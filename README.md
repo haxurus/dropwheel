@@ -442,6 +442,14 @@ dropwheel run image.compress.balanced photo.jpg  # run an action without the int
 | `dropwheel config [--path\|--init\|--edit]` | Show, create or edit the configuration |
 
 Exit codes are `0` for success, `1` for an error, `2` for incorrect usage and `130` for an interruption.
+`dropwheel setup` never overwrites a file without first saving a copy named
+`<file>.dropwheel-bak-YYYYmmdd-HHMMSS`.
+
+| Environment variable | Effect |
+|---|---|
+| `DROPWHEEL_CONFIG` | Alternative path for `config.toml` |
+| `DROPWHEEL_DATA` | Data folder with the shell and integrations, normally `~/.local/share/dropwheel` or `/usr/share/dropwheel` |
+| `DROPWHEEL_BACKEND` | The service command used by the shell, set by `dropwheel start` |
 
 ## Troubleshooting
 
@@ -524,6 +532,88 @@ different application, release Shift first.
 
 </details>
 
+<details>
+<summary><b>The <code>dropwheel</code> command is not found</b></summary>
+
+<br>
+
+With `install.sh`, the command is in `~/.local/bin`, which must be on your `PATH`. On fish, run
+`fish_add_path ~/.local/bin`. On bash or zsh, add `export PATH="$HOME/.local/bin:$PATH"` to your shell's
+startup file. Hyprland and the file managers use the full path anyway.
+
+</details>
+
+<details>
+<summary><b>I have a file at <code>~/.config/quickshell/shell.qml</code></b></summary>
+
+<br>
+
+With a `shell.qml` directly in `~/.config/quickshell/`, Quickshell no longer finds configurations in its
+subfolders. Dropwheel is **not affected**, because it is always started by path. Do not move its shell
+into `~/.config/quickshell/`.
+
+</details>
+
+<details>
+<summary><b>Document conversions produce nothing</b></summary>
+
+<br>
+
+Headless LibreOffice silently does nothing when its profile is already in use. Dropwheel uses a **private
+profile**, so this does not affect it, but the first conversion is slower because the profile is being
+created. If it still fails, `soffice --version` must answer and `dropwheel doctor` must see `soffice`.
+
+</details>
+
+<details>
+<summary><b>Some files open with Dropwheel</b></summary>
+
+<br>
+
+Dropwheel's desktop entry declares the most common file types so that it appears in Open with. If one of
+those types has no default application, a program might choose Dropwheel. Set the right one, for example:
+
+```sh
+xdg-mime default org.gnome.Loupe.desktop image/png
+```
+
+`install.sh` does this by itself for types that already had a default application.
+
+</details>
+
+<details>
+<summary><b>File manager actions do nothing</b></summary>
+
+<br>
+
+Try `dropwheel open ~/some/file.jpg` from a terminal. Communication with the shell only works on the same
+Wayland display, so the file manager needs `WAYLAND_DISPLAY` in its environment. That is normal when it
+was started from the Hyprland session.
+
+</details>
+
+<details>
+<summary><b>Dropwheel closes by itself at startup</b></summary>
+
+<br>
+
+The global shortcuts protocol does not allow two clients with the same name, so if a second copy starts,
+one of them is closed. Check with `qs list`, then run `dropwheel stop && dropwheel start`.
+
+</details>
+
+<details>
+<summary><b>A document is refused as too large</b></summary>
+
+<br>
+
+An Office document, EPUB or CBZ can declare enormous parts inside a tiny file. To protect your memory,
+Dropwheel does not open parts compressed in unusual ways (bzip2, LZMA) or read text parts above 64 MiB
+(256 MiB for the content of an ODS sheet). **Compress** and **Remove metadata** still copy embedded videos,
+up to 8 GiB in total, and **Extract images** skips parts above 64 MiB and says which ones.
+
+</details>
+
 ## Privacy and security
 
 - **Everything is local.** There is no telemetry, cloud service or account.
@@ -585,7 +675,8 @@ sudo pacman -Rns dropwheel
 ```
 
 Then remove the `require("dropwheel")` line from `~/.config/caelestia/hypr-user.lua`, delete
-`~/.config/caelestia/dropwheel.lua` and run `hyprctl reload`.
+`~/.config/caelestia/dropwheel.lua` and run `hyprctl reload`. pacman does not touch your home folder, so
+your settings, history, cache and Whisper models stay until you delete them.
 
 **install.sh**
 

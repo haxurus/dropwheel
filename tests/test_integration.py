@@ -607,6 +607,38 @@ def test_documentation_links_resolve(doc):
     assert not problems, f"{doc}: broken links {problems}"
 
 
+def _doc_structure(path: Path) -> dict:
+    """What a translation must share with its original, whatever the wording."""
+    text = path.read_text(encoding="utf-8")
+    prose = re.sub(r"^```.*?^```", "", text, flags=re.S | re.M)
+    links = [t.partition("#")[0] for t in re.findall(r"(?<!\\)\[[^\]]*\]\(([^)\s]+)\)", prose)]
+    return {
+        "heading levels": [len(h) for h in re.findall(r"^(#+) ", prose, flags=re.M)],
+        "images": [src.replace(".it.svg", ".svg") for src in re.findall(r'<img[^>]*?src="([^"]+)"', prose)],
+        "local links": sorted(t.replace(".it.md", ".md") for t in links if t and not t.startswith("http")),
+        "collapsible sections": prose.count("<details>"),
+        "table rows": len(re.findall(r"^\|", prose, flags=re.M)),
+        "list items": len(re.findall(r"^\s*(?:-|\d+\.) ", prose, flags=re.M)),
+        "code blocks": re.findall(r"^```(\w*)", text, flags=re.M),
+        "keys": text.count("<kbd>"),
+    }
+
+
+@pytest.mark.parametrize("original, translation", [("README.md", "README.it.md"), ("docs/CONFIG.md", "docs/CONFIG.it.md"),
+                                                   ("docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md")])
+def test_translations_stay_in_sync(original, translation):
+    """Changing one language only is a bug: both versions have the same structure, images and links."""
+    assert _doc_structure(ROOT / original) == _doc_structure(ROOT / translation)
+
+
+def test_italian_readme_uses_the_italian_illustration():
+    images = _doc_structure(ROOT / "README.it.md")["images"]
+    text = (ROOT / "README.it.md").read_text(encoding="utf-8")
+    assert "assets/wheel-preview.it.svg" in text and "assets/wheel-preview.svg" not in text
+    assert all((ROOT / i).exists() for i in images if not i.startswith("http"))
+    assert (ROOT / "assets" / "wheel-preview.it.svg").exists()
+
+
 # ------------------------------------------------------------------------- protocol (SPEC §5)
 
 def _shell_sources() -> str:

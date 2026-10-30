@@ -254,7 +254,7 @@ def test_makefile_uninstall_keeps_what_it_did_not_install() -> None:
 
 def test_update_instructions_force_a_rebuild() -> None:
     """pkgver does not change between commits: without -f makepkg reinstalls the previous build."""
-    for name, heading in (("README.it.md", "### Aggiornare"), ("README.md", "**Updating**")):
+    for name, heading in (("README.it.md", "**Aggiornare**"), ("README.md", "**Updating**")):
         update = _read(name).split(heading, 1)[1].split("\n## ", 1)[0]
         assert "makepkg -sif" in update
         assert not re.search(r"makepkg -si(?!f)", update)
@@ -720,14 +720,13 @@ def _lua_list(table) -> list:
     return [table[i] for i in range(1, len(table) + 1)]
 
 
-def test_readme_describes_the_layer_rules_of_the_module() -> None:
+@pytest.mark.parametrize("name, label", [("README.md", "| Layer rules |"), ("README.it.md", "| Regole dei layer |")])
+def test_readme_describes_the_layer_rules_of_the_module(name, label) -> None:
     """The dialog is full-screen with its own scrim: blurring it would blur the whole screen."""
-    readme = _read("README.it.md")
-    row = next(line for line in readme.splitlines() if line.startswith("| regole dei layer"))
-    blurred, _, plain = row.partition("con sfocatura")
+    row = next(line for line in _read(name).splitlines() if line.startswith(label))
+    blurred, _, plain = row.partition(";")
     assert "dropwheel-wheel" in blurred and "dropwheel-hud" in blurred
     assert "dropwheel-dialog" not in blurred and "dropwheel-dialog" in plain
-    assert "sfocatura dietro la ruota e le schede" in readme
 
 
 def test_lua_module_compiles_and_runs_without_hyprland() -> None:
@@ -812,6 +811,9 @@ def test_readme_states_the_platform_scope_and_links_exist() -> None:
     readme = _read("README.md")
     assert "currently runs on Arch Linux with Hyprland only" in readme
     assert "extend Dropwheel to other operating systems" in readme
+    italian = _read("README.it.md")
+    assert "funziona solo su Arch Linux con Hyprland" in italian
+    assert "estendere\nDropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
     local = [t for t in targets if not t.startswith(("http://", "https://"))]
     assert local, "no local links found"

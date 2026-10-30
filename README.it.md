@@ -1,621 +1,313 @@
 <p align="center">
-  <img src="assets/dropwheel.svg" width="128" height="128" alt="Icona di Dropwheel">
+  <img src="assets/dropwheel.svg" width="112" height="112" alt="Icona di Dropwheel">
 </p>
 
 <h1 align="center">Dropwheel</h1>
 
 <p align="center">
-  <a href="README.md">English</a> · <b>Italiano</b>
-</p>
-
-<p align="center">
-  <b>La ruota delle azioni sui file per Hyprland e Caelestia.</b><br>
+  <b>Una ruota radiale di azioni sui file per il tuo desktop Linux.</b><br>
   Trascina dei file, tocca <kbd>Shift</kbd>, rilascia su un settore: convertiti, compressi, ritagliati, oscurati, condivisi.
 </p>
 
----
+<p align="center">
+  <img alt="Piattaforma: Arch Linux" src="https://img.shields.io/badge/platform-Arch%20Linux-1793d1?logo=archlinux&logoColor=white">
+  <img alt="Hyprland 0.57 o successivo" src="https://img.shields.io/badge/Hyprland-0.57%2B-58e1ff">
+  <img alt="Quickshell 0.3.2 o successivo" src="https://img.shields.io/badge/Quickshell-0.3.2%2B-6f334a">
+  <img alt="Python 3.11 o successivo" src="https://img.shields.io/badge/python-3.11%2B-3776ab?logo=python&logoColor=white">
+  <img alt="Stato: versione iniziale" src="https://img.shields.io/badge/status-early%20release-orange">
+  <a href="LICENSE"><img alt="Licenza: MIT" src="https://img.shields.io/badge/license-MIT-green"></a>
+</p>
 
-Dropwheel è l'equivalente per Linux di **[Tangerine](https://tangerineformac.com)** per macOS.
-Mentre trascini uno o più file da qualsiasi applicazione (Thunar, Nautilus, Dolphin, Firefox,
-un client di posta…) basta toccare **Shift**: sotto il puntatore compare una ruota con le azioni
-adatte a quei file. Rilasci i file sul settore che ti serve e il lavoro parte; una piccola scheda
-nell'angolo dello schermo mostra l'avanzamento e, alla fine, il risultato, che puoi aprire,
-mostrare nella cartella, copiare o trascinare direttamente in un'altra applicazione.
-
-Tutto avviene **sul tuo computer**, con programmi liberi che probabilmente hai già
-(ffmpeg, Ghostscript, LibreOffice, Tesseract…). L'aspetto segue i colori e la trasparenza di
-**Caelestia**, il tema Material You per Hyprland.
-
-```
-                                ┌──────────┐
-                                │ CONVERTI │
-               ┌─────────┐      └──────────┘      ╔══════════╗
-               │  ALTRO  │                        ║ COMPRIMI ║  ← settore sotto il puntatore
-               └─────────┘     ╭────────────╮     ╚══════════╝
-                               │     ▣      │
-        ┌─────────┐            │  foto.jpg  │            ┌──────────────┐
-        │ PRIVACY │            │   2,4 MB   │            │ RIDIMENSIONA │
-        └─────────┘            ╰────────────╯            └──────────────┘
-               ┌─────────┐                        ┌──────────┐
-               │ SFONDO  │      ┌──────────┐      │ RITAGLIA │
-               └─────────┘      │ MODIFICA │      └──────────┘
-                                └──────────┘
-                           ( Comprimi · foto.jpg 2,4 MB )
-```
-
-*La ruota di un'immagine: otto settori in senso orario a partire da mezzogiorno, l'anteprima al
-centro. Passando sopra «Comprimi» durante il trascinamento si apre l'anello interno con
-Bilanciata, Leggera, Forte, Dimensione file…*
+<p align="center">
+  <a href="README.md">English</a> · <b>Italiano</b>
+</p>
 
 ---
+
+Dropwheel porta su Linux l'idea di [Tangerine](https://tangerineformac.com) per macOS. Mentre trascini
+dei file da qualsiasi applicazione, tocca <kbd>Shift</kbd>: sotto il puntatore compare una ruota con le
+azioni adatte a quei file. Rilasciali su un settore e il lavoro parte. Una piccola scheda nell'angolo
+dello schermo mostra l'avanzamento e poi il risultato, che puoi aprire, mostrare nella cartella, copiare,
+annullare o trascinare direttamente in un'altra applicazione.
+
+Tutto avviene **sul tuo computer**, con programmi liberi che probabilmente hai già, come FFmpeg,
+Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e niente telemetria.
+
+<p align="center">
+  <img src="assets/wheel-preview.it.svg" width="420" alt="Illustrazione della ruota per un'immagine: Converti, Comprimi, Ridimensiona, Ritaglia, Modifica, Sfondo, Privacy e Altro attorno a una miniatura del file">
+  <br><sub>Illustrazione della ruota per un file immagine. I colori seguono il tuo tema Caelestia.</sub>
+</p>
+
+> [!IMPORTANT]
+> **Al momento Dropwheel funziona solo su Arch Linux con Hyprland.** L'obiettivo è estenderlo ad altri
+> sistemi operativi: vedi [Piattaforme supportate](#piattaforme-supportate).
+>
+> Questa è una versione iniziale. Il codice ha un'ampia suite di test automatici, ma il flusso completo di
+> trascinamento non è ancora stato provato su una vera sessione Hyprland, e molte parti che chiamano
+> programmi esterni sono state eseguite solo con simulazioni. Aspettati qualche imperfezione e, quando ne
+> trovi una, [apri una segnalazione](https://github.com/haxurus/dropwheel/issues).
 
 ## Indice
 
-- [In breve](#in-breve)
-- [Funzionalità](#funzionalità)
-- [Requisiti](#requisiti)
-- [Installazione](#installazione)
-- [Configurare Hyprland e Caelestia](#configurare-hyprland-e-caelestia)
+- [Punti di forza](#punti-di-forza)
+- [Piattaforme supportate](#piattaforme-supportate)
+- [Per iniziare](#per-iniziare)
 - [Come si usa](#come-si-usa)
-- [Tastiera e mouse](#tastiera-e-mouse)
-- [Le schede dei lavori (HUD)](#le-schede-dei-lavori-hud)
-- [Dipendenze per funzionalità](#dipendenze-per-funzionalità)
+- [Cosa può fare](#cosa-può-fare)
+- [Dipendenze facoltative](#dipendenze-facoltative)
 - [Configurazione](#configurazione)
 - [Integrazione con i file manager](#integrazione-con-i-file-manager)
 - [Riga di comando](#riga-di-comando)
 - [Risoluzione dei problemi](#risoluzione-dei-problemi)
 - [Privacy e sicurezza](#privacy-e-sicurezza)
-- [Disinstallazione](#disinstallazione)
+- [Architettura](#architettura)
 - [Sviluppo](#sviluppo)
+- [Disinstallazione](#disinstallazione)
 - [Crediti e licenza](#crediti-e-licenza)
 
----
+## Punti di forza
 
-## In breve
+- **448 azioni, scelte in base al tipo di file.** Immagini, PDF, documenti Office, Markdown, codice, file
+  di dati, ebook, sottotitoli, audio, video, archivi, font, cartelle, link, AppImage e immagini disco.
+- **Solo ciò che ha senso.** A un PDF non viene proposto «Converti in PDF». Selezionando più file compaiono
+  le azioni di gruppo, come unire dei PDF o trasformare delle immagini in una presentazione.
+- **I tuoi originali sono al sicuro.** Gli strumenti scrivono un nuovo file accanto all'originale e non
+  sovrascrivono mai un file esistente. Le sole azioni che toccano il file di partenza sono quelle che lo
+  dichiarano, come Rinomina, Sposta e Cestino. **Annulla** manda nel cestino i risultati di un lavoro.
+- **Oscuramento vero.** L'oscuramento dei PDF rimuove il testo e le immagini sottostanti, poi rilegge il
+  risultato per verificare che siano spariti.
+- **Editor dove servono.** Ritaglio, oscuramento, taglio, organizzatore di pagine PDF, metadati,
+  regolazione dei colori e composizione dello sfondo, tutti con anteprima.
+- **Errori chiari.** Una funzione a cui manca il programma appare in grigio e mostra il comando esatto per
+  installarlo. Un file che non riesce non ferma mai il resto del gruppo.
+- **A casa su Caelestia.** Colori, trasparenza e movimenti seguono il tuo tema. Funziona anche senza
+  Caelestia, con una tavolozza scura Material 3.
+- **Programmabile.** Le stesse azioni sono disponibili dalla riga di comando, con output JSON.
+- **Bilingue.** L'interfaccia è disponibile in italiano e in inglese.
 
-1. **Inizia a trascinare** uno o più file, da qualunque applicazione.
-2. **Tocca Shift**: la ruota compare centrata sotto il puntatore.
-3. **Scegli**: passando sopra un gruppo (Converti, Comprimi, …) per mezzo secondo si apre il
-   suo anello interno; il centro diventa «Indietro».
-4. **Rilascia** sul settore: l'azione parte subito, oppure si apre una finestra per regolarla
-   (ritaglio, oscuramento, pagine di un PDF…). Rilasciare al centro o fuori annulla.
+## Piattaforme supportate
 
-Altri modi per aprire la ruota: l'**angolo attivo** in alto a destra (trascinaci sopra i file),
-la scorciatoia **SUPER+ALT+D** (con dei file copiati negli appunti), il menu del **file manager**
-e la **riga di comando**.
-
----
-
-## Funzionalità
-
-Qui sotto c'è la sintesi per tipo di file. L'elenco completo di tutte le azioni, anello per anello
-e con i programmi che richiedono, è in **[docs/FUNCTIONS.it.md](docs/FUNCTIONS.it.md)**.
-
-La ruota mostra solo ciò che ha senso per i file trascinati: un PDF non propone «Converti in
-PDF», una foto JPG non propone «JPG». Ogni anello ha al massimo otto settori; quando le azioni
-sono di più, l'ultimo settore è **Altro**. Le azioni che richiedono un programma non installato
-compaiono in grigio, con il comando per installarlo (vedi
-[Dipendenze per funzionalità](#dipendenze-per-funzionalità)); con
-`wheel.show_unavailable = false` vengono nascoste.
-
-**I file originali non vengono mai modificati né cancellati.** I risultati vengono salvati
-accanto all'originale con nomi chiari:
-
-| Operazione | Esempio di risultato |
+| Piattaforma | Stato |
 |---|---|
-| Conversione | `foto.heic` → `foto.jpg` |
-| Strumento sullo stesso formato | `foto.jpg` → `foto (compresso).jpg`, `contratto (oscurato).pdf` |
-| Nome già esistente | `foto 2.jpg`, `foto 3.jpg`, … (mai sovrascritto) |
-| Più file in uscita | cartella `documento (pagine)/` con `page-001.png`, `page-002.png`, … |
+| Arch Linux, Hyprland 0.57+, Caelestia | **Obiettivo principale** |
+| Arch Linux, Hyprland 0.57+, senza Caelestia | **Supportata**, con una tavolozza scura integrata |
+| Distribuzioni basate su Arch | Dovrebbero funzionare con gli stessi pacchetti, non provate |
+| Altre distribuzioni Linux | Non ancora |
+| Altri compositor Wayland, X11 | Non ancora |
+| Windows, macOS | Non ancora |
 
-Se la cartella di origine non è scrivibile o è temporanea (download del browser, `/tmp`, file
-condivisi da app Flatpak) il risultato va in **Scaricati/Dropwheel**. Con
-`output.location = "folder"` va sempre lì. Ogni lavoro si può **annullare**: i file creati
-finiscono nel cestino.
+### Dove stiamo andando
 
-Oltre all'anello «Strumenti», ogni file ha una seconda pagina, **File** (si passa da una
-all'altra con Shift): Apri, Apri con…, Mostra nella cartella, Copia il file, Copia il percorso,
-Sposta in…, Copia in…, Rinomina…, Duplica, Comprimi in ZIP, Condividi (QR per il telefono,
-KDE Connect, LocalSend, e-mail), Proprietà, Checksum, Cifra (GnuPG), Apri un terminale qui,
-Rendi eseguibile (quando serve) e Sposta nel cestino.
+Arch e Hyprland sono il punto di partenza del progetto, non quello di arrivo. **L'obiettivo è estendere
+Dropwheel ad altri sistemi operativi.** Non c'è ancora un calendario, e l'ordine dipenderà da ciò che serve
+alle persone e da chi vorrà dare una mano.
 
-### Immagini — JPG, PNG, WebP, AVIF, HEIC/HEIF, JPEG XL, TIFF, BMP, ICO, PSD
+L'architettura mantiene portabile la maggior parte del lavoro difficile, perché l'interfaccia parla con il
+motore attraverso un piccolo protocollo JSON:
 
-| Settore | Cosa fa |
-|---|---|
-| **Converti** | PNG, JPG, WebP, AVIF, PDF, JPEG XL, TIFF; in «Altro» HEIC, GIF, BMP, ICO, SVG (vettorializzata) |
-| **Comprimi** | Bilanciata, Leggera, Forte, Per il web, Senza perdita, Dimensione file (da 100 KB a 5 MB o a scelta) |
-| **Ridimensiona** | lato lungo 1920/2560/1280/3840 px, 50 %, 25 %, su misura, formati social (Instagram, storie, miniatura YouTube, X, LinkedIn, il tuo monitor) |
-| **Ritaglia** | editor con proporzioni libere, originali, 1:1, 4:3, 3:2, 16:9, 9:16, 4:5, 2:3, 21:9, griglia dei terzi e ritaglio JPEG senza perdita |
-| **Modifica** | ruota e rifletti (senza perdita per i JPEG), regolazioni (esposizione, contrasto, saturazione, temperatura, nitidezza, vignettatura) con anteprima, annota, filigrana (testo o logo), bianco e nero, inverti i colori, rifila i bordi |
-| **Sfondo** | rimuovi lo sfondo (AI, in locale), aggiungi dietro un colore, una sfumatura, un'immagine o una copia sfocata (con margini, angoli arrotondati e ombra), bianco → trasparente; con le immagini trasparenti anche trasparente → colore e ritaglia sul soggetto |
-| **Privacy** | togli la posizione GPS, togli tutti i metadati, oscura parti dell'immagine (riquadro pieno, pixel o sfocatura), mostra e modifica i metadati, rinomina con la data di scatto |
-| **Altro** | OCR (copia il testo, TXT, PDF ricercabile), leggi QR e codici a barre, ingrandisci ×2/×4 con l'AI, vettorizza in SVG, crea icone (ICO, serie di PNG, favicon), copia l'immagine negli appunti, imposta come sfondo, stampa |
+| Livello | Oggi | Cosa serve per portarlo altrove |
+|---|---|---|
+| Motore delle azioni (Python) | Scritto per Linux, in gran parte indipendente dalla piattaforma | Codice specifico per percorsi, cestino, appunti e notifiche; le tabelle delle dipendenze indicano pacchetti Arch |
+| Protocollo | Righe JSON su stdio | Niente: qualsiasi interfaccia può parlarlo |
+| Riga di comando | Non richiede un compositor | Quasi niente: un primo passo naturale su una nuova piattaforma |
+| Attivazione | Scorciatoie globali di Hyprland e `hyprctl` | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
+| Ruota e finestre | Quickshell, Wayland layer-shell | Altri compositor Wayland potrebbero riutilizzarle; gli altri sistemi richiedono una nuova interfaccia |
+| Pacchetti | `PKGBUILD`, `install.sh` | Pacchetti nativi per ogni sistema |
 
-Le foto vengono raddrizzate secondo l'orientamento EXIF, i profili colore vengono conservati e la
-trasparenza viene appiattita su bianco quando il formato di destinazione non la supporta.
+Se vorresti Dropwheel sul tuo sistema, una
+[segnalazione](https://github.com/haxurus/dropwheel/issues) che descrive la tua configurazione è un utile
+punto di partenza.
 
-**Immagini animate** (GIF, WebP animate, APNG): converti in MP4, WebM, WebP, GIF o primo
-fotogramma; comprimi; ridimensiona; ritaglia; ruota e rifletti; velocità e riproduzione al
-contrario; estrai i fotogrammi.
+## Per iniziare
 
-**SVG**: converti in PNG (dimensione originale, da 512 a 4096 px o a una misura precisa), PDF,
-JPG, WebP, ICO; ottimizza (toglie i dati dell'editor e i commenti); copia come codice o immagine;
-crea icone; OCR; leggi QR; stampa.
-
-### PDF
-
-| Settore | Cosa fa |
-|---|---|
-| **Converti** | Word (DOCX), JPG e PNG (una immagine per pagina, alla risoluzione che scegli), TXT, Markdown, EPUB, HTML; in «Altro» PDF/A e scala di grigi |
-| **Comprimi** | Bilanciata (150 dpi), Leggera (senza ridurre la risoluzione), Forte (72 dpi), Su misura (risoluzione e qualità delle immagini) |
-| **Pagine** | organizzatore con miniature (riordina trascinando, ruota, elimina, duplica); dividi (ogni pagina, ogni N pagine, intervalli come `1-3, 5, 7-`, segnalibri); estrai o elimina pagine; ruota; inverti l'ordine; inserisci pagine vuote |
-| **Sicurezza** | proteggi con password (AES-256) o sblocca; **oscura** con riquadri neri disegnati o con la ricerca di testo («oscura tutte le occorrenze»): il testo sotto i riquadri viene **rimosso davvero** e il risultato viene verificato; togli o modifica i metadati |
-| **OCR** | rendi ricercabile un PDF scansionato (italiano + inglese), rifai l'OCR, raddrizza le pagine, copia il testo |
-| **Estrai** | immagini e allegati |
-| **Annota** | apre il PDF in Xournal++ per evidenziare, scrivere note, disegnare e firmare |
-| **Altro** | filigrana, numeri di pagina, appiattisci, ripara, stampa, informazioni |
-
-Con più PDF: **unisci** (con un segnalibro per file), fascicola scansioni fronte/retro, comprimi,
-converti o proteggi tutto insieme.
-
-### Documenti, fogli di calcolo e presentazioni
-
-- **Documenti** (DOCX, DOC, ODT, RTF): PDF con un tocco, conversione in DOCX/ODT, Markdown, TXT,
-  HTML, EPUB, RTF, DOC, immagini delle pagine; compressione delle immagini incluse; rimozione dei
-  dati personali; estrazione di immagini e testo; PDF protetto da password; statistiche (parole,
-  caratteri, tempo di lettura). Con più documenti: un unico PDF o un unico DOCX.
-- **Fogli di calcolo** (XLSX, ODS, XLS, CSV, TSV): converti in XLSX, ODS, CSV (un file per
-  foglio), TSV, PDF, JSON, tabella Markdown, HTML; strumenti CSV (UTF-8, separatore `,` o `;`,
-  formato «Per Excel» con `;` e BOM, fine riga); rimozione dei metadati; informazioni sul foglio.
-  Con più file: unisci i CSV o combina in un unico XLSX.
-- **Presentazioni** (PPTX, ODP, PPT): PDF, conversione in PPTX/ODP, immagini delle diapositive
-  (PNG o JPG), compressione dei media, testo e note in Markdown, note del relatore, estrazione
-  delle immagini, rimozione dei metadati, statistiche.
-
-Le conversioni usano LibreOffice in modalità invisibile con un profilo privato, quindi
-funzionano anche se LibreOffice è già aperto. Le macro non vengono mai eseguite.
-
-### Markdown, testo e codice
-
-- **Markdown**: PDF (con Typst, WeasyPrint, LaTeX o LibreOffice), DOCX, HTML, ODT, EPUB, TXT, RTF;
-  copia come testo semplice o formattato; indice (mostralo o inseriscilo nel file); togli gli
-  spazi finali, fine riga, UTF-8; diapositive (PDF, PPTX, pagina web); statistiche. Le immagini
-  remote non vengono scaricate.
-- **Testo**: converti in PDF/DOCX/ODT/MD/HTML, copia il contenuto, converti in UTF-8 (la codifica
-  originale viene rilevata), fine riga LF/CRLF, togli gli spazi finali, statistiche. Con più file:
-  unisci.
-- **Codice sorgente**: esporta in PDF/HTML con evidenziazione e numeri di riga (anche in Markdown,
-  DOCX e ODT), copia il contenuto, fine riga, UTF-8, togli gli spazi finali, statistiche, rendi
-  eseguibile (solo se ha lo shebang). Dropwheel non esegue mai il codice trascinato.
-
-### Dati strutturati — JSON, YAML, TOML, XML, NDJSON
-
-Converti tra JSON, YAML, TOML, XML, CSV e XLSX; formatta, minimizza, verifica, ordina le chiavi;
-con più file, unisci in JSON. Gli avvisi segnalano ciò che una conversione non può rappresentare
-(commenti, `null` in TOML…). Il parsing è sicuro (niente XXE, YAML solo `safe_load`).
-
-### Ebook — EPUB, MOBI, AZW3, FB2, CBZ/CBR
-
-Converti (EPUB, AZW3, MOBI, PDF, DOCX, TXT, HTMLZ), estrai la copertina, informazioni (titolo,
-autore, lingua, editore, serie); per i fumetti CBZ, estrai le pagine. I libri protetti da DRM
-vengono segnalati e non toccati.
-
-### Audio — MP3, M4A, FLAC, WAV, Opus, OGG
-
-| Settore | Cosa fa |
-|---|---|
-| **Converti** | MP3, M4A (AAC), Opus, OGG, FLAC, WAV, AIFF, M4R (suoneria per iPhone) |
-| **Comprimi** | Bilanciata (128 kbit/s), Alta qualità (192 kbit/s), Massima (96 kbit/s), Voce (Opus mono) |
-| **Taglia** | editor con forma d'onda: tieni o elimina un intervallo |
-| **Normalizza** | streaming −14 LUFS, podcast −16, radio/TV −23 (EBU R128) |
-| **Tag** | titolo, artista, album, anno, traccia, genere e copertina |
-| **Trascrivi** | testo, sottotitoli SRT/VTT con whisper.cpp, in locale (lingua automatica, italiano o inglese) |
-| **Modifica** | velocità senza cambiare l'intonazione, dissolvenza, togli i silenzi all'inizio e alla fine, riduzione del rumore, volume, mono o stereo, al contrario |
-| **Altro** | video con la forma d'onda (quadrato, orizzontale, verticale), estrai la copertina |
-
-Con più file audio: unisci, crea una playlist M3U.
-
-### Video — MP4, MKV, WebM, MOV, AVI
-
-| Settore | Cosa fa |
-|---|---|
-| **Converti** | MP4 (H.264 o HEVC), WebM, MKV (senza ricodifica), MOV, GIF, MP3, M4A; in «Audio» Opus, FLAC, WAV |
-| **Comprimi** | Bilanciata (≤1080p), Alta qualità, Massima (≤720p), WhatsApp/Telegram (≤720p, sotto 16 MB), Dimensione a scelta |
-| **Taglia** | editor con miniature dei punti di taglio: tieni o elimina un intervallo; veloce (senza ricodifica) o preciso |
-| **Ritaglia** | tieni solo una parte dell'inquadratura, anche con proporzioni fisse |
-| **Ridimensiona** | 1080p, 720p, 480p, 1440p, 2160p |
-| **Modifica** | togli l'audio, ruota e rifletti (anche solo l'orientamento, senza ricodifica), velocità, al contrario, ripeti, stabilizza, dissolvenza |
-| **Estrai** | audio (senza ricodifica), istantanea, fotogrammi, foglio provini (da 3×3 a 6×6), sottotitoli |
-| **Altro** | sottotitoli (genera con whisper.cpp, aggiungi come traccia, imprimi un file nell'immagine, estrai), dividi in clip uguali, metadati (modifica, togli, togli il GPS) |
-
-Con più video: unisci (senza ricodifica quando i formati coincidono), estrai l'audio, comprimi
-tutto. Le risoluzioni non vengono mai aumentate; l'accelerazione hardware (VA-API, NVENC) si
-sceglie in `[video] hwaccel`.
-
-**Sottotitoli** (SRT, VTT, ASS): converti, sposta i tempi, cambia gli fps, UTF-8, togli i tag per
-non udenti, copia il testo, statistiche. Per imprimerli in un video, usa **Altro → Sottotitoli**
-sul video.
-
-### Archivi — ZIP, 7Z, RAR, TAR.GZ/XZ/ZST, GZ, XZ, ZST
-
-Estrai qui (crea una cartella solo se l'archivio contiene più elementi), estrai in…, mostra il
-contenuto, converti in ZIP/7Z/TAR.ZST/TAR.GZ/TAR.XZ, verifica l'integrità, proteggi con password
-(7z AES-256 con nomi cifrati, ZIP AES-256) o togli la password, dividi in parti (100 MB, 1 GB,
-4 GB o a scelta) e riunisci. Le voci pericolose (percorsi assoluti, `..`, link fuori
-dall'archivio) vengono rifiutate; prima di estrarre archivi enormi o sospetti viene chiesta
-conferma.
-
-### Font — TTF, OTF, WOFF, WOFF2
-
-Installa (o disinstalla) per l'utente, anteprima (un foglio PNG con alfabeto, frase di prova e
-glifi), converti in WOFF2/WOFF/TTF/OTF, kit per il web con CSS `@font-face`, sottoinsieme (latino,
-latino esteso con le lettere accentate, testo personalizzato, intervalli Unicode), informazioni
-(con avviso sulle licenze che vietano la modifica).
-
-### Cartelle
-
-Comprimi (ZIP, 7Z, TAR.ZST, TAR.GZ, TAR.XZ, anche con password o in più parti), immagini → un PDF,
-rinomina i file in blocco (modello con numerazione e data, trova e sostituisci, maiuscole),
-dimensioni, duplicati, conta per tipo, checksum (`SHA256SUMS`: crea e verifica), elenco del
-contenuto in TXT, appiattisci le sottocartelle, apri un terminale qui.
-
-### Link trascinati dal browser
-
-Scarica il file (nella cartella Scaricati), scarica video o audio con yt-dlp (MP4 fino a 1080p,
-MP3, oppure scegli qualità, sottotitoli e miniatura), QR del link, salva la pagina in PDF (serve
-Chromium), copia come link semplice o Markdown, apri nel browser, pulisci il link dai parametri
-di tracciamento (`utm_*`, `fbclid`, …), crea un collegamento. Con più link: salva l'elenco.
-
-### AppImage, immagini disco, pacchetti, file sconosciuti
-
-- **AppImage**: integra nel menu delle applicazioni (e togli), rendi eseguibile, avvia, estrai
-  (senza eseguirla), informazioni, verifica del checksum.
-- **ISO/IMG**: monta in sola lettura, verifica il checksum, estrai, smonta.
-- **Pacchetti** (`.pkg.tar.zst`, `.deb`, `.rpm`): informazioni, elenco dei file, estrai, checksum;
-  «Installa» apre un terminale con il comando già scritto (Dropwheel non chiede mai la password).
-- **File sconosciuti**: identifica il tipo reale, checksum (SHA-256, SHA-1, MD5, BLAKE2b, XXH128;
-  nella pagina File anche il confronto con un valore incollato o negli appunti), comprimi, vista
-  esadecimale, stringhe, apri con…, cifra.
-
-### Più file insieme
-
-Se i file sono tutti dello stesso tipo, la ruota propone le azioni di gruppo: immagini → **PDF**,
-GIF/WebP animata, presentazione MP4, collage; PDF → **unisci**; video e audio → **unisci**;
-documenti → **un unico PDF**. Con file di tipi diversi: ZIP, checksum, rinomina, sposta in…, invia
-al telefono e, quando ha senso, un unico PDF (immagini, PDF, documenti e testi convertiti e uniti),
-un PDF per file, tutto in MP3 o un video con copertina (un'immagine e un audio). Un file che non
-riesce non ferma gli altri: alla fine la scheda riporta, per esempio, «18 riusciti, 2 non riusciti,
-3 saltati».
-
----
-
-## Requisiti
+**Requisiti**
 
 | | |
 |---|---|
-| **Sistema** | Arch Linux (o derivate) con Wayland |
-| **Hyprland** | 0.57 o successivo, **configurazione Lua** (dalla 0.57 il vecchio `hyprland.conf` non è più letto) |
-| **Quickshell** | 0.3.2 o successivo: il pacchetto `quickshell` oppure `quickshell-git` (quello usato da Caelestia) |
-| **Python** | 3.11 o successivo (Arch: 3.14) con Pillow |
+| **Sistema** | Arch Linux o una derivata, su Wayland |
+| **Hyprland** | 0.57 o successivo, con configurazione Lua |
+| **Quickshell** | 0.3.2 o successivo (`quickshell` o `quickshell-git`) |
+| **Python** | 3.11 o successivo, con Pillow |
 | **Altri pacchetti** | `wl-clipboard`, `libnotify`, `ttf-material-symbols-variable`, `glib2`, `xdg-utils` |
-| **Caelestia** | consigliato, non obbligatorio: senza Caelestia Dropwheel usa una tavolozza scura Material 3 |
+| **Caelestia** | Consigliato, non obbligatorio |
 
-Tutto il resto è facoltativo e abilita le singole funzioni: vedi
-[Dipendenze per funzionalità](#dipendenze-per-funzionalità).
-
----
-
-## Installazione
-
-Scarica il codice (con `git clone` o come archivio) ed entra nella cartella del progetto. Poi
-scegli **una** delle due strade.
-
-### A. Pacchetto Arch (consigliata)
+**Installa come pacchetto Arch (consigliato)**
 
 ```sh
+git clone https://github.com/haxurus/dropwheel.git
+cd dropwheel
 makepkg -si
 ```
 
-Il `PKGBUILD` costruisce il pacchetto **dalla cartella in cui ti trovi** (nessun download) e
-pacman tiene traccia di ogni file: `/usr/bin/dropwheel`, `/usr/share/dropwheel/`, la voce del
-menu, l'icona e le azioni per Dolphin e Nemo. Le dipendenze facoltative, ognuna con la funzione
-che abilita, compaiono al termine dell'installazione e con `pacman -Qi dropwheel`.
+Il `PKGBUILD` costruisce il pacchetto dalla cartella in cui ti trovi e pacman tiene traccia di ogni file.
 
-Poi, **con il tuo utente** (non root):
+**Oppure installa nella tua home, senza root**
 
 ```sh
-dropwheel setup hyprland   # Shift, SUPER+ALT+D e regole dei layer (vedi sotto)
-dropwheel start            # avvia subito; dal prossimo login parte da sola
-dropwheel doctor           # cosa è installato e cosa manca
+git clone https://github.com/haxurus/dropwheel.git
+cd dropwheel
+./install.sh
 ```
 
-> **Nota su `makepkg -c` / `-C`.** In questo progetto `src/` contiene il codice Python, mentre
-> makepkg usa normalmente `src/` come cartella di lavoro. Il `PKGBUILD` sposta quindi la
-> cartella di lavoro in `.makepkg/` (a meno che tu non abbia impostato `BUILDDIR` in
-> `makepkg.conf`), così anche le opzioni di pulizia sono sicure.
->
-> Se i test falliscono per un motivo che non ti interessa (per esempio uno strumento opzionale
-> mancante) puoi saltarli con `makepkg -si --nocheck`.
+Lo script installa in `~/.local`, controlla le dipendenze e stampa il comando per ciò che manca. Non esegue
+mai `sudo`. Le opzioni sono in `./install.sh --help`.
 
-### B. Installazione nella home, senza root
+**Poi, con il tuo utente normale, collegalo a Hyprland**
 
 ```sh
-./install.sh          # oppure: bash install.sh
+dropwheel setup hyprland   # Shift, SUPER+ALT+D, regole dei layer e avvio automatico
+hyprctl reload
+dropwheel start            # dal prossimo login parte da solo
+dropwheel doctor           # mostra cosa è installato e cosa manca
 ```
 
-Lo script copia Dropwheel in `~/.local` (nessun file fuori dalla tua home, nessun `sudo`):
+Ora inizia a trascinare un file e tocca <kbd>Shift</kbd>.
 
-| Cosa | Dove |
-|---|---|
-| pacchetto Python | `~/.local/share/dropwheel/python/dropwheel` |
-| shell Quickshell | `~/.local/share/dropwheel/shell/` |
-| integrazioni | `~/.local/share/dropwheel/integrations/` |
-| comando | `~/.local/bin/dropwheel` (avvia `python3 -P -m dropwheel` con il `PYTHONPATH` giusto) |
-| voce del menu e icona | `~/.local/share/applications/`, `~/.local/share/icons/hicolor/scalable/apps/` |
-| azioni dei file manager | Nautilus, Dolphin e Nemo, se installati |
+<details>
+<summary><b>Cosa cambia <code>dropwheel setup hyprland</code></b></summary>
 
-Durante l'installazione lo script:
+<br>
 
-- controlla le dipendenze con `pacman -Qq` e **stampa** il comando per installare quelle
-  mancanti e una selezione di quelle facoltative (non esegue mai `sudo`);
-- protegge le applicazioni predefinite: se la nuova voce del menu diventasse l'applicazione
-  predefinita per un tipo di file che ne aveva già una, la precedente viene rimessa in
-  `~/.config/mimeapps.list` (Dropwheel resta nel menu «Apri con»);
-- propone `dropwheel setup hyprland` e infine esegue `dropwheel start`.
+Con Caelestia copia il modulo Lua in `~/.config/caelestia/dropwheel.lua` e, dopo averne fatto un backup,
+aggiunge una riga a `~/.config/caelestia/hypr-user.lua`:
 
-Opzioni utili: `--yes` (nessuna domanda), `--no-hyprland`, `--no-start`, `--no-file-managers`,
-`--no-mime-guard`, `--prefix DIR`, `--python PERCORSO`, `--uninstall`. Elenco completo con
-`./install.sh --help`.
-
-Se il terminale non trova `dropwheel`, aggiungi `~/.local/bin` al `PATH`
-(con fish, la shell predefinita di Caelestia: `fish_add_path ~/.local/bin`).
-
-### Aggiornare
-
-```sh
-git pull
-makepkg -sif         # oppure: ./install.sh
-dropwheel stop && dropwheel start
+```lua
+require("dropwheel")
 ```
-
-La `f` di `makepkg -sif` è necessaria: la versione del pacchetto non cambia a ogni modifica e,
-senza `f`, makepkg trova il pacchetto costruito la volta precedente («A package has already been
-built») e reinstalla quello, senza gli aggiornamenti.
-
----
-
-## Configurare Hyprland e Caelestia
-
-Dropwheel ha bisogno di tre cose da Hyprland: inoltrare **Shift** (e la scorciatoia di apertura)
-alla shell di Dropwheel, applicare la sfocatura alle sue superfici e avviarla al login. Tutto è
-nel modulo Lua [`integrations/hyprland/dropwheel.lua`](integrations/hyprland/dropwheel.lua).
-
-### In automatico
-
-```sh
-dropwheel setup hyprland
-```
-
-Con Caelestia il comando:
-
-1. copia `dropwheel.lua` in `~/.config/caelestia/dropwheel.lua` (la tua copia, che puoi
-   modificare);
-2. aggiunge in fondo a `~/.config/caelestia/hypr-user.lua`, dopo averne fatto un backup, la riga
-
-   ```lua
-   require("dropwheel")
-   ```
-
-   Caelestia aggiunge già `~/.config/caelestia/?.lua` al percorso dei moduli Lua e carica
-   `hypr-user.lua` per ultimo; né `caelestia install` né `caelestia update` toccano quel file.
 
 Il modulo registra:
 
 | Cosa | Dettagli |
 |---|---|
-| `Shift_L`, `Shift_R` | `hl.dsp.global("dropwheel:shift")` con `non_consuming` (le applicazioni ricevono comunque Shift) e `ignore_mods` (funziona anche tenendo Ctrl o Alt) |
-| `SUPER + ALT + D` | `hl.dsp.global("dropwheel:open")`: apre la ruota con i file negli appunti |
-| regole dei layer | `dropwheel-wheel`, `dropwheel-hud` con sfocatura (`blur`, `ignore_alpha = 0.3`) e senza animazioni di Hyprland; `dropwheel-dialog` e `dropwheel-hotzone` solo senza animazioni (il dialogo ha un suo velo: sfocarlo sfocherebbe tutto lo schermo) |
-| avvio automatico | `hl.on("hyprland.start", …)` esegue `dropwheel start` |
+| `Shift_L`, `Shift_R` | `hl.dsp.global("dropwheel:shift")`, `non_consuming` perché le applicazioni ricevano comunque Shift, `ignore_mods` perché funzioni anche tenendo Ctrl o Alt |
+| `SUPER + ALT + D` | `hl.dsp.global("dropwheel:open")`, apre la ruota con i file negli appunti |
+| Regole dei layer | Sfocatura e nessuna animazione di Hyprland su `dropwheel-wheel` e `dropwheel-hud`; nessuna animazione su `dropwheel-dialog` e `dropwheel-hotzone` |
+| Avvio automatico | `hl.on("hyprland.start", ...)` esegue `dropwheel start` |
 
-Le scorciatoie hanno una descrizione, quindi compaiono in `hyprctl binds`.
+Le opzioni sono in cima al file copiato: la scorciatoia di apertura, i tasti Shift, l'avvio automatico e la
+sfocatura.
 
-> L'evento `hyprland.start` scatta **solo al login**, non quando la configurazione viene
-> ricaricata: la prima volta avvia Dropwheel a mano con `dropwheel start`. Se le scorciatoie non
-> compaiono subito, ricarica Hyprland con `hyprctl reload`.
-
-### A mano
-
-Con Caelestia (pacchetto di sistema; con `install.sh` il file si trova in
-`~/.local/share/dropwheel/integrations/hyprland/`):
-
-```sh
-cp /usr/share/dropwheel/integrations/hyprland/dropwheel.lua ~/.config/caelestia/dropwheel.lua
-echo 'require("dropwheel")' >> ~/.config/caelestia/hypr-user.lua
-hyprctl reload
-dropwheel start
-```
-
-Senza Caelestia, copia il file in `~/.config/hypr/` e aggiungi a `~/.config/hypr/hyprland.lua`:
+Senza Caelestia, copia il modulo in `~/.config/hypr/` e aggiungi a `~/.config/hypr/hyprland.lua`:
 
 ```lua
 package.path = package.path .. ";" .. os.getenv("HOME") .. "/.config/hypr/?.lua"
 require("dropwheel")
 ```
 
-Se preferisci non usare il modulo, queste righe fanno lo stesso:
+</details>
 
-```lua
-for _, key in ipairs({ "Shift_L", "Shift_R" }) do
-    hl.bind(key, hl.dsp.global("dropwheel:shift"),
-        { non_consuming = true, ignore_mods = true, description = "Dropwheel: Shift durante il trascinamento" })
-end
-hl.bind("SUPER + ALT + D", hl.dsp.global("dropwheel:open"), { description = "Dropwheel: apri la ruota" })
-hl.layer_rule({ match = { namespace = "dropwheel-(wheel|hud)" }, blur = true, ignore_alpha = 0.3, no_anim = true })
-hl.layer_rule({ match = { namespace = "dropwheel-(dialog|hotzone)" }, no_anim = true })
-hl.on("hyprland.start", function() hl.exec_cmd("dropwheel start") end)
+**Aggiornare**
+
+```sh
+git pull
+makepkg -sif               # oppure: ./install.sh
+dropwheel stop && dropwheel start
 ```
 
-### Cambiare la scorciatoia e le altre opzioni del modulo
-
-In cima a `~/.config/caelestia/dropwheel.lua`:
-
-```lua
-local OPEN_KEY = "SUPER + ALT + D"          -- per esempio "SUPER + D"; nil = nessuna scorciatoia
-local SHIFT_KEYS = { "Shift_L", "Shift_R" } -- {} = non usare Shift
-local AUTOSTART = true                      -- avvio al login
-local BLUR = true                           -- sfocatura dietro la ruota e le schede
-local DROPWHEEL_CMD = nil                   -- nil = ~/.local/bin/dropwheel se esiste, altrimenti "dropwheel"
-```
-
-Il modulo restituisce una tabella: `require("dropwheel").set_enabled(false)` disattiva
-scorciatoie e regole. Un errore nel modulo (per esempio una scorciatoia scritta male) non blocca
-il resto della configurazione: viene mostrato con una notifica.
-
----
+La `f` è importante: la versione non cambia a ogni commit, quindi senza di essa makepkg reinstalla il
+pacchetto costruito la volta precedente.
 
 ## Come si usa
 
-### 1. Shift durante il trascinamento
+Ci sono cinque modi per aprire la ruota.
 
-È il modo principale. Inizia a trascinare dei file e **tocca Shift** (premi e rilascia): la
-ruota compare centrata sotto il puntatore. Spostati su un settore e rilascia.
+1. **Shift durante un trascinamento.** Inizia a trascinare, tocca <kbd>Shift</kbd>, spostati su un settore
+   e rilascia. È il modo principale. Dropwheel controlla che un trascinamento sia davvero in corso, quindi
+   Shift continua a funzionare normalmente mentre scrivi.
+2. **L'angolo attivo.** Trascina i file sull'area di 6×6 pixel nell'angolo in alto a destra dello schermo.
+   Angolo, dimensione e presenza stessa sono configurabili.
+3. **SUPER+ALT+D.** Copia dei file nel file manager e premi la scorciatoia. Se negli appunti non c'è nulla,
+   ottieni un'area vuota su cui trascinare i file.
+4. **Il file manager.** Fai clic destro sui file e scegli **Apri in Dropwheel**.
+5. **Il terminale.** Esegui `dropwheel open foto.heic`.
 
-- I gruppi si aprono da soli se ci resti sopra mezzo secondo (`wheel.spring_ms`); il centro
-  diventa **Indietro** (restaci sopra o cliccalo per tornare indietro).
-- Rilasciare su un **gruppo** lascia la ruota aperta, in modalità clic, sull'anello di quel gruppo.
-- Rilasciare **al centro o fuori** dalla ruota annulla. Anche **Esc** annulla: Hyprland
-  interrompe il trascinamento e la ruota si chiude.
-- Toccare di nuovo Shift con la ruota aperta passa dalla pagina **Strumenti** alla pagina
-  **File** e viceversa.
-
-Dropwheel controlla che un trascinamento sia davvero in corso (`hyprctl -j monitors`), quindi
-Shift continua a funzionare normalmente quando scrivi.
-
-### 2. L'angolo attivo
-
-Un'area di 6×6 pixel in alto a destra dello schermo (configurabile: angolo o bordo, dimensione,
-disattivabile). Trascina i file **sopra l'angolo**: la ruota si apre lì vicino e ti basta
-spostarti sopra. Se invece **rilasci i file direttamente sull'angolo**, la ruota si apre in
-modalità clic con quei file.
-
-### 3. SUPER+ALT+D, senza trascinare
-
-Copia dei file (<kbd>Ctrl</kbd>+<kbd>C</kbd> nel file manager) e premi
-<kbd>SUPER</kbd>+<kbd>ALT</kbd>+<kbd>D</kbd>: la ruota si apre sotto il puntatore con quei file,
-in modalità clic. Se negli appunti non ci sono file, compare un'area «Trascina qui dei file».
-
-### 4. Dal file manager
-
-Tasto destro sui file → **Apri in Dropwheel** (Dolphin, Nemo, Thunar) oppure
-**Script → Dropwheel** (Nautilus). Vedi [Integrazione con i file manager](#integrazione-con-i-file-manager).
-
-### 5. Dal terminale
-
-```sh
-dropwheel open ~/Immagini/foto.heic        # ruota in modalità clic su quel file
-dropwheel menu --json documento.pdf        # le azioni disponibili, in JSON
-dropwheel run image.convert.png foto.heic  # esegue un'azione senza interfaccia
-```
-
-Vedi [Riga di comando](#riga-di-comando).
-
----
-
-## Tastiera e mouse
-
-### Durante il trascinamento
+**Durante un trascinamento**
 
 | Gesto | Effetto |
 |---|---|
-| tocca **Shift** | apre la ruota sotto il puntatore; con la ruota aperta cambia pagina (Strumenti ⇄ File) |
-| resta su un gruppo per 450 ms | apre l'anello del gruppo |
-| resta al centro («Indietro») per 450 ms | torna all'anello precedente |
-| rilascia su un'azione | la esegue (o apre la sua finestra di regolazione) |
-| rilascia su un gruppo | la ruota resta aperta in modalità clic sull'anello del gruppo |
-| rilascia al centro o fuori | annulla |
-| **Esc** | annulla il trascinamento e chiude la ruota |
+| Tocca <kbd>Shift</kbd> | Apre la ruota; se è già aperta, passa dalla pagina **Strumenti** alla pagina **File** e viceversa |
+| Resta su un gruppo per 450 ms | Apre l'anello di quel gruppo |
+| Resta al centro per 450 ms | Torna all'anello precedente |
+| Rilascia su un'azione | La esegue, oppure apre il suo editor |
+| Rilascia su un gruppo | Lascia la ruota aperta su quell'anello, in modalità clic |
+| Rilascia al centro o fuori | Annulla |
+| <kbd>Esc</kbd> | Annulla il trascinamento e chiude la ruota |
 
-### In modalità clic (dopo SUPER+ALT+D, l'angolo attivo, un gruppo o il file manager)
+**In modalità clic** (dopo SUPER+ALT+D, l'angolo attivo, il file manager o un rilascio su un gruppo)
 
 | Tasto o gesto | Effetto |
 |---|---|
-| frecce, **Tab**, rotellina | spostano l'evidenziazione tra i settori |
-| **1** … **8** | esegue il settore N (in senso orario da mezzogiorno) |
-| **Invio** o clic | esegue l'azione o apre il gruppo |
-| **Alt+Invio** o clic destro | apre i parametri di un'azione rapida prima di eseguirla |
-| **Backspace** o clic al centro | torna indietro |
-| **Esc** | torna indietro; all'anello principale chiude la ruota |
-| **Shift** o **Ctrl+Tab** | cambia pagina (Strumenti ⇄ File) |
+| Frecce, <kbd>Tab</kbd>, rotellina | Spostano l'evidenziazione |
+| Da <kbd>1</kbd> a <kbd>8</kbd> | Esegue il settore N, in senso orario da mezzogiorno |
+| <kbd>Invio</kbd> o clic | Esegue l'azione o apre il gruppo |
+| <kbd>Alt</kbd>+<kbd>Invio</kbd> o clic destro | Imposta prima i parametri di un'azione rapida |
+| <kbd>Backspace</kbd> o clic al centro | Torna indietro |
+| <kbd>Esc</kbd> | Torna indietro; sull'anello principale, chiude |
+| <kbd>Shift</kbd> o <kbd>Ctrl</kbd>+<kbd>Tab</kbd> | Cambia pagina |
 
-Le azioni **rapide** partono subito con i valori predefiniti (quelli di `config.toml`); con
-Alt+Invio o il clic destro puoi cambiarli per una volta. Le azioni con una **finestra**
-(Ritaglia, Oscura, Taglia, Pagine, Metadati, Regolazioni, Sfondo) aprono il loro editor: Invio
-applica, Esc annulla.
+**Schede dei lavori**
 
----
+Dopo il rilascio compare una scheda nell'angolo in basso a destra. Durante il lavoro mostra l'avanzamento e
+un pulsante per interrompere. Alla fine mostra un'anteprima, lo spazio risparmiato e i pulsanti **Apri**,
+**Mostra nella cartella**, **Copia** e **Annulla**. Puoi anche **trascinare il risultato** direttamente in
+un browser, una chat o un'e-mail. I lavori non riusciti restano finché non li chiudi, con i dettagli e, se
+manca un programma, un pulsante che copia il comando di installazione.
 
-## Le schede dei lavori (HUD)
+## Cosa può fare
 
-Dopo il rilascio la ruota si rimpicciolisce in una scheda nell'angolo in basso a destra
-(`hud.position`). Le schede si impilano (al massimo cinque visibili):
+L'anello si adatta al file, quindi le voci esatte possono cambiare. Gli anelli hanno al massimo otto
+settori, e le voci in più passano in **Altro**.
 
-- **in corso**: nome dell'azione, file, barra di avanzamento e ✕ per interrompere;
-- **completata**: anteprima, nome e dimensione del risultato (con il risparmio, per esempio
-  «−78 %»). **Trascina il risultato** direttamente in un'altra applicazione (browser, chat,
-  e-mail) oppure usa **Apri**, **Mostra nella cartella**, **Copia**, **Annulla** (sposta i file
-  creati nel cestino). Si chiude da sola dopo 7 secondi (`hud.timeout_ms`), ma non mentre ci passi
-  sopra;
-- **testo, QR, informazioni**: anteprima compatta con **Copia** ed **Espandi**;
-- **non riuscita**: messaggio chiaro, dettagli espandibili e, se manca un programma, **Copia il
-  comando di installazione**. Resta finché non la chiudi.
-
-I lavori lunghi (più di 10 secondi) o terminati con la scheda non visibile mandano anche una
-notifica (`notifications.mode`).
-
----
-
-## Dipendenze per funzionalità
-
-Le dipendenze obbligatorie sono poche; il resto si installa solo quando serve. Una funzione
-senza il suo programma appare in grigio e mostra il comando giusto; `dropwheel doctor` elenca
-tutto. Nessun comando viene mai eseguito con `sudo` al posto tuo.
-
-### Pacchetti ufficiali (`sudo pacman -S --needed …`)
-
-| Funzionalità | Pacchetti |
+| Tipo di file | Azioni |
 |---|---|
-| **Base (obbligatori)** | `python python-pillow quickshell hyprland wl-clipboard libnotify ttf-material-symbols-variable glib2 xdg-utils` |
-| Foto HEIC/HEIF e JPEG XL | `python-pillow-heif python-pillow-jpegxl-plugin` |
-| Compressione e ottimizzazione immagini | `oxipng pngquant jpegoptim libjpeg-turbo` |
-| GIF di qualità, GIF animate | `gifski gifsicle libwebp-utils` |
-| Formati insoliti, immagini enormi | `imagemagick libheif libvips` |
-| SVG | `librsvg resvg potrace inkscape scour` (o `svgo`) |
-| Metadati e privacy | `perl-image-exiftool mat2` |
-| OCR (italiano e inglese) | `tesseract tesseract-data-ita tesseract-data-eng` |
-| QR e codici a barre | `zbar python-qrcode qrencode` |
-| Annotazioni | `satty` (o `swappy`), `xournalpp` per i PDF |
-| Ingrandimento con l'AI | `waifu2x-ncnn-vulkan` |
-| PDF | `python-pymupdf python-pypdf python-pikepdf python-cryptography qpdf ghostscript poppler mupdf-tools img2pdf` |
-| Documenti Office | `libreoffice-fresh` (o `libreoffice-still`) `python-openpyxl python-docx` |
-| Markdown, testo, codice | `pandoc-cli typst python-weasyprint python-pygments python-charset-normalizer` |
-| Dati strutturati | `python-yaml python-tomli-w python-defusedxml` |
-| Ebook | `calibre` |
-| Audio e video | `ffmpeg python-mutagen` |
-| Trascrizione e sottotitoli | `whisper-cpp` |
-| Download da link | `yt-dlp deno` (deno serve a yt-dlp per YouTube) |
-| Archivi | `7zip unrar unarchiver` |
-| Font | `python-fonttools python-brotli` |
-| AppImage | `squashfs-tools` |
-| Invio al telefono | `kdeconnect` (KDE Connect); il QR in rete locale non richiede altro oltre a `python-qrcode` |
-| Sistema | `gnupg udisks2 trash-cli zenity gtk3 xdg-terminal-exec` |
-| Contagocce nei dialoghi (selettore colore) | `hyprpicker` |
-| Stampa | `cups` |
-| Checksum XXH128 | `xxhash` |
-| Pagina web → PDF | `chromium` (o un altro browser basato su Chromium) |
+| **Immagini** (JPG, PNG, WebP, AVIF, HEIC, JPEG XL, TIFF, BMP, ICO, PSD) | Converti, comprimi (anche a una dimensione precisa), ridimensiona (con formati per i social), ritaglia, ruota, rifletti, regola i colori, annota, filigrana, rimuovi o aggiungi uno sfondo, togli la posizione o tutti i metadati, oscura, OCR, leggi i codici QR, ingrandisci con l'AI, vettorizza, crea icone, imposta come sfondo, stampa |
+| **Immagini animate** (GIF, WebP, APNG) | Converti in MP4 o WebM, comprimi, ridimensiona, ritaglia, ruota, estrai i fotogrammi, al contrario, cambia la velocità |
+| **SVG** | Converti in PNG, PDF, JPG, WebP o ICO, ottimizza, copia come testo o immagine, crea icone |
+| **PDF** | Converti in DOCX, JPG, PNG, TXT, Markdown, EPUB, HTML o PDF/A; comprimi; organizza, dividi, estrai, elimina e ruota le pagine; proteggi con AES-256 o sblocca; oscuramento vero; modifica i metadati; OCR; estrai immagini e allegati; annota; filigrana; numeri di pagina; appiattisci; ripara |
+| **Documenti** (DOCX, DOC, ODT, RTF) | Converti in PDF, ODT, Markdown, TXT, HTML, EPUB o RTF, comprimi le immagini incluse, rimuovi i dati personali, estrai immagini e testo, PDF protetto da password, statistiche |
+| **Fogli di calcolo** (XLSX, ODS, XLS, CSV, TSV) | Converti in ODS, CSV, PDF, JSON, tabella Markdown, HTML o TSV, rimuovi i metadati, informazioni sul foglio |
+| **Presentazioni** (PPTX, ODP, PPT) | Converti in PDF, ODP o immagini, comprimi i media, estrai testo, note del relatore e immagini, rimuovi i metadati |
+| **Markdown** | Converti in PDF, HTML, DOCX, ODT, EPUB, TXT o RTF, diapositive, indice, formattazione, statistiche |
+| **Testo e codice** | Esporta in PDF, HTML, DOCX o Markdown con evidenziazione della sintassi, converti in UTF-8, correggi i fine riga, togli gli spazi finali, statistiche |
+| **Dati** (JSON, YAML, TOML, XML) | Converti tra i formati e in CSV o XLSX, formatta, minimizza, verifica, ordina le chiavi |
+| **Ebook** (EPUB, MOBI, AZW3, FB2, CBZ) | Converti, estrai la copertina, informazioni sul libro |
+| **Sottotitoli** (SRT, VTT, ASS) | Converti, sposta i tempi, cambia gli fps, togli i tag per non udenti, testo semplice |
+| **Audio** (MP3, M4A, FLAC, WAV, Opus, OGG) | Converti, comprimi, taglia, normalizza secondo EBU R128, modifica tag e copertina, trascrivi in locale con whisper.cpp, cambia la velocità, dissolvenza, togli i silenzi, riduci il rumore, video con la forma d'onda |
+| **Video** (MP4, MKV, WebM, MOV, AVI) | Converti, comprimi (anche per WhatsApp/Telegram e a una dimensione precisa), taglia, ritaglia, ridimensiona, togli l'audio, ruota, cambia la velocità, al contrario, ripeti, stabilizza, estrai audio, fotogrammi e sottotitoli, foglio provini, genera o imprimi i sottotitoli, dividi, modifica i metadati |
+| **Archivi** (ZIP, 7Z, RAR, TAR, GZ, XZ, ZST) | Estrazione intelligente, estrai in una cartella, elenca, verifica, converti, aggiungi una password |
+| **Font** (TTF, OTF, WOFF, WOFF2) | Installa, foglio di anteprima, converti, kit per il web, sottoinsieme, informazioni |
+| **Cartelle** | Comprimi, rinomina in blocco, dimensioni, trova i duplicati, crea SHA256SUMS, elenca il contenuto, appiattisci |
+| **Link** | Scarica, salva video o audio con yt-dlp, codice QR, copia il link pulito, salva la pagina in PDF, crea un collegamento |
+| **AppImage, immagini disco, pacchetti** | Aggiungi al menu, avvia, monta in sola lettura, verifica, ispeziona, estrai |
+| **File sconosciuti** | Identifica il tipo reale, checksum, vista esadecimale, stringhe, cifra |
 
-Una buona base per quasi tutto:
+Ogni file ha anche una pagina **File**: copia, copia il percorso, sposta, rinomina, duplica, ZIP, apri con,
+condividi (codice QR per il telefono, KDE Connect, LocalSend, e-mail), proprietà, checksum, cifra con
+GnuPG, apri un terminale qui e cestino.
+
+**Più file insieme.** I file dello stesso tipo hanno azioni di gruppo, per esempio immagini in PDF, GIF,
+presentazione o collage; unione di PDF, video o audio; documenti in un unico PDF. Le selezioni miste
+ricevono ciò che vale per tutti.
+
+**Dove finiscono i risultati**
+
+| Operazione | Esempio |
+|---|---|
+| Conversione | `foto.heic` produce `foto.jpg` |
+| Strumento sullo stesso formato | `foto.jpg` produce `foto (compresso).jpg` |
+| Nome già esistente | `foto 2.jpg`, `foto 3.jpg` e così via, mai una sovrascrittura |
+| Più file in uscita | Una cartella come `documento (pagine)/` |
+| Origine in sola lettura o temporanea | `~/Scaricati/Dropwheel`, e la scheda te lo dice |
+
+L'elenco completo delle azioni, anello per anello e con i programmi che richiedono, è in
+[docs/FUNCTIONS.it.md](docs/FUNCTIONS.it.md).
+
+## Dipendenze facoltative
+
+Solo i [requisiti](#per-iniziare) sono obbligatori. Tutto il resto abilita singole funzioni, e
+`dropwheel doctor` mostra cosa manca. Dropwheel non esegue mai `sudo` al posto tuo.
+
+Una buona base che copre la maggior parte delle funzioni:
 
 ```sh
 sudo pacman -S --needed python-pillow-heif python-pillow-jpegxl-plugin oxipng pngquant jpegoptim \
@@ -624,48 +316,78 @@ sudo pacman -S --needed python-pillow-heif python-pillow-jpegxl-plugin oxipng pn
     ffmpeg python-mutagen 7zip python-fonttools python-brotli
 ```
 
-### Dall'AUR (`paru -S …` o `yay -S …`)
+<details>
+<summary><b>Elenco completo per funzione</b></summary>
 
-| Pacchetto | Per cosa |
+<br>
+
+**Repository ufficiali**
+
+| Funzione | Pacchetti |
 |---|---|
-| `ocrmypdf` | rendere ricercabili i PDF scansionati (non è più nei repository ufficiali) |
-| `python-pdf2docx` | conversione PDF → Word più fedele (altrimenti si usa LibreOffice) |
-| `vtracer` | vettorializzazione a colori di un'immagine in SVG |
-| `realesrgan-ncnn-vulkan-bin` | ingrandimento ×4 con Real-ESRGAN |
-| `localsend-cli-bin` | invio con LocalSend |
+| HEIC e JPEG XL | `python-pillow-heif python-pillow-jpegxl-plugin` |
+| Ottimizzazione delle immagini | `oxipng pngquant jpegoptim libjpeg-turbo` |
+| GIF e animazioni | `gifski gifsicle libwebp-utils` |
+| Formati insoliti, immagini enormi | `imagemagick libheif libvips` |
+| SVG | `librsvg resvg potrace inkscape scour` o `svgo` |
+| Metadati e privacy | `perl-image-exiftool mat2` |
+| OCR | `tesseract tesseract-data-ita tesseract-data-eng`, più le tue lingue |
+| Codici QR e a barre | `zbar python-qrcode qrencode` |
+| Annotazioni | `satty` o `swappy`, `xournalpp` per i PDF |
+| Ingrandimento con l'AI | `waifu2x-ncnn-vulkan` |
+| PDF | `python-pymupdf python-pypdf python-pikepdf python-cryptography qpdf ghostscript poppler mupdf-tools img2pdf` |
+| Documenti Office | `libreoffice-fresh` o `libreoffice-still`, `python-openpyxl python-docx` |
+| Markdown, testo, codice | `pandoc-cli typst python-weasyprint python-pygments python-charset-normalizer` |
+| Dati strutturati | `python-yaml python-tomli-w python-defusedxml` |
+| Ebook | `calibre` |
+| Audio e video | `ffmpeg python-mutagen` |
+| Trascrizione e sottotitoli | `whisper-cpp` |
+| Download dai link | `yt-dlp deno` |
+| Archivi | `7zip unrar unarchiver` |
+| Font | `python-fonttools python-brotli` |
+| AppImage | `squashfs-tools` |
+| Invio al telefono | `kdeconnect` |
+| Sistema | `gnupg udisks2 trash-cli zenity gtk3 xdg-terminal-exec` |
+| Selettore colore nelle finestre | `hyprpicker` |
+| Stampa | `cups` |
+| Checksum XXH128 | `xxhash` |
+| Pagina web in PDF | `chromium` o un altro browser basato su Chromium |
 
-### Con pipx
+**AUR**
 
-| Programma | Comando | Per cosa |
-|---|---|---|
-| rembg | `pipx install "rembg[cpu,cli]"` | rimozione dello sfondo; al primo uso scarica un modello AI |
+| Pacchetto | Scopo |
+|---|---|
+| `ocrmypdf` | Rendere ricercabili i PDF scansionati |
+| `python-pdf2docx` | Conversione da PDF a Word più fedele |
+| `vtracer` | Vettorializzazione a colori |
+| `realesrgan-ncnn-vulkan-bin` | Ingrandimento ×4 con Real-ESRGAN |
+| `localsend-cli-bin` | Invio con LocalSend |
 
-Se pipx non riesce a installare rembg con Python 3.14, usa un Python precedente, per esempio
-con [uv](https://docs.astral.sh/uv/): `uv tool install --python 3.13 "rembg[cpu,cli]"`.
-Per l'accelerazione con la CPU basta `python-onnxruntime-cpu` dei repository ufficiali.
+**pipx**
 
----
+| Comando | Scopo |
+|---|---|
+| `pipx install "rembg[cpu,cli]"` | Rimozione dello sfondo; al primo uso scarica un modello AI |
+
+</details>
 
 ## Configurazione
 
-Il file è `~/.config/dropwheel/config.toml` (formato TOML). Non serve crearlo: senza file valgono
-i valori predefiniti. Per partire da un file commentato:
+Non serve alcuna configurazione. Per partire da un file commentato in `~/.config/dropwheel/config.toml`:
 
 ```sh
 dropwheel config --init
 ```
 
-Le modifiche valgono alla successiva apertura della ruota. Un valore non valido viene sostituito
-da quello predefinito e segnalato con un avviso, senza bloccare nulla.
-
-Un esempio:
+Le modifiche valgono alla successiva apertura della ruota. Un valore non valido torna a quello predefinito
+con un avviso e non blocca mai nulla. Per esempio:
 
 ```toml
 language = "it"                     # auto | it | en
 hidden_actions = ["image.background.*"]
 
 [output]
-location = "source"                 # accanto all'originale; "folder" = sempre nella cartella sotto
+location = "source"                 # accanto all'originale; "folder" = sempre la cartella qui sotto
 folder = "~/Scaricati/Dropwheel"
 
 [hotzone]
@@ -674,8 +396,9 @@ corner = "bottom-left"
 [image]
 jpeg_quality = 82
 
+# Le tue azioni, mostrate nella ruota accanto a quelle integrate
 [[custom]]
-id = "ottimizza-per-blog"
+id = "immagine-blog"
 label = "Per il blog"
 icon = "web"
 categories = ["image"]
@@ -683,161 +406,172 @@ command = "magick {file} -resize '1600x1600>' -quality 80 {dir}/{stem}-blog.jpg"
 output = "files"
 ```
 
-Tutte le chiavi, con valori ammessi ed esempi di azioni personalizzate, sono in
-**[docs/CONFIG.it.md](docs/CONFIG.it.md)**.
-
----
+Tutte le chiavi, con esempi di azioni personalizzate, sono in [docs/CONFIG.it.md](docs/CONFIG.it.md).
 
 ## Integrazione con i file manager
 
-| File manager | Dove | Come si usa |
+| File manager | Come | Nel menu |
 |---|---|---|
-| **Thunar** (predefinito in Caelestia) | `~/.config/Thunar/uca.xml` | tasto destro → **Apri in Dropwheel** |
-| **Nautilus** | `~/.local/share/nautilus/scripts/Dropwheel` | tasto destro → **Script → Dropwheel** |
-| **Dolphin** | `/usr/share/kio/servicemenus/` o `~/.local/share/kio/servicemenus/` | tasto destro → **Apri in Dropwheel** |
-| **Nemo** | `/usr/share/nemo/actions/` o `~/.local/share/nemo/actions/` | tasto destro → **Apri in Dropwheel** |
+| **Thunar** (predefinito in Caelestia) | `dropwheel setup thunar --apply` | Apri in Dropwheel |
+| **Nautilus** | `dropwheel setup nautilus` | Script, poi Dropwheel |
+| **Dolphin** | Incluso nel pacchetto, oppure `dropwheel setup dolphin` | Apri in Dropwheel |
+| **Nemo** | Incluso nel pacchetto, oppure `dropwheel setup nemo` | Apri in Dropwheel |
 
-Tutte eseguono `dropwheel open %F` sui file selezionati (su una cartella vuota, la cartella stessa).
-
-- **Dolphin e Nemo**: il pacchetto installa le azioni per tutti gli utenti; `install.sh` le
-  installa nella tua home se il file manager è presente.
-- **Nautilus**: gli script sono solo per utente; `install.sh` lo installa. Con il pacchetto:
-  `install -Dm755 /usr/share/dropwheel/integrations/nautilus/Dropwheel ~/.local/share/nautilus/scripts/Dropwheel`.
-- **Thunar** legge le azioni personalizzate da un unico file, `~/.config/Thunar/uca.xml`, che è
-  gestito da Caelestia: per questo Dropwheel non lo modifica da solo. Per aggiungere l'azione:
-
-  ```sh
-  dropwheel setup thunar --apply   # aggiunge l'azione a uca.xml, con backup
-  ```
-
-  oppure segui le istruzioni manuali in
-  [`integrations/thunar/README.md`](integrations/thunar/README.md). Dopo un `caelestia update`
-  potresti trovare `uca.xml.new`: il README spiega come unire le modifiche.
-
-La voce **Dropwheel** compare anche in «Apri con» per i tipi di file più comuni, e il menu delle
-applicazioni ha le azioni **Avvia Dropwheel** e **Arresta Dropwheel**.
-
----
+Caelestia gestisce il file `uca.xml` di Thunar, quindi Dropwheel lo modifica solo se passi `--apply`, e prima
+ne fa un backup. I passaggi manuali sono in [integrations/thunar/README.md](integrations/thunar/README.md).
 
 ## Riga di comando
 
-| Comando | Cosa fa |
+```sh
+dropwheel open ~/Immagini/foto.heic              # la ruota, in modalità clic
+dropwheel menu --json documento.pdf              # le azioni disponibili, in JSON
+dropwheel run image.compress.balanced foto.jpg   # esegue un'azione senza interfaccia
+```
+
+| Comando | Descrizione |
 |---|---|
-| `dropwheel start [--foreground\|--no-wait]` | avvia la shell (Quickshell) e il servizio in background; non fa nulla se sono già attivi |
-| `dropwheel stop` | li arresta (esce con 0 anche se non erano attivi) |
-| `dropwheel restart` | arresta e riavvia la shell |
-| `dropwheel status [--json]` | mostra se Dropwheel è in esecuzione (codice di uscita 1 se non lo è) |
-| `dropwheel open [FILE…] [--at X,Y]` | apre la ruota in modalità clic sui file indicati (percorsi o URL); senza file usa quelli copiati negli appunti |
-| `dropwheel menu FILE… [--json]` | mostra le azioni disponibili per quei file (`--json` per i programmi) |
-| `dropwheel actions [-c CATEGORIA] [--json]` | elenca tutte le azioni e se sono disponibili |
-| `dropwheel run AZIONE FILE… [-p CHIAVE=VALORE]… [--json] [-q]` | esegue un'azione senza interfaccia, per esempio `image.compress.balanced`; l'id di un gruppo (`image.convert`) esegue l'azione predefinita ★; Ctrl+C interrompe (codice 130) |
-| `dropwheel undo [LAVORO]` | annulla un lavoro (di norma l'ultimo): i file prodotti vanno nel cestino, gli originali sostituiti tornano al loro posto |
-| `dropwheel history [-n N]` | mostra gli ultimi lavori |
-| `dropwheel doctor [--json] [--full]` | stato di Hyprland, Quickshell, dipendenze e strumenti opzionali, con i comandi per installarli |
-| `dropwheel setup hyprland` | collega Dropwheel alla configurazione di Hyprland/Caelestia |
-| `dropwheel setup nautilus\|dolphin\|nemo\|desktop\|all [--dry-run]` | installa l'azione per un file manager, la voce del menu applicazioni o tutto quanto |
-| `dropwheel setup thunar [--apply]` | mostra (o aggiunge) l'azione per Thunar |
-| `dropwheel shares [--stop ID\|--stop-all]` | elenca o interrompe le condivisioni in rete locale attive |
-| `dropwheel config [--path\|--init\|--edit] [--force] [--json]` | mostra la configurazione in uso, ne scrive una commentata (`--init`) o la apre nell'editor |
-| `dropwheel daemon` | il servizio che parla con la shell (lo avvia la shell stessa, non serve usarlo a mano) |
+| `dropwheel start`, `stop`, `restart`, `status` | Controllano la shell e il servizio in background |
+| `dropwheel open [FILE...]` | Apre la ruota per file o URL; senza argomenti usa gli appunti |
+| `dropwheel menu FILE... [--json]` | Mostra le azioni disponibili per i file |
+| `dropwheel actions [-c CATEGORIA] [--json]` | Elenca tutte le azioni e se sono disponibili |
+| `dropwheel run AZIONE FILE... [-p CHIAVE=VALORE]... [--json]` | Esegue un'azione; l'id di un gruppo esegue la sua predefinita |
+| `dropwheel undo [LAVORO]`, `history [-n N]` | Annulla un lavoro (di norma l'ultimo), mostra i lavori recenti |
+| `dropwheel doctor [--json] [--full]` | Controlla Hyprland, Quickshell e gli strumenti, con i comandi di installazione |
+| `dropwheel setup hyprland\|nautilus\|dolphin\|nemo\|thunar\|desktop\|all` | Installa un'integrazione |
+| `dropwheel shares [--stop ID\|--stop-all]` | Elenca o interrompe le condivisioni attive in rete locale |
+| `dropwheel config [--path\|--init\|--edit]` | Mostra, crea o modifica la configurazione |
 
-`dropwheel --help` e `dropwheel COMANDO --help` mostrano tutte le opzioni. I codici di uscita sono
-`0` (riuscito), `1` (errore), `2` (uso sbagliato) e `130` (interrotto).
+I codici di uscita sono `0` per il successo, `1` per un errore, `2` per un uso sbagliato e `130` per
+un'interruzione. `dropwheel setup` non sovrascrive mai un file senza prima salvarne una copia chiamata
+`<file>.dropwheel-bak-AAAAMMGG-HHMMSS`.
 
-`dropwheel setup` non sovrascrive mai un file senza averne fatto una copia
-`<file>.dropwheel-bak-AAAAMMGG-HHMMSS` (lo stesso schema di `uninstall.sh`).
-
-Variabili d'ambiente:
-
-| Variabile | Effetto |
+| Variabile d'ambiente | Effetto |
 |---|---|
-| `DROPWHEEL_CONFIG` | percorso alternativo di `config.toml` |
-| `DROPWHEEL_DATA` | cartella dei dati (shell e integrazioni); normalmente `~/.local/share/dropwheel` o `/usr/share/dropwheel` |
-| `DROPWHEEL_BACKEND` | comando del servizio usato dalla shell (lo imposta `dropwheel start`) |
-
----
+| `DROPWHEEL_CONFIG` | Percorso alternativo di `config.toml` |
+| `DROPWHEEL_DATA` | Cartella dei dati con la shell e le integrazioni, di norma `~/.local/share/dropwheel` o `/usr/share/dropwheel` |
+| `DROPWHEEL_BACKEND` | Il comando del servizio usato dalla shell, impostato da `dropwheel start` |
 
 ## Risoluzione dei problemi
 
-Il primo passo è sempre:
+Inizia sempre con `dropwheel doctor`.
+
+<details>
+<summary><b>La ruota non compare quando premo Shift</b></summary>
+
+<br>
+
+1. **È in esecuzione?** `hyprctl globalshortcuts` deve elencare `dropwheel:shift` e `dropwheel:open`. Se
+   non li elenca, esegui `dropwheel start` da un terminale e leggi gli eventuali errori.
+2. **Le scorciatoie sono caricate?** `hyprctl binds | grep -i -B2 -A8 dropwheel` deve mostrarle. Se non
+   compaiono, esegui `dropwheel setup hyprland` e poi `hyprctl reload`.
+3. **Compare solo quando rilasci Shift?** È normale se hai scorciatoie che iniziano con Shift, perché
+   Hyprland aspetta di capire se stai componendo una combinazione più lunga. Tocca Shift invece di tenerlo
+   premuto.
+4. **Stai trascinando da un'applicazione XWayland?** Il trascinamento da client X11 verso superfici Wayland
+   non funziona in Hyprland 0.57. Controlla con `hyprctl clients` (`xwayland: 1`). Avvia l'applicazione in
+   modalità Wayland, oppure copia i file e usa SUPER+ALT+D.
+5. **Ancora niente?** Per prova, imposta `dnd_check = false` in `[trigger]` nel file `config.toml`. La ruota
+   si apre allora a ogni Shift e si richiude da sola se non arriva nessun trascinamento.
+
+</details>
+
+<details>
+<summary><b>Dove trovo i log?</b></summary>
+
+<br>
 
 ```sh
-dropwheel doctor
+qs log -p /usr/share/dropwheel/shell -f            # pacchetto di sistema
+qs log -p ~/.local/share/dropwheel/shell -f        # install.sh
 ```
 
-### La ruota non compare quando premo Shift
+Il log della shell comprende gli errori del servizio Python. I comandi avviati da Hyprland mandano il loro
+output in `/dev/null`, quindi esegui `dropwheel start` da un terminale per vedere gli errori di avvio.
 
-1. **Dropwheel è in esecuzione?** `hyprctl globalshortcuts` deve elencare `dropwheel:shift` e
-   `dropwheel:open`. Se mancano, la shell non è attiva: `dropwheel start` (gli eventuali errori
-   compaiono nel terminale).
-2. **Le scorciatoie sono caricate?** `hyprctl binds | grep -i -B2 -A8 dropwheel` deve mostrare
-   `Shift_L`, `Shift_R` e `SUPER + ALT + D` con la descrizione di Dropwheel. Se mancano:
-   `dropwheel setup hyprland`, poi `hyprctl reload`, e controlla che Hyprland non segnali errori
-   nella configurazione.
-3. **La ruota compare solo quando rilasci Shift?** È normale se nella tua configurazione ci sono
-   scorciatoie che iniziano con Shift: il risolutore degli accordi di Hyprland aspetta il rilascio
-   per capire se stai componendo una combinazione più lunga. Dropwheel gestisce entrambi i casi:
-   tocca Shift (premi e rilascia) invece di tenerlo premuto.
-4. **Trascini da un'applicazione XWayland?** In Hyprland 0.57 il trascinamento da applicazioni
-   X11 (XWayland) verso finestre Wayland non funziona: la ruota non riceve i file. Lo vedi con
-   `hyprctl clients` (`xwayland: 1`). Avvia l'applicazione in modalità Wayland (per le app
-   Electron: `--ozone-platform=wayland` oppure `ELECTRON_OZONE_PLATFORM_HINT=auto`), oppure copia
-   i file e usa SUPER+ALT+D.
-5. **La ruota compare e sparisce subito, oppure mai durante il trascinamento?** Il controllo del
-   trascinamento usa `hyprctl -j monitors`. Come prova imposta `dnd_check = false` nella sezione
-   `[trigger]` di `config.toml`: la ruota si apre a ogni Shift e si richiude da sola dopo poco se
-   non arriva nessun trascinamento.
+</details>
 
-### Dove trovo i log?
+<details>
+<summary><b>Le icone sono quadratini o lettere</b></summary>
 
-```sh
-qs log -p ~/.local/share/dropwheel/shell -f    # installazione con install.sh
-qs log -p /usr/share/dropwheel/shell -f        # pacchetto di sistema
-qs list                                        # istanze di Quickshell attive
-```
+<br>
 
-Il registro della shell contiene anche i messaggi d'errore del servizio Python. L'output dei
-comandi avviati da Hyprland (`hl.exec_cmd`) finisce in `/dev/null`: per vedere gli errori
-dell'avvio esegui `dropwheel start` da un terminale.
-
-### Ho un file `~/.config/quickshell/shell.qml`
-
-Con un `shell.qml` direttamente in `~/.config/quickshell/`, Quickshell non trova più le
-configurazioni nelle sottocartelle (`qs -c nome`). Dropwheel **non ne è toccato** perché viene
-sempre avviato indicando il percorso (`qs -p …/dropwheel/shell`); non spostare la sua shell in
-`~/.config/quickshell/`.
-
-### Le icone della ruota sono quadratini o lettere
-
-Manca il font delle icone: `sudo pacman -S ttf-material-symbols-variable`, poi `fc-cache -f` e
+Manca il font delle icone. Esegui `sudo pacman -S ttf-material-symbols-variable`, poi `fc-cache -f` e infine
 `dropwheel stop && dropwheel start`.
 
-### Il comando `dropwheel` non esiste
+</details>
 
-Con `install.sh` il comando è in `~/.local/bin`, che deve essere nel `PATH`
-(fish: `fish_add_path ~/.local/bin`; bash/zsh: `export PATH="$HOME/.local/bin:$PATH"` nel file di
-avvio della shell). Hyprland e i file manager usano comunque il percorso completo.
+<details>
+<summary><b>Una funzione è grigia</b></summary>
 
-### Il risultato è finito in Scaricati/Dropwheel
+<br>
 
-Succede quando l'originale si trova in una cartella non scrivibile o temporanea: download in corso
-del browser, `/tmp`, archivi aperti da un altro programma, **file condivisi da app Flatpak**
-(arrivano dal portale dei documenti come `/run/user/1000/doc/…`, una copia temporanea). Dropwheel
-copia subito questi file in un'area sicura e salva il risultato in Scaricati/Dropwheel; la scheda
-lo segnala. Se vuoi sempre una cartella fissa usa `output.location = "folder"`.
+Il programma che le serve non è installato. Passa sopra il settore per vedere quale e il comando per
+installarlo. Dropwheel ricontrolla ogni dieci minuti, oppure subito dopo `dropwheel stop && dropwheel start`.
 
-### Le conversioni di documenti non producono nulla
+</details>
 
-LibreOffice in modalità invisibile non fa nulla (senza errori) se il suo profilo è già in uso,
-per esempio quando LibreOffice è aperto. Dropwheel usa un **profilo privato** per le conversioni,
-quindi non ne è toccato; la prima conversione è più lenta perché il profilo viene creato. Se non
-funziona ancora: `soffice --version` deve rispondere, e `dropwheel doctor` deve vedere `soffice`.
+<details>
+<summary><b>Il risultato è finito in ~/Scaricati/Dropwheel</b></summary>
 
-### Alcuni file si aprono con Dropwheel
+<br>
 
-La voce di Dropwheel dichiara i tipi di file più comuni per comparire in «Apri con» (non le cartelle
-e non i file di tipo sconosciuto): se uno di questi tipi non ha un'applicazione predefinita, un
-programma potrebbe scegliere Dropwheel. Imposta quella giusta, per esempio:
+Succede quando l'originale si trova in un punto in sola lettura o temporaneo, come un download del browser in
+corso, `/tmp` o un file condiviso da un'app Flatpak. Per usare sempre una sola cartella, imposta
+`output.location = "folder"`.
+
+</details>
+
+<details>
+<summary><b>Premendo Shift l'applicazione di origine sposta i miei file?</b></summary>
+
+<br>
+
+Hyprland inoltra Shift anche all'applicazione di origine, dove spesso significa «sposta». Dropwheel legge
+sempre i file come copia e non li sposta né li cancella al rilascio. Se apri la ruota e poi rilasci in
+un'altra applicazione, lascia prima Shift.
+
+</details>
+
+<details>
+<summary><b>Il comando <code>dropwheel</code> non esiste</b></summary>
+
+<br>
+
+Con `install.sh` il comando è in `~/.local/bin`, che deve essere nel `PATH`. Su fish, esegui
+`fish_add_path ~/.local/bin`. Su bash o zsh, aggiungi `export PATH="$HOME/.local/bin:$PATH"` al file di avvio
+della shell. Hyprland e i file manager usano comunque il percorso completo.
+
+</details>
+
+<details>
+<summary><b>Ho un file in <code>~/.config/quickshell/shell.qml</code></b></summary>
+
+<br>
+
+Con un `shell.qml` direttamente in `~/.config/quickshell/`, Quickshell non trova più le configurazioni nelle
+sottocartelle. Dropwheel **non ne è toccato**, perché viene sempre avviato indicando il percorso. Non spostare
+la sua shell in `~/.config/quickshell/`.
+
+</details>
+
+<details>
+<summary><b>Le conversioni di documenti non producono nulla</b></summary>
+
+<br>
+
+LibreOffice in modalità invisibile non fa nulla, senza errori, se il suo profilo è già in uso. Dropwheel usa un
+**profilo privato**, quindi non ne è toccato, ma la prima conversione è più lenta perché il profilo viene creato.
+Se ancora non funziona, `soffice --version` deve rispondere e `dropwheel doctor` deve vedere `soffice`.
+
+</details>
+
+<details>
+<summary><b>Alcuni file si aprono con Dropwheel</b></summary>
+
+<br>
+
+La voce di Dropwheel dichiara i tipi di file più comuni per comparire in «Apri con». Se uno di questi tipi non ha
+un'applicazione predefinita, un programma potrebbe scegliere Dropwheel. Imposta quella giusta, per esempio:
 
 ```sh
 xdg-mime default org.gnome.Loupe.desktop image/png
@@ -845,67 +579,93 @@ xdg-mime default org.gnome.Loupe.desktop image/png
 
 `install.sh` lo fa da solo per i tipi che avevano già un'applicazione predefinita.
 
-### Le azioni dal file manager non fanno nulla
+</details>
 
-Prova `dropwheel open ~/un/file.jpg` da un terminale. La comunicazione con la shell di Quickshell
-avviene solo all'interno dello stesso display Wayland: il file manager deve avere
-`WAYLAND_DISPLAY` nel suo ambiente, cosa normale se è stato avviato dalla sessione Hyprland.
+<details>
+<summary><b>Le azioni dal file manager non fanno nulla</b></summary>
 
-### Premendo Shift l'applicazione di origine «sposta» i file?
+<br>
 
-Mentre trascini, Hyprland inoltra Shift anche all'applicazione di origine, e in GTK e Qt
-Shift significa di solito «sposta». Dropwheel **legge sempre i file come copia** e non sposta
-né cancella mai gli originali; Hyprland, inoltre, non comunica all'origine l'esito del
-rilascio. Se invece, dopo aver aperto la ruota, rilasci i file in un'altra applicazione, lascia
-prima Shift.
+Prova `dropwheel open ~/un/file.jpg` da un terminale. La comunicazione con la shell funziona solo sullo stesso
+display Wayland, quindi il file manager deve avere `WAYLAND_DISPLAY` nel suo ambiente. È normale se è stato
+avviato dalla sessione Hyprland.
 
-### Una funzione è grigia
+</details>
 
-Manca il programma che la esegue: passa sopra il settore per vedere quale e il comando per
-installarlo (la scheda di errore ha **Copia il comando di installazione**). Dopo l'installazione
-non serve riavviare: Dropwheel ricontrolla gli strumenti ogni dieci minuti, oppure subito con
-`dropwheel stop && dropwheel start`.
+<details>
+<summary><b>Dropwheel si chiude da solo all'avvio</b></summary>
 
-### Dropwheel si chiude da solo all'avvio
+<br>
 
-Il protocollo delle scorciatoie globali non ammette due client con lo stesso nome: se parte una
-seconda copia di Dropwheel, una delle due viene chiusa. Controlla con `qs list`, poi
-`dropwheel stop && dropwheel start`.
+Il protocollo delle scorciatoie globali non ammette due client con lo stesso nome, quindi se parte una seconda
+copia, una delle due viene chiusa. Controlla con `qs list`, poi esegui `dropwheel stop && dropwheel start`.
 
-### Un documento viene rifiutato perché «troppo grande»
+</details>
 
-Un documento Office, un EPUB o un CBZ può dichiarare parti enormi in un file minuscolo. Per
-proteggere la memoria del sistema Dropwheel non apre parti compresse in modo insolito (bzip2, LZMA)
-né legge parti di testo oltre i 64 MiB (256 MiB per il contenuto di un foglio ODS). **Comprimi** e
-**Rimuovi metadati** copiano comunque i video incorporati, fino a 8 GiB in tutto; **Estrai
-immagini** salta le parti oltre i 64 MiB e dice quali.
+<details>
+<summary><b>Un documento viene rifiutato perché troppo grande</b></summary>
 
----
+<br>
+
+Un documento Office, un EPUB o un CBZ può dichiarare parti enormi in un file minuscolo. Per proteggere la
+memoria, Dropwheel non apre parti compresse in modo insolito (bzip2, LZMA) né legge parti di testo oltre i
+64 MiB (256 MiB per il contenuto di un foglio ODS). **Comprimi** e **Rimuovi metadati** copiano comunque i video
+incorporati, fino a 8 GiB in tutto, ed **Estrai immagini** salta le parti oltre i 64 MiB e dice quali.
+
+</details>
 
 ## Privacy e sicurezza
 
-- **Tutto avviene in locale.** Nessuna telemetria, nessun servizio cloud, nessun account.
-- La rete viene usata **solo** quando lo chiedi tu:
-  - **Condividi → QR per il telefono**: un piccolo server HTTP temporaneo, visibile solo nella
-    rete locale, su una porta e un indirizzo casuali, che offre solo i file scelti e si spegne da
-    solo dopo 15 minuti (`share.minutes`) o quando chiudi la scheda;
-  - **KDE Connect / LocalSend**: invio ai tuoi dispositivi già associati;
-  - **link trascinati dal browser**: il download avviene solo dal sito di quel link (yt-dlp o
-    download diretto);
-  - **modelli AI** (rimozione dello sfondo, trascrizione): vengono scaricati solo quando installi
-    o usi quella funzione per la prima volta.
-- Le immagini remote nei file Markdown e i riferimenti esterni negli SVG non vengono mai
-  scaricati; macro dei documenti, JavaScript dei PDF e contenuti trascinati non vengono mai
-  eseguiti (un'AppImage viene ispezionata senza avviarla).
-- **Oscurare un PDF** rimuove davvero il testo e le immagini sotto i riquadri, poi Dropwheel
-  rilegge il risultato per verificarlo; vengono tolti anche metadati, allegati e la cronologia
-  delle modifiche. Per le immagini, sfocatura e pixel su un testo possono essere reversibili:
-  per dati sensibili usa il riquadro pieno.
-- La cronologia dei lavori (per **Annulla**) è in `~/.local/state/dropwheel/`, i file temporanei
-  e le anteprime in `~/.cache/dropwheel/`; le password (PDF, archivi) restano in memoria solo per
-  il lavoro che le usa.
+- **Tutto è locale.** Niente telemetria, servizi cloud o account.
+- **La rete viene usata solo quando lo chiedi:**
+  - *Il codice QR per il telefono* avvia un server HTTP temporaneo nella rete locale, su una porta e un
+    indirizzo casuali, che offre solo i file scelti e si spegne dopo 15 minuti o quando chiudi la scheda.
+  - *KDE Connect e LocalSend* inviano ai tuoi dispositivi associati.
+  - *I link trascinati* vengono scaricati solo dal sito di quel link.
+  - *I modelli AI* vengono scaricati solo quando installi o usi per la prima volta la funzione.
+- **Nulla di ciò che trascini viene eseguito.** Macro dei documenti e JavaScript dei PDF non partono mai,
+  un'AppImage viene ispezionata senza avviarla, e le immagini remote nel Markdown e i riferimenti esterni negli
+  SVG non vengono scaricati.
+- **I file non fidati sono trattati con prudenza.** Le voci pericolose degli archivi, come percorsi assoluti,
+  `..` e link che puntano fuori dall'archivio, vengono rifiutate, e ci sono protezioni contro gli archivi e i
+  documenti bomba.
+- **Le password** restano in memoria solo per il lavoro che le usa.
 
----
+Quando oscuri un'immagine, sfocatura e pixel possono essere reversibili sul testo. Per i dati sensibili usa un
+riquadro pieno.
+
+## Architettura
+
+```mermaid
+flowchart LR
+    H["Hyprland<br/>tasto Shift, stato del trascinamento"] -->|scorciatoia globale, hyprctl| S
+    S["Shell Quickshell (QML)<br/>ruota, schede, finestre"] <-->|righe JSON su stdio| D
+    C["CLI dropwheel"] --> R
+    D["Servizio Python"] --> R["Registro delle azioni<br/>ed esecutore dei lavori"]
+    R --> T["FFmpeg, Pillow, PyMuPDF,<br/>LibreOffice, Tesseract, ..."]
+```
+
+- **Shell (`shell/`).** Una configurazione Quickshell avviata indicando il percorso, quindi non interferisce
+  mai con la shell di Caelestia.
+- **Servizio (`src/dropwheel/daemon.py`).** Risponde a richieste di menu, anteprime e lavori su stdin e stdout.
+- **Azioni (`src/dropwheel/actions/`).** Un modulo per famiglia, registrato con un decoratore che dichiara
+  categorie, parametri e strumenti richiesti. I menu sono costruiti da queste dichiarazioni.
+- **Lavori (`src/dropwheel/jobs.py`).** Parallelismo, interruzione, avanzamento, scrittura atomica, annulla.
+
+[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) spiega come aggiungere un'azione o una traduzione, e
+[docs/SPEC.md](docs/SPEC.md) è il contratto completo. Entrambi sono in inglese.
+
+## Sviluppo
+
+```sh
+PYTHONPATH=src python -m dropwheel doctor
+PYTHONPATH=src python -m dropwheel start   # usa shell/ e integrations/ di questa cartella
+make test                                  # pytest
+make lint                                  # Python, script, Lua, XML, voci .desktop, QML
+```
+
+I contributi sono benvenuti, e in questo momento sono particolarmente preziose le segnalazioni da vere sessioni
+Hyprland. Lo stesso vale per l'aiuto a portare Dropwheel su [altri sistemi](#dove-stiamo-andando).
 
 ## Disinstallazione
 
@@ -916,58 +676,27 @@ sudo pacman -Rns dropwheel
 ```
 
 Poi togli la riga `require("dropwheel")` da `~/.config/caelestia/hypr-user.lua`, cancella
-`~/.config/caelestia/dropwheel.lua` ed esegui `hyprctl reload`. pacman non tocca la tua home:
-impostazioni, cronologia, cache, modelli Whisper e sfondi salvati (le cartelle sono elencate qui
-sotto) restano dove sono finché non li cancelli tu.
+`~/.config/caelestia/dropwheel.lua` ed esegui `hyprctl reload`. pacman non tocca la tua home, quindi
+impostazioni, cronologia, cache e modelli Whisper restano finché non li cancelli.
 
-**Installazione con install.sh**
-
-```sh
-~/.local/share/dropwheel/uninstall.sh            # oppure ./uninstall.sh dalla cartella del progetto
-~/.local/share/dropwheel/uninstall.sh --purge    # cancella anche i tuoi dati, dopo una conferma
-```
-
-Lo script arresta Dropwheel, toglie la riga `require("dropwheel")` da `hypr-user.lua` (dopo
-averne fatto un backup `hypr-user.lua.dropwheel-bak-…`), rimuove la copia di `dropwheel.lua`
-(se l'avevi modificata la conserva come backup) e tutti i file installati. Restano, a meno di
-`--purge`: le impostazioni in `~/.config/dropwheel`, la cronologia in `~/.local/state/dropwheel`,
-la cache in `~/.cache/dropwheel` e, in `~/.local/share/dropwheel`, i modelli Whisper che hai
-scaricato (`whisper/`) e le copie degli sfondi impostati con Dropwheel (`wallpapers/`: se ne stai
-usando uno, sceglierne un altro prima di `--purge`). **I file creati con Dropwheel non vengono mai
-cancellati.**
-
-Con un'installazione in un'altra cartella (`--prefix`), `uninstall.sh` copiato al suo interno
-rimuove quella; lo script nella cartella del progetto vuole lo stesso `--prefix`.
-
----
-
-## Sviluppo
-
-Dal codice sorgente, senza installare nulla:
+**install.sh**
 
 ```sh
-PYTHONPATH=src python -m dropwheel doctor
-PYTHONPATH=src python -m dropwheel start      # usa shell/ e integrations/ di questa cartella
-make test                                      # pytest
-make lint                                      # Python, script, Lua, XML, voci .desktop, QML
+~/.local/share/dropwheel/uninstall.sh           # conserva impostazioni e dati
+~/.local/share/dropwheel/uninstall.sh --purge   # cancella anche quelli, dopo una conferma
 ```
 
-L'architettura (shell Quickshell, servizio Python, protocollo JSON, come aggiungere un'azione o
-una traduzione) è descritta in **[docs/ARCHITECTURE.md](docs/ARCHITECTURE.md)**; il contratto
-completo è in [docs/SPEC.md](docs/SPEC.md).
-
----
+I file che hai creato con Dropwheel non vengono mai cancellati.
 
 ## Crediti e licenza
 
-- Idea e flusso d'uso: **[Tangerine](https://tangerineformac.com)** per macOS; spunti anche da
+- L'idea e il flusso d'uso vengono da **[Tangerine](https://tangerineformac.com)** per macOS, con spunti da
   OpenShelf e DragShift. Dropwheel non è affiliato a questi progetti.
-- Linguaggio visivo: **[Caelestia](https://github.com/caelestia-dots)** (Material You per
-  Hyprland). Costruito con **[Hyprland](https://hypr.land)** e
-  **[Quickshell](https://quickshell.org)**; icone Material Symbols di Google.
-- Il lavoro vero lo fanno programmi liberi straordinari: FFmpeg, Pillow, ImageMagick, libvips,
-  PyMuPDF, pypdf, qpdf, Ghostscript, Poppler, LibreOffice, pandoc, Typst, Tesseract, OCRmyPDF,
-  whisper.cpp, ExifTool, 7-Zip, calibre, fontTools, yt-dlp e molti altri, ciascuno con la propria
-  licenza.
+- Il linguaggio visivo viene da **[Caelestia](https://github.com/caelestia-dots)**. Dropwheel è costruito con
+  **[Hyprland](https://hypr.land)** e **[Quickshell](https://quickshell.org)**, con le icone Material Symbols di
+  Google.
+- Il vero lavoro lo fa straordinario software libero, tra cui FFmpeg, Pillow, ImageMagick, libvips, PyMuPDF,
+  pypdf, qpdf, Ghostscript, Poppler, LibreOffice, pandoc, Typst, Tesseract, OCRmyPDF, whisper.cpp, ExifTool,
+  7-Zip, calibre, fontTools e yt-dlp, ciascuno con la propria licenza.
 
-Dropwheel è distribuito con licenza **MIT** — © 2026 Haxurus. Vedi [LICENSE](LICENSE).
+Dropwheel è distribuito con la [licenza MIT](LICENSE).

@@ -1,0 +1,40 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 640 690" width="640" height="690" role="img" aria-label="Illustrazione della ruota di Dropwheel per una foto: otto settori attorno a una miniatura, con Comprimi evidenziato">
+<title>La ruota di Dropwheel per un file immagine</title>
+<defs><linearGradient id="thumb" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f6c28b"/><stop offset="1" stop-color="#b5637f"/></linearGradient>
+<filter id="shadow" x="-20%" y="-20%" width="140%" height="140%"><feDropShadow dx="0" dy="6" stdDeviation="10" flood-color="#000" flood-opacity=".35"/></filter></defs>
+<circle cx="320" cy="300" r="278" fill="#191114" filter="url(#shadow)"/>
+<path d="M222.7 54.6A264 264 0 0 1 417.3 54.6L356.1 202.5A104 104 0 0 0 283.9 202.5Z" fill="#2f2629"/>
+<g transform="translate(305.0 78.0) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h13M13 4l4 4-4 4M20 16H7M11 12l-4 4 4 4"/></g>
+<text x="320.0" y="132.0" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">CONVERTI</text>
+<path d="M427.0 52.1A270 270 0 0 1 567.9 193.0L414.5 256.5A104 104 0 0 0 363.5 205.5Z" fill="#6f334a"/>
+<g transform="translate(439.4 133.6) scale(1.25)" fill="none" stroke="#ffd9e3" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></g>
+<text x="454.4" y="187.6" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#ffd9e3">COMPRIMI</text>
+<path d="M565.4 202.7A264 264 0 0 1 565.4 397.3L417.5 336.1A104 104 0 0 0 417.5 263.9Z" fill="#2f2629"/>
+<g transform="translate(495.0 268.0) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M14 4h6v6M20 4l-7 7M10 20H4v-6M4 20l7-7"/></g>
+<text x="510.0" y="322.0" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">RIDIMENSIONA</text>
+<path d="M562.3 404.7A264 264 0 0 1 424.7 542.3L363.5 394.5A104 104 0 0 0 414.5 343.5Z" fill="#2f2629"/>
+<g transform="translate(439.4 402.4) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M7 2v15h15M2 7h15v15"/></g>
+<text x="454.4" y="456.4" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">RITAGLIA</text>
+<path d="M417.3 545.4A264 264 0 0 1 222.7 545.4L283.9 397.5A104 104 0 0 0 356.1 397.5Z" fill="#2f2629"/>
+<g transform="translate(305.0 458.0) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19zM14 7l3 3"/></g>
+<text x="320.0" y="512.0" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">MODIFICA</text>
+<path d="M215.3 542.3A264 264 0 0 1 77.7 404.7L225.5 343.5A104 104 0 0 0 276.5 394.5Z" fill="#2f2629"/>
+<g transform="translate(170.6 402.4) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 5h16v14H4zM4 16l5-5 4 4 3-3 4 4"/></g>
+<text x="185.6" y="456.4" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">SFONDO</text>
+<path d="M74.6 397.3A264 264 0 0 1 74.6 202.7L222.5 263.9A104 104 0 0 0 222.5 336.1Z" fill="#2f2629"/>
+<g transform="translate(115.0 268.0) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3l8 3v6c0 5-3.500 8-8 9-4.500-1-8-4-8-9V6zM9 12l2 2 4-4"/></g>
+<text x="130.0" y="322.0" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">PRIVACY</text>
+<path d="M77.7 195.3A264 264 0 0 1 215.3 57.7L276.5 205.5A104 104 0 0 0 225.5 256.5Z" fill="#2f2629"/>
+<g transform="translate(170.6 133.6) scale(1.25)" fill="none" stroke="#efdfe2" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M6 12h.01M12 12h.01M18 12h.01"/></g>
+<text x="185.6" y="187.6" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="14" font-weight="600" letter-spacing="1" fill="#efdfe2">ALTRO</text>
+<circle cx="320" cy="300" r="96" fill="#120c0e"/>
+<rect x="274" y="254" width="92" height="92" rx="16" fill="url(#thumb)"/>
+<circle cx="338" cy="284" r="12" fill="#ffe7c4" fill-opacity=".9"/>
+<path d="M274 330l26-28 22 22 14-14 30 30v6a16 16 0 0 1-16 16h-60a16 16 0 0 1-16-16z" fill="#6f334a" fill-opacity=".85"/>
+<rect x="328" y="330" width="50" height="24" rx="12" fill="#ffb0ca"/>
+<text x="353" y="347" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13" font-weight="700" fill="#3f0a22">JPG</text>
+<rect x="296" y="596" width="28" height="8" rx="4" fill="#ffb0ca"/><circle cx="338" cy="600" r="4" fill="#6b5a60"/>
+<rect x="160" y="620" width="320" height="62" rx="20" fill="#191114" stroke="#514347"/>
+<text x="320" y="646" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="16" font-weight="600" fill="#efdfe2">Comprimi · foto.jpg · 2,4 MB</text>
+<text x="320" y="667" text-anchor="middle" font-family="'Google Sans','Inter','Segoe UI',Roboto,Helvetica,Arial,sans-serif" font-size="13.500" fill="#d5c2c7">Maiusc: cambia pagina</text>
+</svg>
