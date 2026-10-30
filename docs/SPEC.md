@@ -22,7 +22,7 @@ Target platform facts (verified, do not re-litigate):
 ```
 pyproject.toml                       packaging (setuptools), entry point dropwheel = dropwheel.cli:main
 Makefile, PKGBUILD, install.sh, uninstall.sh
-README.md (Italian, main doc), docs/*.md
+README.md (English, main doc), README.it.md (Italian), docs/*.md
 src/dropwheel/
   __init__.py  __main__.py
   cli.py            CLI (argparse)                                   [core-B]

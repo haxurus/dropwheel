@@ -12,7 +12,7 @@ _dropwheel_next_steps() {
         dropwheel doctor           # controlla dipendenze e strumenti opzionali
 
       Uso: mentre trascini dei file premi Shift, oppure SUPER+ALT+D con dei file
-      copiati negli appunti. Documentazione: /usr/share/doc/dropwheel/README.md
+      copiati negli appunti. Documentazione: /usr/share/doc/dropwheel/README.it.md
 
   ==> Dropwheel: finish the setup as YOUR user (not root):
 

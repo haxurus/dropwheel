@@ -13,7 +13,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Haxurus" }]
 keywords = ["hyprland", "quickshell", "caelestia", "wayland", "file-converter", "drag-and-drop"]
 classifiers = [
-    "Development Status :: 4 - Beta",
+    "Development Status :: 3 - Alpha",
     "Intended Audience :: End Users/Desktop",
     "Natural Language :: English",
     "Natural Language :: Italian",
@@ -42,6 +42,10 @@ all = [
     "mutagen", "fonttools", "brotli", "py7zr", "rarfile", "qrcode", "send2trash",
 ]
 test = ["pytest>=7"]
+
+[project.urls]
+Homepage = "https://github.com/haxurus/dropwheel"
+Issues = "https://github.com/haxurus/dropwheel/issues"
 
 [project.scripts]
 dropwheel = "dropwheel.cli:main"

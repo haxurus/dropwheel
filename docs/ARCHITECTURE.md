@@ -2,7 +2,8 @@
 
 This document is the developer-oriented summary of Dropwheel. The binding contract (exact
 APIs, protocol fields, UX numbers) is [SPEC.md](SPEC.md); when the two disagree, SPEC.md wins.
-User documentation is in Italian in the [README](../README.md) and [CONFIG.md](CONFIG.md).
+User documentation: the [README](../README.md) in English, [README.it.md](../README.it.md) and
+[CONFIG.md](CONFIG.md) in Italian.
 
 ## Contents
 
@@ -43,7 +44,7 @@ Design principles:
 ```
 pyproject.toml                 setuptools packaging; entry point dropwheel = dropwheel.cli:main
 Makefile, PKGBUILD, dropwheel.install, install.sh, uninstall.sh
-README.md (Italian), docs/SPEC.md, docs/ARCHITECTURE.md, docs/CONFIG.md (Italian)
+README.md (English), README.it.md (Italian), docs/SPEC.md, docs/ARCHITECTURE.md, docs/CONFIG.md (Italian)
 assets/dropwheel.svg           app icon
 src/dropwheel/
   cli.py        command line (argparse)

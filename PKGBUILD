@@ -177,7 +177,7 @@ prepare() {
   rm -rf "$root"
   mkdir -p "$root"
   local item
-  for item in pyproject.toml setup.cfg setup.py MANIFEST.in README.md LICENSE Makefile \
+  for item in pyproject.toml setup.cfg setup.py MANIFEST.in README.md README.it.md LICENSE Makefile \
               PKGBUILD dropwheel.install install.sh uninstall.sh \
               src shell integrations assets docs tests; do
     if [[ -e $startdir/$item ]]; then

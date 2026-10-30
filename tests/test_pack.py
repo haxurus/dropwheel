@@ -76,7 +76,7 @@ def test_packaging_files_have_unix_line_endings() -> None:
     """A CR is fatal on Linux (``pkgname=dropwheel\\r``, ``Exec=dropwheel open %F\\r``) but invisible
     here: Git Bash on the Windows development machine ignores it, and so does ``read_text``."""
     files = [ROOT / name for name in ("PKGBUILD", "Makefile", "install.sh", "uninstall.sh", "dropwheel.install",
-                                      "pyproject.toml", "README.md", "LICENSE", ".gitignore")]
+                                      "pyproject.toml", "README.md", "README.it.md", "LICENSE", ".gitignore")]
     files += sorted((ROOT / "docs").glob("*.md"))
     for folder in (INTEGRATIONS, ROOT / "assets"):
         files += sorted(path for path in folder.rglob("*") if path.is_file())
@@ -254,10 +254,10 @@ def test_makefile_uninstall_keeps_what_it_did_not_install() -> None:
 
 def test_update_instructions_force_a_rebuild() -> None:
     """pkgver does not change between commits: without -f makepkg reinstalls the previous build."""
-    readme = _read("README.md")
-    update = readme.split("### Aggiornare", 1)[1].split("\n## ", 1)[0]
-    assert "makepkg -sif" in update
-    assert not re.search(r"makepkg -si(?!f)", update)
+    for name, heading in (("README.it.md", "### Aggiornare"), ("README.md", "**Updating**")):
+        update = _read(name).split(heading, 1)[1].split("\n## ", 1)[0]
+        assert "makepkg -sif" in update
+        assert not re.search(r"makepkg -si(?!f)", update)
     assert "makepkg -sif" in _read("PKGBUILD").split("pkgname=", 1)[0]
 
 
@@ -722,7 +722,7 @@ def _lua_list(table) -> list:
 
 def test_readme_describes_the_layer_rules_of_the_module() -> None:
     """The dialog is full-screen with its own scrim: blurring it would blur the whole screen."""
-    readme = _read("README.md")
+    readme = _read("README.it.md")
     row = next(line for line in readme.splitlines() if line.startswith("| regole dei layer"))
     blurred, _, plain = row.partition("con sfocatura")
     assert "dropwheel-wheel" in blurred and "dropwheel-hud" in blurred
@@ -805,3 +805,14 @@ def test_lua_module_survives_a_failing_bind() -> None:
     assert len(module.errors) == 1
     assert len(calls.rules) == 2, "an invalid bind must not stop the rest of the module"
     assert any("notify-send" in cmd for cmd in _lua_list(calls.execs))
+
+
+def test_readme_states_the_platform_scope_and_links_exist() -> None:
+    """The English README says what runs today and where it is going, and its local links resolve."""
+    readme = _read("README.md")
+    assert "currently runs on Arch Linux with Hyprland only" in readme
+    assert "extend Dropwheel to other operating systems" in readme
+    targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
+    local = [t for t in targets if not t.startswith(("http://", "https://"))]
+    assert local, "no local links found"
+    assert not [t for t in local if not (ROOT / t).exists()], "broken local links"

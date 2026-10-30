@@ -1,7 +1,7 @@
 # Configurazione di Dropwheel
 
 Questo documento descrive **tutte** le impostazioni di Dropwheel. Per l'uso generale vedi il
-[README](../README.md).
+[README](../README.it.md).
 
 - **File:** `~/.config/dropwheel/config.toml` (più precisamente
   `$XDG_CONFIG_HOME/dropwheel/config.toml`). La variabile d'ambiente `DROPWHEEL_CONFIG` permette

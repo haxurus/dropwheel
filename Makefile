@@ -110,7 +110,9 @@ install-data:
 	fi
 	@echo "==> Installing documentation and licence"
 	install -Dm0644 README.md "$(DEST)$(DOCDIR)/README.md"
+	install -Dm0644 README.it.md "$(DEST)$(DOCDIR)/README.it.md"
 	install -Dm0644 assets/dropwheel.svg "$(DEST)$(DOCDIR)/assets/dropwheel.svg"
+	install -Dm0644 assets/wheel-preview.svg "$(DEST)$(DOCDIR)/assets/wheel-preview.svg"
 	for f in docs/*.md; do install -Dm0644 "$$f" "$(DEST)$(DOCDIR)/$$f"; done
 	install -Dm0644 LICENSE "$(DEST)$(LICENSEDIR)/LICENSE"
 

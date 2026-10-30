@@ -538,7 +538,7 @@ def _toml_blocks(path: Path) -> list[str]:
     return re.findall(r"```toml\n(.*?)```", path.read_text(encoding="utf-8"), flags=re.S)
 
 
-@pytest.mark.parametrize("doc", ["README.md", "docs/CONFIG.md"])
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md"])
 def test_documented_toml_examples_load_cleanly(tmp_path, doc):
     """Every TOML example of the user documentation is a valid configuration (no warnings)."""
     blocks = _toml_blocks(ROOT / doc)
@@ -550,7 +550,7 @@ def test_documented_toml_examples_load_cleanly(tmp_path, doc):
         assert cfg["_warnings"] == [], f"{doc} example #{i + 1}: {cfg['_warnings']}\n{block}"
 
 
-@pytest.mark.parametrize("doc", ["README.md", "docs/CONFIG.md"])
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md"])
 def test_documented_action_ids_exist(loaded, doc):
     """The ids the documentation tells users to write: a wrong one does nothing, silently."""
     known = {spec.id for spec in registry.all_actions()}
