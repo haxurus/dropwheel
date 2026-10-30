@@ -1,0 +1,31 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  Dropwheel custom action for Thunar.
+
+  Thunar reads custom actions from ONE file only, ~/.config/Thunar/uca.xml, and Caelestia
+  deploys that file. Copy the action element below inside the actions element of your
+  uca.xml by hand, or let "dropwheel setup thunar" merge it for you with its apply option
+  (the exact command is in README.md in this folder; it cannot be written here because XML
+  comments may not contain two consecutive hyphens).
+
+  %F = full paths of the selected files. A "*" pattern plus the six file-type elements make
+  the action appear for every kind of file and for folders.
+-->
+<action>
+	<icon>dropwheel</icon>
+	<name>Open in Dropwheel</name>
+	<name xml:lang="it">Apri in Dropwheel</name>
+	<submenu></submenu>
+	<unique-id>dropwheel-open-in-dropwheel</unique-id>
+	<command>dropwheel open %F</command>
+	<description>Show the Dropwheel action wheel for the selected files</description>
+	<description xml:lang="it">Mostra la ruota di Dropwheel per i file selezionati</description>
+	<range></range>
+	<patterns>*</patterns>
+	<directories/>
+	<audio-files/>
+	<image-files/>
+	<other-files/>
+	<text-files/>
+	<video-files/>
+</action>

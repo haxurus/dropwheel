@@ -1,0 +1,8 @@
+{
+  "grp.custom": "Personalizzate",
+  "msg.custom.done": "{label}: fatto",
+  "msg.custom.no_output": "{label}: fatto, nessun output",
+  "warn.custom.no_files": "Il comando non ha creato nuovi file",
+  "err.custom.failed": "{label} non è riuscito (codice {code})",
+  "err.custom.empty": "{label}: il comando è vuoto"
+}

@@ -1,0 +1,5 @@
+singleton Theme 1.0 Theme.qml
+singleton Backend 1.0 Backend.qml
+singleton Hypr 1.0 Hypr.qml
+singleton I18n 1.0 I18n.qml
+singleton Jobs 1.0 Jobs.qml

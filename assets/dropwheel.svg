@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Dropwheel app icon. Flat colours only (no gradients or filters) so that every renderer
+     draws it the same way, from 16 px panel icons to 256 px launchers. -->
+<svg xmlns="http://www.w3.org/2000/svg" width="256" height="256" viewBox="0 0 256 256">
+  <title>Dropwheel</title>
+
+  <!-- soft shadow below the disc -->
+  <circle cx="128" cy="132" r="118" fill="#000000" fill-opacity="0.22"/>
+
+  <!-- backdrop disc with a lighter upper half for a hint of depth -->
+  <circle cx="128" cy="128" r="118" fill="#2c1b11"/>
+  <path d="M10 128a118 118 0 0 1 236 0z" fill="#ffffff" fill-opacity="0.05"/>
+  <circle cx="128" cy="128" r="117" fill="none" stroke="#ffffff" stroke-opacity="0.08" stroke-width="2"/>
+
+  <!-- seven idle segments, clockwise from 1:30; the matching stroke rounds the corners -->
+  <g stroke-width="10" stroke-linejoin="round">
+    <path fill="#ffd7ae" stroke="#ffd7ae" d="M160.61 74.1L176.79 35.03A105 105 0 0 1 220.97 79.21L181.9 95.39A63 63 0 0 0 160.61 74.1Z"/>
+    <path fill="#ffcd9c" stroke="#ffcd9c" d="M189.17 112.94L228.24 96.76A105 105 0 0 1 228.24 159.24L189.17 143.06A63 63 0 0 0 189.17 112.94Z"/>
+    <path fill="#ffd7ae" stroke="#ffd7ae" d="M181.9 160.61L220.97 176.79A105 105 0 0 1 176.79 220.97L160.61 181.9A63 63 0 0 0 181.9 160.61Z"/>
+    <path fill="#ffcd9c" stroke="#ffcd9c" d="M143.06 189.17L159.24 228.24A105 105 0 0 1 96.76 228.24L112.94 189.17A63 63 0 0 0 143.06 189.17Z"/>
+    <path fill="#ffd7ae" stroke="#ffd7ae" d="M95.39 181.9L79.21 220.97A105 105 0 0 1 35.03 176.79L74.1 160.61A63 63 0 0 0 95.39 181.9Z"/>
+    <path fill="#ffcd9c" stroke="#ffcd9c" d="M66.83 143.06L27.76 159.24A105 105 0 0 1 27.76 96.76L66.83 112.94A63 63 0 0 0 66.83 143.06Z"/>
+    <path fill="#ffd7ae" stroke="#ffd7ae" d="M74.1 95.39L35.03 79.21A105 105 0 0 1 79.21 35.03L95.39 74.1A63 63 0 0 0 74.1 95.39Z"/>
+  </g>
+
+  <!-- active segment at 12 o'clock, lifted out of the ring, with its own shadow -->
+  <path d="M112.94 66.83L91.77 15.7A118 118 0 0 1 164.23 15.7L143.06 66.83A63 63 0 0 0 112.94 66.83Z"
+        transform="translate(0 3)" fill="#000000" stroke="#000000" stroke-width="10" stroke-linejoin="round"
+        fill-opacity="0.25" stroke-opacity="0.25"/>
+  <path d="M112.94 66.83L91.77 15.7A118 118 0 0 1 164.23 15.7L143.06 66.83A63 63 0 0 0 112.94 66.83Z"
+        fill="#f76d12" stroke="#f76d12" stroke-width="10" stroke-linejoin="round"/>
+  <!-- drop arrow on the active segment -->
+  <path d="M128 27v18m-8.5-8.5L128 45l8.5-8.5" fill="none" stroke="#ffffff" stroke-width="6.5"
+        stroke-linecap="round" stroke-linejoin="round"/>
+
+  <!-- centre hub -->
+  <circle cx="128" cy="130" r="48" fill="#000000" fill-opacity="0.2"/>
+  <circle cx="128" cy="128" r="48" fill="#fff5ea"/>
+
+  <!-- file glyph with folded corner -->
+  <path d="M109 110a6 6 0 0 1 6-6h19l13 13v29a6 6 0 0 1-6 6h-26a6 6 0 0 1-6-6z" fill="#f2620f"/>
+  <path d="M134 104v8a5 5 0 0 0 5 5h8z" fill="#ffbf8c"/>
+  <path d="M117 128h22m-22 9h15" fill="none" stroke="#ffffff" stroke-width="4.5" stroke-linecap="round" stroke-opacity="0.92"/>
+</svg>

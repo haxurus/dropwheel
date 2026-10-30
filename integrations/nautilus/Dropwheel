@@ -1,0 +1,102 @@
+#!/usr/bin/env bash
+# Dropwheel — Nautilus (GNOME Files) script.
+#
+# Install:  install -Dm755 Dropwheel ~/.local/share/nautilus/scripts/Dropwheel
+# Use:      right click on files → Scripts → Dropwheel
+#
+# Nautilus passes the selection in NAUTILUS_SCRIPT_SELECTED_FILE_PATHS (one local path per
+# line) and as arguments (names relative to the current folder). The variable is preferred;
+# arguments are the fallback, and they are also used when a file name contains a newline
+# (which would split the variable incorrectly). Remote files (sftp://, smb://, …) arrive as
+# URIs in NAUTILUS_SCRIPT_SELECTED_URIS. With nothing selected the current folder is used.
+
+set -u
+
+notify_error() {
+    local title=$1 body=$2
+    if command -v notify-send >/dev/null 2>&1; then
+        notify-send -a Dropwheel -i dropwheel -u critical -- "$title" "$body" >/dev/null 2>&1 || true
+    fi
+    printf 'Dropwheel: %s: %s\n' "$title" "$body" >&2
+}
+
+is_italian() {
+    local lang=${LC_ALL:-${LC_MESSAGES:-${LANG:-}}}
+    [[ $lang == it* ]]
+}
+
+# Find the dropwheel launcher: PATH first, then the user-local and system locations
+# (file managers started by the session do not always have ~/.local/bin in PATH).
+find_dropwheel() {
+    local candidate
+    if candidate=$(command -v dropwheel 2>/dev/null) && [[ -n $candidate ]]; then
+        printf '%s\n' "$candidate"
+        return 0
+    fi
+    for candidate in "${HOME:-}/.local/bin/dropwheel" /usr/local/bin/dropwheel /usr/bin/dropwheel; do
+        if [[ -x $candidate ]]; then
+            printf '%s\n' "$candidate"
+            return 0
+        fi
+    done
+    return 1
+}
+
+files=()
+
+# 1) Local paths from Nautilus, one per line.
+if [[ -n ${NAUTILUS_SCRIPT_SELECTED_FILE_PATHS:-} ]]; then
+    all_exist=1
+    while IFS= read -r line; do
+        [[ -z $line ]] && continue
+        if [[ -e $line || -L $line ]]; then
+            files+=("$line")
+        else
+            all_exist=0
+        fi
+    done <<< "$NAUTILUS_SCRIPT_SELECTED_FILE_PATHS"
+    # A name containing a newline was split in two: use the arguments instead.
+    if (( ! all_exist && $# > 0 )); then
+        files=()
+    fi
+fi
+
+# 2) Fallback: the arguments (relative to the current folder, which Nautilus sets as cwd).
+#    Only names that exist locally are kept; remote selections are handled in step 3.
+if (( ${#files[@]} == 0 && $# > 0 )); then
+    for arg in "$@"; do
+        [[ -z $arg ]] && continue
+        if [[ $arg != /* ]]; then
+            arg="$PWD/$arg"
+        fi
+        if [[ -e $arg || -L $arg ]]; then
+            files+=("$arg")
+        fi
+    done
+fi
+
+# 3) Remote selections: pass the URIs, the backend stages them locally.
+if (( ${#files[@]} == 0 )) && [[ -n ${NAUTILUS_SCRIPT_SELECTED_URIS:-} ]]; then
+    while IFS= read -r line; do
+        [[ -n $line ]] && files+=("$line")
+    done <<< "$NAUTILUS_SCRIPT_SELECTED_URIS"
+fi
+
+# 4) Nothing selected: act on the folder being shown.
+if (( ${#files[@]} == 0 )); then
+    files+=("$PWD")
+fi
+
+if ! dropwheel_bin=$(find_dropwheel); then
+    if is_italian; then
+        notify_error "Dropwheel non trovato" "Installa Dropwheel oppure aggiungi ~/.local/bin al PATH."
+    else
+        notify_error "Dropwheel not found" "Install Dropwheel or add ~/.local/bin to PATH."
+    fi
+    exit 127
+fi
+
+# Every entry is an absolute path or a URI, so none can be mistaken for an option, and none
+# depends on the current folder: leave it, because it may hold anything (a folder of downloads).
+cd -- "${HOME:-/}" 2>/dev/null || true
+exec "$dropwheel_bin" open "${files[@]}"

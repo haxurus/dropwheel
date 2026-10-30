@@ -1,0 +1,18 @@
+[Desktop Entry]
+# Dropwheel service menu for Dolphin (KDE Frameworks 5/6).
+# System-wide: /usr/share/kio/servicemenus/dropwheel.desktop (installed by the package).
+# Per user:    ~/.local/share/kio/servicemenus/dropwheel.desktop — must be executable
+#              (chmod +x), otherwise Dolphin ignores it for security reasons.
+Type=Service
+X-KDE-ServiceTypes=KonqPopupMenu/Plugin
+MimeType=all/all;inode/directory;
+Actions=openInDropwheel;
+X-KDE-Priority=TopLevel
+X-KDE-StartupNotify=false
+Icon=dropwheel
+
+[Desktop Action openInDropwheel]
+Name=Open in Dropwheel
+Name[it]=Apri in Dropwheel
+Icon=dropwheel
+Exec=dropwheel open %F

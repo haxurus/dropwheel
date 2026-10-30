@@ -1,0 +1,28 @@
+[Desktop Entry]
+Type=Application
+Version=1.5
+Name=Dropwheel
+GenericName=File Action Wheel
+GenericName[it]=Ruota di azioni sui file
+Comment=Convert, compress, crop, redact and share files from a radial wheel
+Comment[it]=Converti, comprimi, ritaglia, oscura e condividi file da una ruota radiale
+Exec=dropwheel open %F
+TryExec=dropwheel
+Icon=dropwheel
+Terminal=false
+StartupNotify=false
+Categories=Utility;FileTools;
+Keywords=convert;compress;resize;crop;redact;pdf;image;video;audio;archive;ocr;wheel;
+Keywords[it]=converti;comprimi;ridimensiona;ritaglia;oscura;pdf;immagine;video;audio;archivio;ocr;ruota;
+MimeType=image/png;image/jpeg;image/webp;image/avif;image/heic;image/heif;image/jxl;image/gif;image/tiff;image/bmp;image/svg+xml;image/x-icon;application/pdf;application/vnd.openxmlformats-officedocument.wordprocessingml.document;application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;application/vnd.openxmlformats-officedocument.presentationml.presentation;application/vnd.oasis.opendocument.text;application/vnd.oasis.opendocument.spreadsheet;application/vnd.oasis.opendocument.presentation;application/msword;application/vnd.ms-excel;application/vnd.ms-powerpoint;application/rtf;text/plain;text/markdown;text/csv;text/html;application/json;application/xml;application/x-yaml;application/toml;application/epub+zip;application/x-mobipocket-ebook;video/mp4;video/webm;video/x-matroska;video/quicktime;audio/mpeg;audio/flac;audio/ogg;audio/x-wav;audio/mp4;audio/x-opus+ogg;application/x-subrip;text/vtt;application/zip;application/x-7z-compressed;application/vnd.rar;application/x-tar;application/x-compressed-tar;application/x-xz-compressed-tar;application/x-zstd-compressed-tar;application/gzip;font/ttf;font/otf;font/woff;font/woff2;application/x-iso9660-image;application/vnd.appimage;
+Actions=start;stop;
+
+[Desktop Action start]
+Name=Start Dropwheel
+Name[it]=Avvia Dropwheel
+Exec=dropwheel start
+
+[Desktop Action stop]
+Name=Stop Dropwheel
+Name[it]=Arresta Dropwheel
+Exec=dropwheel stop

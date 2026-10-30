@@ -1,0 +1,15 @@
+[Nemo Action]
+# Dropwheel action for Nemo (Cinnamon file manager).
+# System-wide: /usr/share/nemo/actions/dropwheel.nemo_action (installed by the package).
+# Per user:    ~/.local/share/nemo/actions/dropwheel.nemo_action
+Active=true
+Name=Open in Dropwheel
+Name[it]=Apri in Dropwheel
+Comment=Show the Dropwheel action wheel for the selected files
+Comment[it]=Mostra la ruota di Dropwheel per i file selezionati
+Exec=dropwheel open %F
+Icon-Name=dropwheel
+Selection=notnone
+Extensions=any;
+Quote=double
+Dependencies=dropwheel;

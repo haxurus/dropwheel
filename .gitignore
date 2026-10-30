@@ -1,0 +1,40 @@
+# --- Python -------------------------------------------------------------------
+__pycache__/
+*.py[cod]
+*.egg-info/
+.eggs/
+/build/
+/dist/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+.coverage.*
+htmlcov/
+.venv/
+venv/
+.tox/
+
+# --- Arch packaging (makepkg) -------------------------------------------------
+# The PKGBUILD redirects makepkg's build directory to .makepkg/ because src/ holds
+# the Python sources (see the comment at the top of PKGBUILD). Never ignore src/.
+/.makepkg/
+/pkg/
+*.pkg.tar
+*.pkg.tar.*
+*.src.tar.gz
+*.log
+
+# --- Qt / QML tooling ---------------------------------------------------------
+.qmlls.ini
+*.qmlc
+*.jsc
+
+# --- Editors and OS -----------------------------------------------------------
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db

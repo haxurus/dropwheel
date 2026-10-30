@@ -1,0 +1,3 @@
+# Everything that git recognises as text is stored and checked out with LF, also on Windows:
+# on Arch a CR at the end of a line breaks PKGBUILD, the shell scripts and the desktop entries.
+* text=auto eol=lf

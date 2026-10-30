@@ -1,0 +1,8 @@
+{
+  "grp.custom": "Custom",
+  "msg.custom.done": "{label}: done",
+  "msg.custom.no_output": "{label}: done, no output",
+  "warn.custom.no_files": "The command did not create any new file",
+  "err.custom.failed": "{label} failed (code {code})",
+  "err.custom.empty": "{label}: the command is empty"
+}

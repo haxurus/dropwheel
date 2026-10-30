@@ -1,0 +1,63 @@
+[build-system]
+requires = ["setuptools>=77"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "dropwheel"
+version = "1.0.0"
+description = "Radial drag+Shift file-action wheel for Hyprland + Quickshell (Caelestia)"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+authors = [{ name = "Haxurus" }]
+keywords = ["hyprland", "quickshell", "caelestia", "wayland", "file-converter", "drag-and-drop"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Natural Language :: English",
+    "Natural Language :: Italian",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Desktop Environment",
+    "Topic :: Multimedia :: Graphics :: Graphics Conversion",
+    "Topic :: Utilities",
+]
+dependencies = ["pillow"]
+
+[project.optional-dependencies]
+image = ["pillow-heif", "pillow-jxl-plugin"]
+pdf = ["pymupdf>=2.0", "pypdf", "pikepdf"]
+docs = ["openpyxl", "pyyaml", "tomli-w", "charset-normalizer", "pygments", "python-docx", "defusedxml"]
+media = ["mutagen"]
+fonts = ["fonttools", "brotli"]
+archive = ["py7zr", "rarfile"]
+qr = ["qrcode"]
+trash = ["send2trash"]
+all = [
+    "pillow-heif", "pillow-jxl-plugin",
+    "pymupdf>=2.0", "pypdf", "pikepdf",
+    "openpyxl", "pyyaml", "tomli-w", "charset-normalizer", "pygments", "python-docx", "defusedxml",
+    "mutagen", "fonttools", "brotli", "py7zr", "rarfile", "qrcode", "send2trash",
+]
+test = ["pytest>=7"]
+
+[project.scripts]
+dropwheel = "dropwheel.cli:main"
+
+[tool.setuptools]
+package-dir = { "" = "src" }
+include-package-data = true
+
+[tool.setuptools.packages.find]
+where = ["src"]
+include = ["dropwheel*"]
+
+[tool.setuptools.package-data]
+dropwheel = ["locales/*/*.json", "locales/**/*.json"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["src"]
+addopts = "-ra"

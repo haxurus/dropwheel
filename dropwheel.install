@@ -1,0 +1,59 @@
+# pacman install script for Dropwheel. It only prints instructions: Hyprland and the
+# Quickshell shell belong to the user session, so nothing can be configured from here (root).
+
+_dropwheel_next_steps() {
+  cat <<'EOF'
+
+  ==> Dropwheel: completa la configurazione con il TUO utente (non root):
+
+        dropwheel setup hyprland   # collega Shift, SUPER+ALT+D e le regole dei layer
+                                   # (~/.config/caelestia/hypr-user.lua, con backup)
+        dropwheel start            # avvia subito la ruota; ai prossimi login parte da sola
+        dropwheel doctor           # controlla dipendenze e strumenti opzionali
+
+      Uso: mentre trascini dei file premi Shift, oppure SUPER+ALT+D con dei file
+      copiati negli appunti. Documentazione: /usr/share/doc/dropwheel/README.md
+
+  ==> Dropwheel: finish the setup as YOUR user (not root):
+
+        dropwheel setup hyprland && dropwheel start && dropwheel doctor
+
+EOF
+}
+
+post_install() {
+  _dropwheel_next_steps
+}
+
+post_upgrade() {
+  cat <<'EOF'
+
+  ==> Dropwheel aggiornato: riavvialo per usare la nuova versione
+      Dropwheel updated: restart it to use the new version
+
+        dropwheel stop && dropwheel start
+
+      Per aggiornare la tua copia di ~/.config/caelestia/dropwheel.lua riesegui
+      "dropwheel setup hyprland" (le tue modifiche vengono salvate in un backup).
+      To refresh your copy of dropwheel.lua, run "dropwheel setup hyprland" again.
+
+EOF
+}
+
+post_remove() {
+  cat <<'EOF'
+
+  ==> Dropwheel rimosso. Se l'avevi configurato, togli anche la riga
+        require("dropwheel")
+      da ~/.config/caelestia/hypr-user.lua (e il file ~/.config/caelestia/dropwheel.lua),
+      poi ricarica Hyprland con "hyprctl reload".
+      Le impostazioni restano in ~/.config/dropwheel, i modelli Whisper e gli sfondi salvati
+      in ~/.local/share/dropwheel (cancellali a mano se non servono).
+
+  ==> Dropwheel removed. Also delete the require("dropwheel") line from
+      ~/.config/caelestia/hypr-user.lua, then run "hyprctl reload".
+      Settings stay in ~/.config/dropwheel, Whisper models and saved wallpapers in
+      ~/.local/share/dropwheel.
+
+EOF
+}
