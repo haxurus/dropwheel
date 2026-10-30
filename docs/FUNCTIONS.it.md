@@ -1,19 +1,23 @@
 # Funzioni per tipo di file
 
+[English](FUNCTIONS.md) · **Italiano**
+
 > Generato da `tools/gen_functions_doc.py` a partire dai menu reali della ruota: non modificarlo
 > a mano. Rigeneralo con `PYTHONPATH=src python tools/gen_functions_doc.py`.
 
-Dropwheel registra **448 azioni**. La ruota mostra solo quelle che
-hanno senso per i file trascinati, al massimo otto per anello: un gruppo apre un altro anello, e
-quando le voci sono troppe l'ultimo settore diventa **Altro**.
+Dropwheel registra **448 azioni**. La ruota mostra solo quelle che hanno senso per i file
+trascinati, al massimo otto per anello: un gruppo apre un altro anello, e quando le voci sono troppe
+l'ultimo settore diventa **Altro**.
 
 Come leggere gli elenchi:
 
 - **Grassetto**: un gruppo, cioè un anello con altre voci.
-- **★**: la voce predefinita del gruppo, eseguita rilasciando il file sul gruppo stesso.
+- **★**: la voce predefinita del gruppo. È preselezionata quando apri l'anello da tastiera, ed è
+  quella che esegue `dropwheel run GRUPPO`.
 - *finestra*: apre una finestra di modifica o di parametri prima di partire.
 - *richiede*: il programma necessario. Se manca, la voce compare in grigio con il comando per
-  installarlo. Dove ci sono alternative, ne basta una.
+  installarlo. Dove ci sono alternative, ne basta una. Pillow, sempre necessario a Dropwheel, non
+  è elencato.
 
 I formati di conversione cambiano con il file di partenza: una foto JPG non propone «JPG», un
 PDF non propone «PDF». Gli elenchi qui sotto usano il formato di esempio indicato in ogni sezione.
@@ -791,7 +795,7 @@ Formati: SRT, VTT, ASS.
 - **Tempi**
   - Sposta tempi… ★ · *finestra* — Anticipa o ritarda tutti i sottotitoli
   - Cambia fps… · *finestra* — Corregge sottotitoli fatti per un video con fps diversi
-- Togli tag per non udenti — Rimuove [suoni], (rumori), righe di musica e nomi di chi parla
+- Togli tag per non udenti — Rimuove \[suoni], (rumori), righe di musica e nomi di chi parla
 - **Codifica**
   - UTF-8 ★ — Converte il testo in UTF-8 (la codifica originale è rilevata automaticamente)
   - LF (Linux) — Usa i fine riga di Linux/macOS
@@ -809,7 +813,7 @@ Formati: SRT, VTT, ASS.
 - **Tempi**
   - Sposta tempi… ★ · *finestra* — Anticipa o ritarda tutti i sottotitoli
   - Cambia fps… · *finestra* — Corregge sottotitoli fatti per un video con fps diversi
-- Togli tag per non udenti — Rimuove [suoni], (rumori), righe di musica e nomi di chi parla
+- Togli tag per non udenti — Rimuove \[suoni], (rumori), righe di musica e nomi di chi parla
 - **Codifica**
   - UTF-8 ★ — Converte il testo in UTF-8 (la codifica originale è rilevata automaticamente)
   - LF (Linux) — Usa i fine riga di Linux/macOS
@@ -1172,7 +1176,7 @@ Formati: Indirizzi http, https e ftp trascinati dal browser.
   - Salva QR · richiede python-qrcode o qrencode — Salva il codice QR del link in PNG
 - **Copia**
   - Link ★ — Copia il link
-  - Link Markdown — Copia [titolo della pagina](link)
+  - Link Markdown — Copia \[titolo della pagina](link)
   - Link pulito — Copia il link senza parametri di tracciamento (utm, fbclid…)
 - Apri nel browser · richiede xdg-open o gio — Apri il link nel browser predefinito
 - Pagina → PDF · richiede chromium o google-chrome-stable o google-chrome o brave o brave-browser o microsoft-edge-stable o vivaldi-stable o thorium-browser — Salva la pagina web in PDF (serve Chromium)

@@ -298,7 +298,8 @@ selections get what applies to all of them.
 | Several outputs | A folder such as `document (Pages)/` |
 | Read-only or temporary source | `~/Downloads/Dropwheel`, and the card tells you |
 
-The complete list of actions, ring by ring, is in [docs/FUNZIONI.md](docs/FUNZIONI.md) (in Italian).
+The complete list of actions, ring by ring and with the programs they need, is in
+[docs/FUNCTIONS.md](docs/FUNCTIONS.md).
 
 ## Optional dependencies
 
@@ -404,7 +405,7 @@ command = "magick {file} -resize '1600x1600>' -quality 80 {dir}/{stem}-blog.jpg"
 output = "files"
 ```
 
-Every key is documented in [docs/CONFIG.md](docs/CONFIG.md) (in Italian).
+Every key, with examples of custom actions, is documented in [docs/CONFIG.md](docs/CONFIG.md).
 
 ## File manager integration
 

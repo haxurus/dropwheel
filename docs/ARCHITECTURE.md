@@ -2,8 +2,8 @@
 
 This document is the developer-oriented summary of Dropwheel. The binding contract (exact
 APIs, protocol fields, UX numbers) is [SPEC.md](SPEC.md); when the two disagree, SPEC.md wins.
-User documentation: the [README](../README.md) in English, [README.it.md](../README.it.md) and
-[CONFIG.md](CONFIG.md) in Italian.
+User documentation: the [README](../README.md), [CONFIG.md](CONFIG.md) and [FUNCTIONS.md](FUNCTIONS.md) in
+English, each with an Italian version (`.it.md`).
 
 ## Contents
 
@@ -44,7 +44,7 @@ Design principles:
 ```
 pyproject.toml                 setuptools packaging; entry point dropwheel = dropwheel.cli:main
 Makefile, PKGBUILD, dropwheel.install, install.sh, uninstall.sh
-README.md (English), README.it.md (Italian), docs/SPEC.md, docs/ARCHITECTURE.md, docs/CONFIG.md (Italian)
+README.md (English), README.it.md (Italian), docs/SPEC.md, docs/ARCHITECTURE.md, docs/CONFIG.md, docs/CONFIG.it.md, docs/FUNCTIONS.md, docs/FUNCTIONS.it.md
 assets/dropwheel.svg           app icon
 src/dropwheel/
   cli.py        command line (argparse)
@@ -458,7 +458,7 @@ Tests must not need Linux-only tools on the development machine: guard them with
 - [ ] Both locales updated; `make test` and `make lint` pass.
 
 User-level actions that do not need Python live in the configuration (`[[custom]]`, see
-[CONFIG.md](CONFIG.md#custom--azioni-personalizzate)).
+[CONFIG.md](CONFIG.md#custom--custom-actions)).
 
 ## 10. How to add or change a translation
 
@@ -476,7 +476,7 @@ with `{"act.image.invert": "Negativo"}`).
 
 1. Create `src/dropwheel/locales/de/` with a translated copy of every fragment of `en/`.
 2. Add `"de"` to `i18n.LANGS` and to the allowed values of `language` in `config.py`
-   (`_SCHEMA["language"]`), and document it in `docs/CONFIG.md`.
+   (`_SCHEMA["language"]`), and document it in `docs/CONFIG.md` and `docs/CONFIG.it.md`.
 3. Translate the output suffixes (`sfx.*`) with care: they become part of file names.
 4. Add the language to the built-in fallback map of `shell/services/I18n.qml` only if the shell
    must show strings before the daemon answers (normally English is enough there).
@@ -520,8 +520,8 @@ Release checklist:
 
 ## Regenerating the function reference
 
-`docs/FUNZIONI.md` lists every action per file type, in Italian. It is generated from the real menus, so
-regenerate it after changing actions, layouts or labels:
+`docs/FUNCTIONS.md` and `docs/FUNCTIONS.it.md` list every action per file type. They are generated from the real menus, so
+regenerate them after changing actions, layouts or labels:
 
 ```sh
 PYTHONPATH=src python tools/gen_functions_doc.py

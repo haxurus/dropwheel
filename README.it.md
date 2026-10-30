@@ -89,7 +89,7 @@ e la **riga di comando**.
 ## Funzionalità
 
 Qui sotto c'è la sintesi per tipo di file. L'elenco completo di tutte le azioni, anello per anello
-e con i programmi che richiedono, è in **[docs/FUNZIONI.md](docs/FUNZIONI.md)**.
+e con i programmi che richiedono, è in **[docs/FUNCTIONS.it.md](docs/FUNCTIONS.it.md)**.
 
 La ruota mostra solo ciò che ha senso per i file trascinati: un PDF non propone «Converti in
 PDF», una foto JPG non propone «JPG». Ogni anello ha al massimo otto settori; quando le azioni
@@ -684,7 +684,7 @@ output = "files"
 ```
 
 Tutte le chiavi, con valori ammessi ed esempi di azioni personalizzate, sono in
-**[docs/CONFIG.md](docs/CONFIG.md)**.
+**[docs/CONFIG.it.md](docs/CONFIG.it.md)**.
 
 ---
 

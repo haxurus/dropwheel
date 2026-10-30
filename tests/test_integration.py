@@ -538,7 +538,7 @@ def _toml_blocks(path: Path) -> list[str]:
     return re.findall(r"```toml\n(.*?)```", path.read_text(encoding="utf-8"), flags=re.S)
 
 
-@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md"])
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md"])
 def test_documented_toml_examples_load_cleanly(tmp_path, doc):
     """Every TOML example of the user documentation is a valid configuration (no warnings)."""
     blocks = _toml_blocks(ROOT / doc)
@@ -550,7 +550,7 @@ def test_documented_toml_examples_load_cleanly(tmp_path, doc):
         assert cfg["_warnings"] == [], f"{doc} example #{i + 1}: {cfg['_warnings']}\n{block}"
 
 
-@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md"])
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md"])
 def test_documented_action_ids_exist(loaded, doc):
     """The ids the documentation tells users to write: a wrong one does nothing, silently."""
     known = {spec.id for spec in registry.all_actions()}
@@ -563,11 +563,12 @@ def test_documented_action_ids_exist(loaded, doc):
     assert not [c for c in commands if c not in known and c not in groups], f"{doc}: unknown ids in {commands}"
 
 
-def test_config_reference_lists_every_default():
-    """The "full defaults" block of docs/CONFIG.md and the commented default file match DEFAULTS."""
+@pytest.mark.parametrize("doc", ["CONFIG.md", "CONFIG.it.md"])
+def test_config_reference_lists_every_default(doc):
+    """The "full defaults" block of the config reference and the commented default file match DEFAULTS."""
     import tomllib
 
-    blocks = _toml_blocks(ROOT / "docs" / "CONFIG.md")
+    blocks = _toml_blocks(ROOT / "docs" / doc)
     full = tomllib.loads(blocks[-1])
     expected = {k: v for k, v in cfgmod.DEFAULTS.items() if k != "custom"}
     assert full == expected
@@ -575,7 +576,35 @@ def test_config_reference_lists_every_default():
     for key, value in expected.items():
         if isinstance(value, dict):
             for sub in value:
-                assert f"`{sub}`" in (ROOT / "docs" / "CONFIG.md").read_text(encoding="utf-8"), f"{key}.{sub}"
+                assert f"`{sub}`" in (ROOT / "docs" / doc).read_text(encoding="utf-8"), f"{key}.{sub}"
+
+
+@pytest.mark.parametrize("doc, word", [("FUNCTIONS.md", "actions"), ("FUNCTIONS.it.md", "azioni")])
+def test_function_reference_is_current(loaded, doc, word):
+    """A stale count means tools/gen_functions_doc.py has to run again."""
+    text = (ROOT / "docs" / doc).read_text(encoding="utf-8")
+    assert f"**{len(registry.all_actions())} {word}**" in text
+
+
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md",
+                                 "docs/ARCHITECTURE.md", "docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md"])
+def test_documentation_links_resolve(doc):
+    """Local links point at real files, and anchors at real headings of the English and Italian docs."""
+    path = ROOT / doc
+    problems = []
+    for target in re.findall(r"(?<!\\)\[[^\]]*\]\(([^)\s]+)\)", path.read_text(encoding="utf-8")):
+        if target.startswith(("http://", "https://")):
+            continue
+        name, _, anchor = target.partition("#")
+        linked = path if not name else (path.parent / name)
+        if not linked.exists():
+            problems.append(target)
+        elif anchor and linked.suffix == ".md":
+            headings = re.findall(r"^#+ (.+)$", linked.read_text(encoding="utf-8"), flags=re.M)
+            slugs = {re.sub(r"[^\w\- ]", "", h.lower()).replace(" ", "-") for h in headings}
+            if anchor not in slugs:
+                problems.append(target)
+    assert not problems, f"{doc}: broken links {problems}"
 
 
 # ------------------------------------------------------------------------- protocol (SPEC §5)
