@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "dropwheel"
 version = "1.0.0"
-description = "Radial drag+Shift file-action wheel for Hyprland + Quickshell (Caelestia)"
+description = "Radial drag+Shift file-action wheel for Hyprland + Quickshell (Caelestia), with a Windows preview"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
@@ -20,13 +20,14 @@ classifiers = [
     "Natural Language :: English",
     "Natural Language :: Italian",
     "Operating System :: POSIX :: Linux",
+    "Operating System :: Microsoft :: Windows",
     "Programming Language :: Python :: 3",
     "Programming Language :: Python :: 3 :: Only",
     "Topic :: Desktop Environment",
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
     "Topic :: Utilities",
 ]
-dependencies = ["pillow", "send2trash; sys_platform == 'win32'"]
+dependencies = ["pillow", "send2trash; sys_platform == 'win32'", "PySide6-Essentials>=6.5; sys_platform == 'win32'"]
 
 [project.optional-dependencies]
 image = ["pillow-heif", "pillow-jxl-plugin"]
@@ -63,7 +64,7 @@ where = ["src"]
 include = ["dropwheel*"]
 
 [tool.setuptools.package-data]
-dropwheel = ["locales/*/*.json", "locales/**/*.json"]
+dropwheel = ["locales/*/*.json", "locales/**/*.json", "winshell/qml/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

@@ -336,6 +336,9 @@ _TOOL_LIST: list[Tool] = [
     _py("onnxruntime", "python-onnxruntime-cpu"),
     _py("ruamel.yaml", "python-ruamel-yaml"),
 ]
+if WINDOWS:
+    # the Windows front end (dropwheel.winshell); on Linux Quickshell hosts the shell
+    _TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows"))
 
 #: name -> Tool
 TOOLS: dict[str, Tool] = {t.name: t for t in _TOOL_LIST}
@@ -608,7 +611,8 @@ def install_hint(names: Iterable[str] | str | None) -> str:
 
 
 #: Windows: pip distributions whose name is not the Arch package minus ``python-``.
-_NT_PIP = {"PIL": "pillow", "PIL._avif": "pillow", "pillow_jxl": "pillow-jxl-plugin", "docx": "python-docx",
+_NT_PIP = {"PySide6": "PySide6-Essentials",
+           "PIL": "pillow", "PIL._avif": "pillow", "pillow_jxl": "pillow-jxl-plugin", "docx": "python-docx",
            "yaml": "PyYAML", "cv2": "opencv-python", "gi": "PyGObject", "onnxruntime": "onnxruntime",
            "odf": "odfpy", "ruamel.yaml": "ruamel.yaml"}
 

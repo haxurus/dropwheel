@@ -18,6 +18,7 @@ dropwheel run image.compress.balanced foto.jpg   # esegue un'azione senza interf
 | `dropwheel undo [LAVORO]`, `history [-n N]` | Annulla un lavoro (di norma l'ultimo), mostra i lavori recenti |
 | `dropwheel doctor [--json] [--full]` | Controlla Hyprland, Quickshell e gli strumenti, con i comandi di installazione |
 | `dropwheel setup hyprland\|nautilus\|dolphin\|nemo\|thunar\|desktop\|all` | Installa un'integrazione |
+| `dropwheel setup windows [--remove]` | Su Windows: menu di Esplora file, *Invia a*, collegamenti nel menu Start e all'accesso, font delle icone ([dettagli](WINDOWS.it.md)) |
 | `dropwheel shares [--stop ID\|--stop-all]` | Elenca o interrompe le condivisioni attive in rete locale |
 | `dropwheel config [--path\|--init\|--edit]` | Mostra, crea o modifica la configurazione |
 
@@ -30,6 +31,9 @@ un'interruzione. `dropwheel setup` non sovrascrive mai un file senza prima salva
 | `DROPWHEEL_CONFIG` | Percorso alternativo di `config.toml` |
 | `DROPWHEEL_DATA` | Cartella dei dati con la shell e le integrazioni, di norma `~/.local/share/dropwheel` o `/usr/share/dropwheel` |
 | `DROPWHEEL_BACKEND` | Il comando del servizio usato dalla shell, impostato da `dropwheel start` |
+
+Su Windows `start`, `stop` e `status` controllano l'host di Dropwheel (`python -m dropwheel.winshell`)
+invece di Quickshell, e gli altri comandi lo raggiungono con una connessione locale su `127.0.0.1`.
 
 ---
 

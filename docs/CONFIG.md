@@ -121,6 +121,7 @@ open_after = true
 |---|---|---|
 | `shift` | boolean | `true` |
 | `dnd_check` | boolean | `true` |
+| `shortcut` | string | `"Ctrl+Alt+D"` |
 
 - **`shift`**: `false` ignores Shift (the hot corner, SUPER+ALT+D, the file manager and the command
   line remain). To stop Shift from reaching Dropwheel at all, you can also empty `SHIFT_KEYS` in the
@@ -128,7 +129,12 @@ open_after = true
 - **`dnd_check`**: before opening the wheel, Dropwheel uses `hyprctl -j monitors` to check that a drag
   is really in progress, so Shift does not open the wheel while you type. With `false`, the wheel opens
   on every Shift and closes by itself after 1.2 seconds if no drag arrives. This is useful only for
-  diagnosing problems.
+  diagnosing problems. On Windows the check is that the mouse button is held.
+- **`shortcut`** (Windows only): the key combination that opens the wheel with the files in the
+  clipboard, such as `"Win+Shift+D"` or `"F9"`: `Ctrl`, `Alt`, `Shift` and `Win` joined with `+` to a
+  letter, a digit, `F1` to `F24` or `Space`, `Enter`, `Tab`, `Insert`, `Delete`, `Home`, `End`,
+  `PageUp`, `PageDown` (a letter or digit needs at least one modifier). `""` turns it off. It takes
+  effect at the next `dropwheel restart`. On Linux the shortcut is a Hyprland bind (SUPER+ALT+D).
 
 ---
 
@@ -512,6 +518,7 @@ open_after = false
 [trigger]
 shift = true
 dnd_check = true
+shortcut = "Ctrl+Alt+D"
 
 [hotzone]
 enabled = true

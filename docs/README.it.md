@@ -18,7 +18,7 @@ spiegano come installarlo, usarlo ed estenderlo.
 | [Riferimento delle funzioni](FUNCTIONS.it.md) | Ogni azione, anello per anello, con i programmi che richiede |
 | [Risoluzione dei problemi](TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
-| [Dropwheel su Windows](WINDOWS.it.md) | L'anteprima per Windows: cosa funziona, come installarla, cosa manca |
+| [Dropwheel su Windows](WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 
 ## Per chi contribuisce
 

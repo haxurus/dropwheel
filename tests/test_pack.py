@@ -811,10 +811,12 @@ def test_lua_module_survives_a_failing_bind() -> None:
 def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
-    assert "currently runs on Arch Linux with Hyprland only" in readme
+    assert "made for Arch Linux with Hyprland" in readme
+    assert "not yet run on a real Windows" in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
-    assert "funziona solo su Arch Linux con Hyprland" in italian
+    assert "fatto per Arch Linux con Hyprland" in italian
+    assert "non è ancora stata eseguita su un vero" in italian
     assert "estendere\nDropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
     local = [t for t in targets if not t.startswith(("http://", "https://"))]

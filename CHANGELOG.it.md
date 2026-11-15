@@ -23,6 +23,14 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
     Ghostscript trovato come `gswin64c`.
   - Indicazioni di installazione con `winget install` e `python -m pip install`.
   - *Apri un terminale qui* apre una console `cmd.exe`.
+- **Interfaccia per Windows (anteprima)**: la stessa ruota, le stesse schede, gli stessi editor e la scheda del
+  codice QR di Linux, ospitati da PySide6 (`dropwheel.winshell`). Si apre con Shift durante un trascinamento,
+  l'angolo attivo, una scorciatoia globale e *Apri in Dropwheel* / *Invia a* in Esplora file.
+  - `dropwheel setup windows [--remove]`: menu di Esplora file, *Invia a*, collegamenti nel menu Start e
+    all'accesso, e il font delle icone (scaricato una volta da una versione fissa, controllato con il suo SHA-256).
+  - `trigger.shortcut` (predefinita `Ctrl+Alt+D`), usata su Windows.
+  - `dropwheel start`, `stop`, `status` e `open` controllano l'host su `127.0.0.1` con un token per ogni avvio.
+  - `tests/test_winshell.py`: 20 test, compreso il caricamento della vera shell senza schermo e senza avvisi QML.
 - `tests/test_windows.py`: 16 test che esercitano le parti per Windows su Linux.
 - Documentazione divisa in guide nella cartella [docs](docs/README.it.md): installazione, uso, funzioni, riga di
   comando, risoluzione dei problemi, privacy, sviluppo e Windows, in inglese e in italiano.
@@ -30,6 +38,8 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
 
 ### Modificato
 
+- Su Windows il servizio scambia i percorsi con la shell nella forma `/C:/…`; PySide6-Essentials è una
+  dipendenza su Windows.
 - Il README principale è più corto. Tiene la panoramica, la tabella delle piattaforme e un avvio rapido, e
   rimanda alle guide.
 

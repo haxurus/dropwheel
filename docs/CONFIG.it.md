@@ -123,6 +123,7 @@ open_after = true
 |---|---|---|
 | `shift` | booleano | `true` |
 | `dnd_check` | booleano | `true` |
+| `shortcut` | stringa | `"Ctrl+Alt+D"` |
 
 - **`shift`**: `false` ignora Shift (restano l'angolo attivo, SUPER+ALT+D, il file manager e la
   riga di comando). Per non far arrivare proprio Shift a Dropwheel puoi anche svuotare
@@ -130,7 +131,13 @@ open_after = true
 - **`dnd_check`**: prima di aprire la ruota Dropwheel verifica con `hyprctl -j monitors` che un
   trascinamento sia davvero in corso, così Shift non apre la ruota mentre scrivi. Con `false` la
   ruota si apre a ogni Shift e si richiude da sola dopo 1,2 secondi se non arriva nessun
-  trascinamento: utile solo per diagnosticare problemi.
+  trascinamento: utile solo per diagnosticare problemi. Su Windows la verifica è che il tasto del mouse
+  sia premuto.
+- **`shortcut`** (solo Windows): la combinazione di tasti che apre la ruota con i file negli appunti,
+  per esempio `"Win+Shift+D"` o `"F9"`: `Ctrl`, `Alt`, `Shift` e `Win` uniti con `+` a una lettera, una
+  cifra, da `F1` a `F24` oppure `Space`, `Enter`, `Tab`, `Insert`, `Delete`, `Home`, `End`, `PageUp`,
+  `PageDown` (una lettera o una cifra richiede almeno un modificatore). `""` la disattiva. Vale dal
+  prossimo `dropwheel restart`. Su Linux la scorciatoia è un bind di Hyprland (SUPER+ALT+D).
 
 ---
 
@@ -519,6 +526,7 @@ open_after = false
 [trigger]
 shift = true
 dnd_check = true
+shortcut = "Ctrl+Alt+D"
 
 [hotzone]
 enabled = true

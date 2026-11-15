@@ -59,8 +59,8 @@ REQUIRED_TOOLS: tuple[tuple[str, str], ...] = (
     ("wl-paste", "wl-clipboard"),
 )
 if tools.WINDOWS:
-    # no compositor or Quickshell there: the CLI is the front end; send2trash is the only safe trash
-    REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"))
+    # no compositor or Quickshell there: PySide6 hosts the shell; send2trash is the only safe trash
+    REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"), ("py:PySide6", "PySide6-Essentials"))
 
 #: Programs that are a personal choice (terminals, file managers, viewers, package helpers…):
 #: reported by ``doctor`` but never part of the "install everything" command.
@@ -94,6 +94,8 @@ ALTERNATIVES: tuple[tuple[str, ...], ...] = (
 
 _GROUP_ORDER = ("image", "pdf", "docs", "media", "archive", "fonts", "system", "python")
 _SETUP_TARGETS = ("hyprland", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
+if tools.WINDOWS:
+    _SETUP_TARGETS = ("windows",)
 _URL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]+://")
 _REQUIRE_RE = re.compile(r"""require\s*\(?\s*["']dropwheel["']""")
 _HYPR_USER_RE = re.compile(r"""require\s*\(?\s*["']hypr-user["']|dofile\s*\(?.*hypr-user""")
@@ -449,6 +451,8 @@ def build_parser(lang: str = "en") -> argparse.ArgumentParser:
                    help=T("cli.arg.target", targets=", ".join(_SETUP_TARGETS)))
     p.add_argument("--dry-run", action="store_true", help=T("cli.arg.dry_run"))
     p.add_argument("--apply", action="store_true", help=T("cli.arg.apply"))
+    if tools.WINDOWS:
+        p.add_argument("--remove", action="store_true", help=T("cli.arg.remove"))
 
     p = add("shares", cmd_shares)
     g = p.add_mutually_exclusive_group()
@@ -1220,6 +1224,25 @@ def _required_status() -> list[dict]:
     return rows
 
 
+def _doctor_windows_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
+    """``doctor`` on Windows: PySide6, the Explorer entries and the icon font instead of Hyprland."""
+    from .winshell import explorer
+
+    term = ctx.term
+    yes, no = term.ok(), term.fail()
+    pyside = tools.path("py:PySide6")
+    rows.append((yes if pyside else no, "PySide6", pyside or (ctx.t("cli.doctor.missing") + term.dim(
+        f"  {term.sym('arrow')} " + tools.install_hint(["py:PySide6"])))))
+    st = explorer.state()
+    hint = term.dim(f"  {term.sym('arrow')} dropwheel setup windows")
+    done = st["context_menu"] and st["send_to"]
+    rows.append((yes if done else term.warn(), ctx.t("cli.doctor.win_explorer"),
+                 ctx.t("cli.doctor.win_explorer_ok") if done else ctx.t("cli.doctor.win_explorer_missing") + hint))
+    font = explorer.font_installed()
+    rows.append((yes if font else term.warn(), ctx.t("cli.doctor.win_font"),
+                 explorer.FONT_FAMILY if font else ctx.t("cli.doctor.win_font_missing") + hint))
+
+
 def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel doctor``: session, required dependencies, optional tools and the commands
     that install what is missing.  Exit status 1 when a required dependency is missing."""
@@ -1266,13 +1289,17 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     out()
     out(term.bold(ctx.t("cli.doctor.session")))
     rows: list[tuple[str, str, str]] = []
+    if tools.WINDOWS:
+        _doctor_windows_rows(ctx, rows)
     in_hypr = bool(os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
-    rows.append((yes if in_hypr else no, "Hyprland",
-                 ctx.t("cli.doctor.hypr_session") if in_hypr else ctx.t("cli.doctor.hypr_no_session")))
+    if not tools.WINDOWS:
+        rows.append((yes if in_hypr else no, "Hyprland",
+                     ctx.t("cli.doctor.hypr_session") if in_hypr else ctx.t("cli.doctor.hypr_no_session")))
     qs_text = shell.get("qs") or ctx.t("cli.doctor.missing")
     if shell.get("qs_version"):
         qs_text += term.dim(f"  {shell['qs_version']}")
-    rows.append((yes if shell.get("qs") else no, "Quickshell", qs_text))
+    if not tools.WINDOWS:
+        rows.append((yes if shell.get("qs") else no, "Quickshell", qs_text))
     if shell.get("running"):
         pids = ", ".join(_instance_pid(i) for i in shell.get("instances") or [])
         state = ctx.t("cli.status.running", pids=pids)
@@ -1282,7 +1309,9 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
         state = ctx.t("cli.status.stopped") + term.dim(f"  {term.sym('arrow')} dropwheel start")
     rows.append((yes if shell.get("shell_ok") else no, ctx.t("cli.status.shell"),
                  f"{shell.get('shell_dir')}  {term.dim(term.sym('dot'))} {state}"))
-    if hypr.get("configured"):
+    if tools.WINDOWS:
+        pass
+    elif hypr.get("configured"):
         rows.append((yes, ctx.t("cli.doctor.hypr_setup"), str(hypr.get("module"))))
     elif hypr.get("module"):
         rows.append((term.warn(), ctx.t("cli.doctor.hypr_setup"),
@@ -1922,8 +1951,31 @@ def _setup_thunar(st: _Setup) -> int:
     return EXIT_OK
 
 
+def _setup_windows(ctx: Ctx, *, dry: bool, remove: bool) -> int:
+    """``dropwheel setup windows [--remove]``: the Explorer entries, the shortcuts and the icon font."""
+    from .winshell import explorer
+
+    term = ctx.term
+
+    def say(key: str, **fmt: Any) -> None:
+        prefix = term.dim(ctx.t("cli.setup.dry_prefix") + " ") if dry else ""
+        out(f"  {prefix}{ctx.t(key, **fmt)}")
+
+    out(term.bold("Windows"))
+    if remove:
+        return explorer.remove(dry=dry, say=say)
+    code = explorer.install(ctx.lang, dry=dry, say=say)
+    if not dry:
+        out()
+        out("  " + ctx.t("cli.setup.win_next"))
+        out("    dropwheel start")
+    return code
+
+
 def cmd_setup(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel setup TARGET``: install the desktop integrations for the current user."""
+    if tools.WINDOWS:
+        return _setup_windows(ctx, dry=args.dry_run, remove=args.remove)
     st = _Setup(ctx, dry=args.dry_run, apply=args.apply)
     if not st.src.is_dir():
         raise UserError("cli.setup.no_integrations", path=str(st.src))

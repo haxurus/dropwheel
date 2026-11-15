@@ -28,7 +28,7 @@ DEFAULTS: dict[str, Any] = {
     "language": "auto",
     "hidden_actions": [],
     "output": {"location": "source", "folder": "", "open_after": False},
-    "trigger": {"shift": True, "dnd_check": True},
+    "trigger": {"shift": True, "dnd_check": True, "shortcut": "Ctrl+Alt+D"},
     "hotzone": {"enabled": True, "corner": "top-right", "size": 6},
     "wheel": {"scale": 1.0, "spring_ms": 450, "show_unavailable": True, "sound": False},
     "hud": {"position": "bottom-right", "timeout_ms": 7000},
@@ -57,6 +57,8 @@ _SCHEMA: dict[str, tuple[str, Any]] = {
     "output.open_after": ("bool", None),
     "trigger.shift": ("bool", None),
     "trigger.dnd_check": ("bool", None),
+    "trigger.shortcut": ("regex", r"^(?i:((ctrl|control|alt|shift|win|super)\+)+([a-z0-9]|f[0-9]{1,2}|space|enter|tab|"
+                                  r"insert|delete|home|end|pageup|pagedown)|f[0-9]{1,2})?$"),
     "hotzone.enabled": ("bool", None),
     "hotzone.corner": ("enum", _CORNERS),
     "hotzone.size": ("int", (1, 64)),
@@ -344,6 +346,9 @@ open_after = false
 shift = true
 # Controlla che un trascinamento sia davvero in corso (hyprctl) / check that a drag is really active (hyprctl)
 dnd_check = true
+# Solo Windows: scorciatoia che apre la ruota con i file negli appunti (su Linux la decide Hyprland)
+# Windows only: shortcut that opens the wheel with the files in the clipboard (on Linux, Hyprland binds it)
+shortcut = "Ctrl+Alt+D"
 
 [hotzone]
 # Piccola zona sensibile sul bordo dello schermo / tiny drop zone on the screen edge

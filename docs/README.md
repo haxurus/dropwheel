@@ -18,7 +18,7 @@ extending it.
 | [Function reference](FUNCTIONS.md) | Every action, ring by ring, with the programs it needs |
 | [Troubleshooting](TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](PRIVACY.md) | What uses the network and how untrusted files are handled |
-| [Dropwheel on Windows](WINDOWS.md) | The Windows preview: what works, how to install it, what is missing |
+| [Dropwheel on Windows](WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 
 ## For contributors
 

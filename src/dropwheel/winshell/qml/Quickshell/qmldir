@@ -1,0 +1,14 @@
+module Quickshell
+import DropwheelHost auto
+singleton Quickshell 1.0 Quickshell.qml
+ShellRoot 1.0 ShellRoot.qml
+ShellSettings 1.0 ShellSettings.qml
+Singleton 1.0 Singleton.qml
+PanelWindow 1.0 PanelWindow.qml
+PanelAnchors 1.0 PanelAnchors.qml
+PanelMargins 1.0 PanelMargins.qml
+LazyLoader 1.0 LazyLoader.qml
+Variants 1.0 Variants.qml
+Region 1.0 Region.qml
+RegionShape 1.0 RegionShape.qml
+ExclusionMode 1.0 ExclusionMode.qml

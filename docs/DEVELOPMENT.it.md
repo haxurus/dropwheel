@@ -19,6 +19,9 @@ flowchart LR
 - **Azioni (`src/dropwheel/actions/`).** Un modulo per famiglia, registrato con un decoratore che dichiara
   categorie, parametri e strumenti richiesti. I menu sono costruiti da queste dichiarazioni.
 - **Lavori (`src/dropwheel/jobs.py`).** Parallelismo, interruzione, avanzamento, scrittura atomica, annulla.
+- **Host per Windows (`src/dropwheel/winshell/`).** Un programma PySide6 che carica lo stesso `shell/shell.qml`
+  attraverso piccoli sostituti dei moduli di Quickshell, e risponde da sé ai comandi di Hyprland.
+  `tests/test_winshell.py` lo avvia senza schermo su Linux.
 
 [docs/ARCHITECTURE.md](ARCHITECTURE.md) spiega come aggiungere un'azione o una traduzione, e
 [docs/SPEC.md](SPEC.md) è il contratto completo. Entrambi sono in inglese.

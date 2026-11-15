@@ -39,9 +39,9 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 </p>
 
 > [!IMPORTANT]
-> **Al momento Dropwheel funziona solo su Arch Linux con Hyprland.** L'obiettivo è estenderlo ad altri
-> sistemi operativi: vedi [Piattaforme supportate](#piattaforme-supportate). Una prima anteprima del
-> motore e della riga di comando su Windows è descritta in [Dropwheel su Windows](docs/WINDOWS.it.md).
+> **Dropwheel è fatto per Arch Linux con Hyprland.** Un'anteprima per Windows 10 e 11, con la stessa
+> ruota, è descritta in [Dropwheel su Windows](docs/WINDOWS.it.md); non è ancora stata eseguita su un vero
+> computer Windows. L'obiettivo è arrivare anche ad altri sistemi: vedi [Piattaforme supportate](#piattaforme-supportate).
 >
 > Questa è una versione iniziale. Il codice ha un'ampia suite di test automatici, ma il flusso completo di
 > trascinamento non è ancora stato provato su una vera sessione Hyprland, e molte parti che chiamano
@@ -85,7 +85,7 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 | Distribuzioni basate su Arch | Dovrebbero funzionare con gli stessi pacchetti, non provate |
 | Altre distribuzioni Linux | Non ancora |
 | Altri compositor Wayland, X11 | Non ancora |
-| Windows 10 e 11 | **Anteprima**: solo il motore e la riga di comando, non ancora provati su un vero Windows. Vedi [Dropwheel su Windows](docs/WINDOWS.it.md) |
+| Windows 10 e 11 | **Anteprima**: la stessa ruota, le schede dei lavori e gli editor, Shift durante un trascinamento da Esplora file, angolo attivo, scorciatoia, menu contestuale. Non ancora provata su un vero Windows. Vedi [Dropwheel su Windows](docs/WINDOWS.it.md) |
 | macOS | Non ancora |
 
 ### Dove stiamo andando
@@ -102,8 +102,8 @@ motore attraverso un piccolo protocollo JSON:
 | Motore delle azioni (Python) | Linux, più i rami Windows in anteprima per percorsi, cestino, appunti, processi e indicazioni di installazione | Le notifiche su Windows; lo stesso lavoro per macOS |
 | Protocollo | Righe JSON su stdio | Niente: qualsiasi interfaccia può parlarlo |
 | Riga di comando | Non richiede un compositor | Quasi niente: un primo passo naturale su una nuova piattaforma |
-| Attivazione | Scorciatoie globali di Hyprland e `hyprctl` | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
-| Ruota e finestre | Quickshell, Wayland layer-shell | Altri compositor Wayland potrebbero riutilizzarle; gli altri sistemi richiedono una nuova interfaccia |
+| Attivazione | Scorciatoie globali di Hyprland e `hyprctl`; su Windows, lo stato di Shift e del mouse e una scorciatoia registrata | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
+| Ruota e finestre | Quickshell, Wayland layer-shell; su Windows, lo stesso QML ospitato da PySide6 | Altri compositor Wayland potrebbero riutilizzarle; macOS potrebbe partire dall'host di Windows |
 | Pacchetti | `PKGBUILD`, `install.sh` | Pacchetti nativi per ogni sistema |
 
 Se vorresti Dropwheel sul tuo sistema, una
@@ -126,6 +126,19 @@ dropwheel start
 Ora inizia a trascinare un file e tocca <kbd>Shift</kbd>. I requisiti, l'elenco completo dei programmi
 facoltativi, l'aggiornamento e la disinstallazione sono nella [guida all'installazione](docs/INSTALL.it.md).
 
+Su Windows 10 o 11 (anteprima), con Python 3.11 o successivo e Git, in PowerShell:
+
+```powershell
+git clone https://github.com/haxurus/dropwheel.git
+cd dropwheel
+py -m pip install -e .
+dropwheel setup windows    # menu di Esplora file, Invia a, menu Start, avvio, font delle icone
+dropwheel start
+```
+
+Trascina dei file in Esplora file e tocca <kbd>Shift</kbd>, oppure copiali e premi <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>D</kbd>.
+I dettagli sono in [Dropwheel su Windows](docs/WINDOWS.it.md).
+
 ## Documentazione
 
 La documentazione completa è nella cartella [docs](docs/README.it.md).
@@ -140,7 +153,7 @@ La documentazione completa è nella cartella [docs](docs/README.it.md).
 | [Riferimento delle funzioni](docs/FUNCTIONS.it.md) | Ogni azione, anello per anello, con i programmi che richiede |
 | [Risoluzione dei problemi](docs/TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](docs/PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
-| [Windows](docs/WINDOWS.it.md) | L'anteprima per Windows: cosa funziona, come installarla, cosa manca |
+| [Windows](docs/WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 | [Architettura e sviluppo](docs/DEVELOPMENT.it.md) | Come stanno insieme i pezzi, avvio dal sorgente, test |
 | [Registro delle modifiche](CHANGELOG.it.md) | Cosa è cambiato in ogni versione |
 

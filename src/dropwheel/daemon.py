@@ -39,6 +39,7 @@ import importlib.util
 import json
 import logging
 import os
+import re
 import signal
 import sys
 import threading
@@ -178,6 +179,40 @@ def _sanitize(value: Any) -> Any:
     return value
 
 
+# ============================================================================ Windows paths
+# The QML shell splits paths on "/" and builds file:// URLs from them.  On Windows it gets
+# C:\x\y as /C:/x/y (the path of file:///C:/x/y) and sends that form back.
+
+_NT_DRIVE = re.compile(r"^[A-Za-z]:[\\/]")
+_NT_SHELL_DRIVE = re.compile(r"^/[A-Za-z]:/")
+
+
+def nt_to_shell(value: Any) -> Any:
+    """Every Windows path string in ``value`` (recursively) in the shell's form."""
+    if isinstance(value, str):
+        if _NT_DRIVE.match(value):
+            return "/" + value.replace("\\", "/")
+        if value.startswith("\\\\"):
+            return value.replace("\\", "/")
+        return value
+    if isinstance(value, dict):
+        return {k: nt_to_shell(v) for k, v in value.items()}
+    if isinstance(value, (list, tuple)):
+        return [nt_to_shell(v) for v in value]
+    return value
+
+
+def nt_from_shell(value: Any) -> Any:
+    """The reverse of :func:`nt_to_shell` (``/C:/x`` → ``C:/x``)."""
+    if isinstance(value, str):
+        return value[1:] if _NT_SHELL_DRIVE.match(value) else value
+    if isinstance(value, dict):
+        return {k: nt_from_shell(v) for k, v in value.items()}
+    if isinstance(value, list):
+        return [nt_from_shell(v) for v in value]
+    return value
+
+
 # ================================================================================== logging
 
 class _EventLogHandler(logging.Handler):
@@ -258,6 +293,8 @@ class Daemon:
     # ------------------------------------------------------------------ output
     def emit(self, obj: dict) -> None:
         """Write one message (thread safe; silently stops on a broken pipe)."""
+        if tools.WINDOWS:
+            obj = nt_to_shell(obj)
         try:
             data = encode_message(obj)
         except (TypeError, ValueError) as exc:
@@ -308,6 +345,8 @@ class Daemon:
         params = msg.get("params")
         if params is None:
             params = {}
+        if tools.WINDOWS:
+            params = nt_from_shell(params)
         if not isinstance(method, str) or not method:
             self._reply_error(rid, self._error("daemon.err.bad_request", "bad_request"))
             return

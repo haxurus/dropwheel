@@ -234,5 +234,24 @@
   "shell.err.not_running": "Dropwheel is not running: start it with \"dropwheel start\"",
   "shell.err.ipc_failed": "The shell did not accept the command \"{fn}\"",
   "shell.err.no_display": "No graphical session found (WAYLAND_DISPLAY is not set): run the command inside Hyprland",
-  "shell.err.start_failed": "Quickshell could not start the Dropwheel shell. Log: {log}"
+  "shell.err.start_failed": "Quickshell could not start the Dropwheel shell. Log: {log}",
+
+  "cli.arg.remove": "windows: remove the Explorer entries, the shortcuts and the icon font",
+  "cli.setup.win_would_menu": "would add \"Open in Dropwheel\" to the context menu of files and folders: {command}",
+  "cli.setup.win_would_font": "would download the icon font from {url}",
+  "cli.setup.win_menu": "Added \"{label}\" to the context menu of files and folders (Windows 11: under \"Show more options\")",
+  "cli.setup.win_font_present": "The icon font {family} is already installed",
+  "cli.setup.win_font_done": "Downloaded the icon font to {path}",
+  "cli.setup.win_font_failed": "Cannot download the icon font ({details}). Download {url} yourself and save it as {path}",
+  "cli.setup.win_would_remove": "would remove the registry keys {keys}",
+  "cli.setup.win_would_delete": "would delete {path}",
+  "cli.setup.win_removed_menu": "Removed \"Open in Dropwheel\" from the context menu",
+  "cli.setup.win_deleted": "Deleted {path}",
+  "cli.setup.win_next": "Start Dropwheel now (it will also start by itself at the next login):",
+  "cli.doctor.win_explorer": "Explorer",
+  "cli.doctor.win_explorer_ok": "context menu, Send to, Start menu",
+  "cli.doctor.win_explorer_missing": "not set up",
+  "cli.doctor.win_font": "Icon font",
+  "cli.doctor.win_font_missing": "missing: the icons show as words",
+  "win.menu.open": "Open in Dropwheel"
 }

@@ -234,5 +234,24 @@
   "shell.err.not_running": "Dropwheel non è in esecuzione: avvialo con \"dropwheel start\"",
   "shell.err.ipc_failed": "La shell non ha accettato il comando \"{fn}\"",
   "shell.err.no_display": "Nessuna sessione grafica trovata (WAYLAND_DISPLAY non è impostata): esegui il comando dentro Hyprland",
-  "shell.err.start_failed": "Quickshell non è riuscito ad avviare la shell di Dropwheel. Log: {log}"
+  "shell.err.start_failed": "Quickshell non è riuscito ad avviare la shell di Dropwheel. Log: {log}",
+
+  "cli.arg.remove": "windows: rimuove le voci di Esplora file, i collegamenti e il font delle icone",
+  "cli.setup.win_would_menu": "aggiungerebbe \"Apri in Dropwheel\" al menu contestuale di file e cartelle: {command}",
+  "cli.setup.win_would_font": "scaricherebbe il font delle icone da {url}",
+  "cli.setup.win_menu": "Aggiunto \"{label}\" al menu contestuale di file e cartelle (Windows 11: sotto \"Mostra altre opzioni\")",
+  "cli.setup.win_font_present": "Il font delle icone {family} è già installato",
+  "cli.setup.win_font_done": "Font delle icone scaricato in {path}",
+  "cli.setup.win_font_failed": "Impossibile scaricare il font delle icone ({details}). Scarica {url} a mano e salvalo come {path}",
+  "cli.setup.win_would_remove": "rimuoverebbe le chiavi di registro {keys}",
+  "cli.setup.win_would_delete": "cancellerebbe {path}",
+  "cli.setup.win_removed_menu": "Rimosso \"Apri in Dropwheel\" dal menu contestuale",
+  "cli.setup.win_deleted": "Cancellato {path}",
+  "cli.setup.win_next": "Avvia Dropwheel ora (partirà da solo anche al prossimo accesso):",
+  "cli.doctor.win_explorer": "Esplora file",
+  "cli.doctor.win_explorer_ok": "menu contestuale, Invia a, menu Start",
+  "cli.doctor.win_explorer_missing": "non configurato",
+  "cli.doctor.win_font": "Font delle icone",
+  "cli.doctor.win_font_missing": "mancante: le icone appaiono come parole",
+  "win.menu.open": "Apri in Dropwheel"
 }

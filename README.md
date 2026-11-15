@@ -39,9 +39,9 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel currently runs on Arch Linux with Hyprland only.** The goal is to extend it to other
-> operating systems: see [Platform support](#platform-support). A first preview of the engine and the
-> command line on Windows is described in [Dropwheel on Windows](docs/WINDOWS.md).
+> **Dropwheel is made for Arch Linux with Hyprland.** A preview for Windows 10 and 11, with the same
+> wheel, is described in [Dropwheel on Windows](docs/WINDOWS.md); it has not yet run on a real Windows
+> machine. The goal is to reach other systems too: see [Platform support](#platform-support).
 >
 > This is an early release. The code has an extensive automated test suite, but the complete
 > drag-and-drop flow has not yet been exercised on a live Hyprland session, and many paths that call
@@ -85,7 +85,7 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 | Arch-based distributions | Expected to work with the same packages, not tested |
 | Other Linux distributions | Not yet |
 | Other Wayland compositors, X11 | Not yet |
-| Windows 10 and 11 | **Preview**: the engine and the command line only, not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
+| Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
 | macOS | Not yet |
 
 ### Where this is going
@@ -102,8 +102,8 @@ through a small JSON protocol:
 | Action engine (Python) | Linux, plus Windows branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows; the same work for macOS |
 | Protocol | JSON lines over stdio | Nothing: any front end can speak it |
 | Command line | Needs no compositor | Mostly nothing: a natural first step on a new platform |
-| Trigger | Hyprland global shortcuts and `hyprctl` | A new way to detect Shift during a drag on each platform |
-| Wheel and dialogs | Quickshell, Wayland layer-shell | Other Wayland compositors may reuse them; other systems need a new front end |
+| Trigger | Hyprland global shortcuts and `hyprctl`; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
+| Wheel and dialogs | Quickshell, Wayland layer-shell; on Windows, the same QML hosted by PySide6 | Other Wayland compositors may reuse them; macOS could start from the Windows host |
 | Packaging | `PKGBUILD`, `install.sh` | Native packages for each system |
 
 If you would like to see Dropwheel on your system, an
@@ -125,6 +125,19 @@ dropwheel start
 Now start dragging a file and tap <kbd>Shift</kbd>. The requirements, the full set of optional programs,
 updating and uninstalling are in the [installation guide](docs/INSTALL.md).
 
+On Windows 10 or 11 (preview), with Python 3.11 or later and Git, in PowerShell:
+
+```powershell
+git clone https://github.com/haxurus/dropwheel.git
+cd dropwheel
+py -m pip install -e .
+dropwheel setup windows    # Explorer menu, Send to, Start menu, login, icon font
+dropwheel start
+```
+
+Drag files in Explorer and tap <kbd>Shift</kbd>, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>D</kbd> after
+copying them. The details are in [Dropwheel on Windows](docs/WINDOWS.md).
+
 ## Documentation
 
 The complete documentation is in the [docs](docs/README.md) folder.
@@ -139,7 +152,7 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Function reference](docs/FUNCTIONS.md) | Every action, ring by ring, with the programs it needs |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
-| [Windows](docs/WINDOWS.md) | The Windows preview: what works, how to install it, what is missing |
+| [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |
 | [Changelog](CHANGELOG.md) | What changed in each version |
 

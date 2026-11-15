@@ -66,6 +66,7 @@ src/dropwheel/
   notify.py     desktop notifications
   locales/{it,en}/*.json
   actions/      common, image, pdf, docs, media, archive, fonts, folder, web, system, custom
+  winshell/     Windows host: PySide6 + qml/Quickshell stand-ins, IPC, Explorer integration
 shell/                         Quickshell config, always started by path (qs -p shell/)
   shell.qml                    root: triggers, IpcHandler, wheel controller
   services/                    singletons: Theme, Backend, I18n, Hypr, Jobs
@@ -110,6 +111,25 @@ tests/                         pytest, one test_<module>.py per module
 - **The CLI** talks to a running shell over Quickshell IPC (`IpcHandler { target: "dropwheel" }`:
   `open(json)`, `openAtCursor()`, `close()`, `setHotzone(bool)`, `reload()`, `ping()`), or runs
   actions headless with its own `JobRunner`.
+
+### The Windows host (`src/dropwheel/winshell/`)
+
+On Windows `dropwheel start` runs `pythonw -P -m dropwheel.winshell` instead of `qs`. It loads the
+unchanged `shell/shell.qml` with `qml/Quickshell/` on the import path: QML and Python stand-ins for the
+Quickshell, Io, Hyprland, Wayland and Widgets types the shell uses (`native.py` registers the Python
+ones under `DropwheelHost`).
+
+- `PanelWindow` is a frameless top-most `Window`; its input mask is emulated by toggling
+  `WS_EX_TRANSPARENT` while the cursor is outside the mask (`win32.py`).
+- `Process` answers `hyprctl -j cursorpos|monitors`, `hyprpicker` and `zenity` in-process
+  (`virtual.py`); a drag is "the primary mouse button is held".
+- Triggers: a 25 ms poll of `GetAsyncKeyState` fires `shift`; `RegisterHotKey` fires `open`
+  (`trigger.shortcut`).
+- IPC: a `QTcpServer` on `127.0.0.1`, random port, token in `cache_dir()/winshell.json`
+  (`control.py` is the client). `open` with `"merge": true` coalesces Explorer's one-process-per-file
+  launches for 400 ms.
+- The daemon exchanges paths with the shell as `/C:/…` (`daemon.nt_to_shell` / `nt_from_shell`).
+- `explorer.py` writes the HKCU context menu and the `.lnk` shortcuts for `dropwheel setup windows`.
 
 ### Triggers (SPEC §2.1)
 

@@ -18,6 +18,7 @@ dropwheel run image.compress.balanced photo.jpg  # run an action without the int
 | `dropwheel undo [JOB]`, `history [-n N]` | Undo a job (the last one by default), show recent jobs |
 | `dropwheel doctor [--json] [--full]` | Check Hyprland, Quickshell and tools, with install commands |
 | `dropwheel setup hyprland\|nautilus\|dolphin\|nemo\|thunar\|desktop\|all` | Install an integration |
+| `dropwheel setup windows [--remove]` | On Windows: Explorer menu, *Send to*, Start menu and login shortcuts, icon font ([details](WINDOWS.md)) |
 | `dropwheel shares [--stop ID\|--stop-all]` | List or stop active LAN shares |
 | `dropwheel config [--path\|--init\|--edit]` | Show, create or edit the configuration |
 
@@ -30,6 +31,9 @@ Exit codes are `0` for success, `1` for an error, `2` for incorrect usage and `1
 | `DROPWHEEL_CONFIG` | Alternative path for `config.toml` |
 | `DROPWHEEL_DATA` | Data folder with the shell and integrations, normally `~/.local/share/dropwheel` or `/usr/share/dropwheel` |
 | `DROPWHEEL_BACKEND` | The service command used by the shell, set by `dropwheel start` |
+
+On Windows, `start`, `stop` and `status` control the Dropwheel host (`python -m dropwheel.winshell`)
+instead of Quickshell, and the other commands reach it over a local connection on `127.0.0.1`.
 
 ---
 
