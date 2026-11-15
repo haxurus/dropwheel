@@ -1,4 +1,4 @@
-"""The Qt host for Windows and GNOME: loads the Linux shell (``shell/shell.qml``) with PySide6, the Quickshell
+"""The Qt host for Windows, macOS and GNOME: loads the Linux shell (``shell/shell.qml``) with PySide6, the Quickshell
 stand-in modules in ``qml/`` first on the import path.
 
 * one instance per user (a lock file next to the state file);
@@ -24,7 +24,7 @@ from typing import Any
 
 from .. import config as cfgmod
 from .. import shellctl, util
-from . import control, win32
+from . import control, macos, win32
 
 log = logging.getLogger("dropwheel.qtshell")
 
@@ -219,13 +219,17 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     qInstallMessageHandler(_qt_message)
-    if not win32.WINDOWS and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
+    # (not on macOS: XQuartz sets DISPLAY there, and PySide6 has no xcb plugin for macOS)
+    if not (win32.WINDOWS or macos.MACOS) and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
         # GNOME: under XWayland the host may place its windows and keep them above the others
         os.environ["QT_QPA_PLATFORM"] = "xcb"
     app = QApplication(sys.argv[:1])
     from . import gnome
 
     gnome.ACTIVE = not win32.WINDOWS and app.platformName() == "xcb"
+    macos.ACTIVE = macos.MACOS and app.platformName() == "cocoa"
+    if macos.ACTIVE:
+        macos.init_app()
     app.setApplicationName("Dropwheel")
     app.setQuitOnLastWindowClosed(False)
     for folder in font_dirs():

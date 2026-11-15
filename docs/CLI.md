@@ -20,6 +20,7 @@ dropwheel run image.compress.balanced photo.jpg  # run an action without the int
 | `dropwheel setup hyprland\|nautilus\|dolphin\|nemo\|thunar\|desktop\|all` | Install an integration |
 | `dropwheel setup gnome [--remove]` | On GNOME: the Shell extension, the shortcut, starting at login, icon font ([details](GNOME.md)) |
 | `dropwheel setup windows [--remove]` | On Windows: Explorer menu, *Send to*, Start menu and login shortcuts, icon font ([details](WINDOWS.md)) |
+| `dropwheel setup macos [--remove]` | On macOS: the Finder Quick Action, starting at login (LaunchAgent), icon font ([details](MACOS.md)) |
 | `dropwheel shares [--stop ID\|--stop-all]` | List or stop active LAN shares |
 | `dropwheel config [--path\|--init\|--edit]` | Show, create or edit the configuration |
 
@@ -33,7 +34,7 @@ Exit codes are `0` for success, `1` for an error, `2` for incorrect usage and `1
 | `DROPWHEEL_DATA` | Data folder with the shell and integrations, normally `~/.local/share/dropwheel` or `/usr/share/dropwheel` |
 | `DROPWHEEL_BACKEND` | The service command used by the shell, set by `dropwheel start` |
 
-On Windows and GNOME, `start`, `stop` and `status` control the Dropwheel host (`python -m dropwheel.qtshell`)
+On Windows, macOS and GNOME, `start`, `stop` and `status` control the Dropwheel host (`python -m dropwheel.qtshell`)
 instead of Quickshell, and the other commands reach it over a local connection on `127.0.0.1`.
 
 ---

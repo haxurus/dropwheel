@@ -25,10 +25,10 @@ from PySide6.QtCore import (QAbstractNativeEventFilter, QByteArray, QCoreApplica
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtQml import QmlAnonymous, QmlAttached, QmlElement, qmlRegisterSingletonInstance
 
-from . import gnome, virtual, win32
+from . import gnome, macos, virtual, win32
 
-#: the desktop's answers: Win32 calls, or the GNOME Shell extension and X11 shapes
-plat: Any = win32 if win32.WINDOWS else gnome
+#: the desktop's answers: Win32 calls, Quartz and AppKit, or the GNOME Shell extension and X11 shapes
+plat: Any = win32 if win32.WINDOWS else macos if macos.MACOS else gnome
 
 log = logging.getLogger("dropwheel.qtshell")
 
@@ -701,8 +701,8 @@ class Desktop(QObject):
     primaryScreen = Property(QObject, _primary, notify=screensChanged)
     focusedScreenName = Property(str, lambda self: self._focused, notify=focusedScreenNameChanged)
     isWindows = Property(bool, lambda self: win32.WINDOWS, constant=True)
-    #: input masks and the drop-only hot zone are emulated (Windows, GNOME); offscreen tests skip them
-    emulatesInput = Property(bool, lambda self: win32.WINDOWS or gnome.ACTIVE, constant=True)
+    #: input masks and the drop-only hot zone are emulated (Windows, macOS, GNOME); offscreen tests skip them
+    emulatesInput = Property(bool, lambda self: win32.WINDOWS or macos.ACTIVE or gnome.ACTIVE, constant=True)
 
     def screen_at(self, x: float, y: float) -> ShellScreen | None:
         for s in self._screens:
@@ -734,7 +734,7 @@ class Desktop(QObject):
         if name != self._focused:
             self._focused = name
             self.focusedScreenNameChanged.emit()
-        if not (win32.WINDOWS or gnome.ACTIVE):
+        if not (win32.WINDOWS or macos.ACTIVE or gnome.ACTIVE):
             return
         buttons = plat.any_button_down()
         if buttons and not self._buttons:
@@ -793,7 +793,7 @@ class Desktop(QObject):
             if bool(window.flags() & Qt.WindowType.WindowDoesNotAcceptFocus) != bool(no_activate):
                 window.setFlag(Qt.WindowType.WindowDoesNotAcceptFocus, bool(no_activate))
             if not window.isVisible():
-                gnome.forget_window(int(window.winId()))
+                plat.forget_window(int(window.winId()))
                 return
         if window.isVisible():
             plat.set_window_style(int(window.winId()), click_through=click_through, no_activate=no_activate)

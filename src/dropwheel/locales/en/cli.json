@@ -236,7 +236,7 @@
   "shell.err.no_display": "No graphical session found (WAYLAND_DISPLAY is not set): run the command inside Hyprland",
   "shell.err.start_failed": "Quickshell could not start the Dropwheel shell. Log: {log}",
 
-  "cli.arg.remove": "gnome, windows: remove what the setup added (extension or Explorer entries, shortcuts, icon font)",
+  "cli.arg.remove": "gnome, windows, macos: remove what the setup added (extension or Explorer entries, shortcuts, icon font)",
   "cli.setup.win_would_menu": "would add \"Open in Dropwheel\" to the context menu of files and folders: {command}",
   "cli.setup.win_would_font": "would download the icon font from {url}",
   "cli.setup.win_menu": "Added \"{label}\" to the context menu of files and folders (Windows 11: under \"Show more options\")",
@@ -268,5 +268,14 @@
   "cli.doctor.gnome_extension_missing": "not installed or not enabled: no Shift during a drag",
   "cli.doctor.gnome_shortcut": "Keyboard shortcut",
   "cli.doctor.gnome_shortcut_ok": "set",
-  "cli.doctor.gnome_shortcut_missing": "not set"
+  "cli.doctor.gnome_shortcut_missing": "not set",
+  "cli.setup.mac_service": "Added the Finder Quick Action \"{label}\" (right click → Quick Actions)",
+  "cli.setup.mac_login": "Dropwheel will start by itself at every login ({path})",
+  "cli.setup.mac_no_shortcut": "macOS has no wheel shortcut yet: press Shift while dragging, use the Quick Action, or run \"dropwheel open\"",
+  "cli.doctor.mac_service": "Finder Quick Action",
+  "cli.doctor.mac_service_ok": "installed",
+  "cli.doctor.mac_service_missing": "not set up",
+  "cli.doctor.mac_login": "Start at login",
+  "cli.doctor.mac_login_ok": "LaunchAgent installed",
+  "cli.doctor.mac_login_missing": "not set up"
 }

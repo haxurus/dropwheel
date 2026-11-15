@@ -818,7 +818,7 @@ def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
     assert "runs on Arch Linux with Hyprland or GNOME, on Debian, Ubuntu, Fedora and openSUSE with GNOME" in readme
-    assert "have not yet run on a real GNOME or\n> Windows machine" in readme
+    assert "yet run on a real GNOME, Windows or Mac machine" in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
     assert "funziona su Arch Linux con Hyprland o GNOME, su Debian, Ubuntu, Fedora e openSUSE con GNOME" in italian

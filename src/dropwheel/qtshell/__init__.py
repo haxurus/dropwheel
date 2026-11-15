@@ -1,4 +1,4 @@
-"""The Qt front end for Windows and GNOME: the Linux QML shell hosted by PySide6
+"""The Qt front end for Windows, macOS and GNOME: the Linux QML shell hosted by PySide6
 (``python -m dropwheel.qtshell``).
 
 :mod:`.host` loads ``shell/shell.qml`` with the Quickshell stand-ins in ``qml/`` (backed by

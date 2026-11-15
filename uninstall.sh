@@ -20,6 +20,9 @@ if [[ $_locale == it* ]]; then IT=1; else IT=0; fi
 
 t() { if (( IT )); then printf '%s' "$1"; else printf '%s' "$2"; fi; }
 
+# lower-case (bash 3.2, the macOS one, has no ${var,,})
+lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
+
 if [[ -t 1 && -z ${NO_COLOR:-} && ${TERM:-dumb} != dumb ]]; then
     C_RESET=$'\e[0m' C_BOLD=$'\e[1m' C_RED=$'\e[1;31m' C_GREEN=$'\e[1;32m'
     C_YELLOW=$'\e[1;33m' C_BLUE=$'\e[1;34m' C_DIM=$'\e[2m'
@@ -85,7 +88,7 @@ ask() {
     while true; do
         printf '  %s?%s %s %s ' "$C_YELLOW" "$C_RESET" "$question" "$hint"
         read -r reply || reply=""
-        reply=${reply,,}
+        reply=$(lower "$reply")
         case $reply in
             '') [[ $default == y ]]; return ;;
             s|si|sì|y|yes) return 0 ;;
@@ -147,6 +150,14 @@ XDG_DATA_HOME_DIR=${XDG_DATA_HOME:-$HOME/.local/share}
 XDG_CONFIG_HOME_DIR=${XDG_CONFIG_HOME:-$HOME/.config}
 XDG_STATE_HOME_DIR=${XDG_STATE_HOME:-$HOME/.local/state}
 XDG_CACHE_HOME_DIR=${XDG_CACHE_HOME:-$HOME/.cache}
+MACOS=0
+if [[ $(uname -s) == Darwin ]]; then
+    # where Dropwheel keeps its settings, history and cache on macOS (util.py)
+    MACOS=1
+    XDG_CONFIG_HOME_DIR=${XDG_CONFIG_HOME:-$HOME/Library/Application Support}
+    XDG_STATE_HOME_DIR=${XDG_STATE_HOME:-$HOME/Library/Application Support}
+    XDG_CACHE_HOME_DIR=${XDG_CACHE_HOME:-$HOME/Library/Caches}
+fi
 
 (( EUID != 0 )) || die "$(t 'Non eseguire uninstall.sh come root: rimuove l'"'"'installazione del tuo utente.' \
                             'Do not run uninstall.sh as root: it removes your user installation.')"
@@ -216,6 +227,11 @@ if (( remove_files )) && [[ -d $XDG_DATA_HOME_DIR/gnome-shell/extensions/dropwhe
         && [[ -x $DW_BIN ]] && grep -qs 'DROPWHEEL-USER-WRAPPER' "$DW_BIN"; then
     step "GNOME"
     run_with_timeout "$DW_BIN" setup gnome --remove || warn "dropwheel setup gnome --remove"
+fi
+# macOS: the Finder Quick Action, the LaunchAgent and the icon font ("dropwheel setup macos")
+if (( remove_files && MACOS )) && [[ -x $DW_BIN ]] && grep -qs 'DROPWHEEL-USER-WRAPPER' "$DW_BIN"; then
+    step "macOS"
+    run_with_timeout "$DW_BIN" setup macos --remove || warn "dropwheel setup macos --remove"
 fi
 
 # --------------------------------------------------------------------------------------------
