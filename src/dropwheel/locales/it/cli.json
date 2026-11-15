@@ -283,6 +283,7 @@
   "cli.doctor.kde_shift": "Shift su Wayland",
   "cli.doctor.kde_shift_ok": "KWin passa i tasti modificatori ai programmi X11",
   "cli.doctor.kde_shift_off": "Impostazioni di sistema → Supporto per le applicazioni X11 (Legacy X11 App Support) è su Mai: consenti almeno i tasti modificatori, altrimenti Shift durante il trascinamento non si vede",
+  "cli.doctor.kde_shift_unknown": "non impostato: il valore predefinito di KWin dipende dalla versione di Plasma (i tasti modificatori dalla 6.2, niente prima): in Impostazioni di sistema → Supporto per le applicazioni X11 consenti almeno i tasti modificatori",
   "cli.setup.mac_service": "Aggiunta l'azione rapida del Finder \"{label}\" (tasto destro → Azioni rapide)",
   "cli.setup.mac_login": "Dropwheel partirà da solo a ogni accesso ({path})",
   "cli.setup.mac_no_shortcut": "Su macOS la scorciatoia della ruota non c'è ancora: premi Shift mentre trascini, usa l'azione rapida oppure \"dropwheel open\"",

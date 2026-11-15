@@ -80,19 +80,31 @@ def _dbus(dest: str, path: str, method: str, *args: str) -> str | None:
 
 
 def _reconfigure() -> bool:
-    """KWin reads ``kwinrc`` again: enabled scripts start, disabled ones stop."""
+    """KWin reads ``kwinrc`` again: enabled scripts that are not loaded start, disabled ones stop."""
     return _dbus("org.kde.KWin", "/KWin", "org.kde.KWin.reconfigure") is not None
+
+
+def _unload() -> None:
+    """Stop the running copy now (``reconfigure`` neither reloads a loaded script nor acts at once)."""
+    _dbus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.unloadScript", gnome_setup._str(SCRIPT_ID))
+
+
+def _unregister_shortcut() -> None:
+    """kglobalaccel keeps a script's shortcut after it stops, and keeps the old key when it starts again."""
+    _dbus("org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel.unregister",
+          gnome_setup._str("kwin"), gnome_setup._str("Dropwheel"))
 
 
 def state() -> dict[str, Any]:
     """What is installed (for ``doctor``).  ``loaded`` is None when KWin cannot be asked;
-    ``shift`` is False when KWin passes no key to X11 programs (Legacy X11 App Support: Never)."""
+    ``shift`` is False when KWin passes no key to X11 programs (Legacy X11 App Support: Never),
+    None when not set (KWin's default: Never before Plasma 6.2, the modifier keys since)."""
     enabled = (_kwinrc("Plugins", f"{SCRIPT_ID}Enabled") or "").strip() == "true"
     loaded = _dbus("org.kde.KWin", "/Scripting", "org.kde.kwin.Scripting.isScriptLoaded",
                    gnome_setup._str(SCRIPT_ID))
     eavesdrop = (_kwinrc("Xwayland", "XwaylandEavesdrops") or "").strip()
     return {"script": (script_dir() / "contents" / "code" / "main.js").is_file() and enabled,
-            "loaded": None if loaded is None else "true" in loaded, "shift": eavesdrop != "None",
+            "loaded": None if loaded is None else "true" in loaded, "shift": None if not eavesdrop else eavesdrop != "None",
             "autostart": gnome_setup.autostart_path().is_file(), "font": gnome_setup.font_installed()}
 
 
@@ -125,14 +137,16 @@ def install(text: str, *, dry: bool, say: Any) -> int:
     except OSError as exc:
         say("cli.setup.write_failed", path=f"{dest} ({exc})")
         return 1
-    # the shortcut is read by the script when it starts; off and on again reloads an older copy
+    # the script reads the shortcut when it starts: unload the running copy, reconfigure starts this one
+    old = (_kwinrc(f"Script-{SCRIPT_ID}", "Shortcut") or "").strip()
     if _kwinrc(f"Script-{SCRIPT_ID}", "Shortcut", accel) is None or \
-            _kwinrc("Plugins", f"{SCRIPT_ID}Enabled", "false") is None:
+            _kwinrc("Plugins", f"{SCRIPT_ID}Enabled", "true") is None:
         say("cli.setup.kde_enable_failed")
         code = 1
     else:
-        _reconfigure()
-        _kwinrc("Plugins", f"{SCRIPT_ID}Enabled", "true")
+        _unload()
+        if old != accel:
+            _unregister_shortcut()
         say("cli.setup.kde_script" if _reconfigure() else "cli.setup.kde_script_later", path=str(dest))
         if accel:
             say("cli.setup.kde_shortcut", accel=accel)
@@ -154,10 +168,9 @@ def remove(*, dry: bool, say: Any) -> int:
         return 0
     _kwinrc("Plugins", f"{SCRIPT_ID}Enabled", delete=True)
     _kwinrc(f"Script-{SCRIPT_ID}", "Shortcut", delete=True)
+    _unload()  # before its files go, or it runs until the next login
     _reconfigure()
-    # KWin keeps a stopped script's shortcut in kglobalaccel: drop it there
-    _dbus("org.kde.kglobalaccel", "/kglobalaccel", "org.kde.KGlobalAccel.unregister",
-          gnome_setup._str("kwin"), gnome_setup._str("Dropwheel"))
+    _unregister_shortcut()
     say("cli.setup.kde_unset")
     for p in paths:
         try:

@@ -1,6 +1,6 @@
 [Documentazione](README.it.md) · [English](KDE.md)
 
-# Dropwheel su KDE Plasma (Debian, Ubuntu, Arch)
+# Dropwheel su KDE Plasma (Debian, Ubuntu, Fedora, openSUSE, Arch)
 
 > [!WARNING]
 > **Questa versione è nuova e non è ancora stata eseguita in una vera sessione Plasma.** L'interfaccia ha
@@ -31,7 +31,7 @@ non dice ai programmi normali; su X11 per questo non serve altro.
 
 | | |
 |---|---|
-| **Sistema** | Debian 13, Ubuntu o Kubuntu 25.04 o successivo, Arch Linux, con Plasma 6 (Plasma 5, come su Kubuntu 24.04, non è supportato) |
+| **Sistema** | Debian 13, Ubuntu o Kubuntu 25.04 o successivo, Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16, Arch Linux, con Plasma 6 (Plasma 5, come su Kubuntu 24.04, non è supportato) |
 | **Python** | 3.11 o successivo (già presente su questi sistemi) |
 | **Sessione** | Plasma su Wayland o su X11 |
 
@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh |
 
 L'installer riconosce la sessione Plasma e chiede prima di ogni passo:
 
-- i pacchetti che servono a Dropwheel, installati con apt o pacman (sudo chiede la password una volta);
+- i pacchetti che servono a Dropwheel, installati con apt, dnf, zypper o pacman (sudo chiede la password una volta);
 - quali gruppi di funzioni facoltative vuoi (immagini, PDF, OCR, documenti, audio e video, archivi, font,
   condivisione): un elenco numerato, <kbd>Invio</kbd> li prende tutti;
 - su Debian e Ubuntu, un ambiente Python privato in `~/.local/share/dropwheel/venv` con PySide6 (80 MB da
@@ -86,8 +86,11 @@ descrive la ruota.
 
 - **Come viene riconosciuto un trascinamento.** Su X11, come su GNOME e Windows, "Shift mentre il tasto del
   mouse è premuto". Su Wayland KWin dice agli altri programmi quando un trascinamento inizia ma non quando
-  finisce, quindi un tocco di Shift entro 10 secondi dall'inizio di un trascinamento vale come "durante un
-  trascinamento". Un trascinamento che finisce altrove lascia la ruota aperta fino allo scadere di quei 10 secondi.
+  finisce, quindi Dropwheel considera i 10 secondi dopo l'inizio di un trascinamento come "durante un
+  trascinamento". Questo sbaglia nei due sensi: dopo un trascinamento breve, un tocco di Shift nel resto di
+  quei 10 secondi apre comunque la ruota per un trascinamento, e l'angolo attivo prende i clic destinati a
+  ciò che sta sotto; un trascinamento tenuto più di 10 secondi non si vede più (ricomincialo, oppure usa il
+  menu di Dolphin).
 - **Shift su Wayland** arriva a Dropwheel perché KWin passa i tasti modificatori ai programmi X11
   (Impostazioni di sistema → Supporto per le applicazioni X11, predefinito da Plasma 6.2). Con *Mai*, Shift
   durante un trascinamento non fa nulla; `dropwheel doctor` lo segnala.
@@ -109,7 +112,7 @@ descrive la ruota.
 
 ## Prossimi passi
 
-1. Provare su veri computer con Debian, Kubuntu e Arch, su Wayland e X11, con e senza ridimensionamento dello schermo.
+1. Provare su veri computer con Debian, Kubuntu, Fedora, openSUSE e Arch, su Wayland e X11, con e senza ridimensionamento dello schermo.
 2. Riconoscere la fine di un trascinamento su Wayland, se l'interfaccia di scripting di KWin darà i tasti del mouse.
 3. Colori che seguono lo schema di colori di Plasma.
 

@@ -9,11 +9,12 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
-- **KDE Plasma 6 on Debian, Ubuntu and Arch**, Wayland and X11, not yet tested in a real Plasma session. See
+- **KDE Plasma 6 on Debian, Ubuntu, Fedora, openSUSE and Arch**, Wayland and X11, not yet tested in a real Plasma session. See
   [Dropwheel on KDE Plasma](docs/KDE.md). The same wheel and host as on GNOME.
   - A KWin script tells Dropwheel where the pointer is (on Wayland) over D-Bus and registers the shortcut
     (`trigger.shortcut`, then System Settings → Shortcuts → KWin).
-  - Shift and the mouse buttons come from XWayland or X11; a drag from a Wayland program counts from its start.
+  - Shift and the mouse buttons come from XWayland or X11; a drag from a Wayland program counts for 10 seconds from its start
+    (its end is not reported).
   - `dropwheel setup kde [--remove]`: the KWin script, starting at login and the icon font; `dropwheel doctor`
     checks the script and KWin's Legacy X11 App Support setting. `install.sh` recognises Plasma
     (`--desktop kde`) and `uninstall.sh` removes the script.

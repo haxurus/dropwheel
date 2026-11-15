@@ -1307,8 +1307,9 @@ def _doctor_kde_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
     rows.append((yes if script else term.warn(), ctx.t("cli.doctor.kde_script"),
                  ctx.t("cli.doctor.kde_script_ok") if script else ctx.t("cli.doctor.kde_script_missing") + hint))
     if os.environ.get("WAYLAND_DISPLAY"):
+        shift = {True: "ok", False: "off", None: "unknown"}[st["shift"]]
         rows.append((yes if st["shift"] else term.warn(), ctx.t("cli.doctor.kde_shift"),
-                     ctx.t("cli.doctor.kde_shift_ok") if st["shift"] else ctx.t("cli.doctor.kde_shift_off")))
+                     ctx.t(f"cli.doctor.kde_shift_{shift}")))
     rows.append((yes if st["font"] else term.warn(), ctx.t("cli.doctor.win_font"),
                  "Material Symbols Rounded" if st["font"] else ctx.t("cli.doctor.win_font_missing") + hint))
 

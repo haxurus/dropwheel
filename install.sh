@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Dropwheel — interactive installer for Arch Linux (Hyprland, GNOME or KDE Plasma), Debian and Ubuntu
-# (GNOME or KDE Plasma), Fedora and openSUSE (GNOME), and macOS 13+ (preview, with Homebrew).
+# Dropwheel — interactive installer for Arch Linux (Hyprland, GNOME or KDE Plasma), Debian, Ubuntu,
+# Fedora and openSUSE (GNOME or KDE Plasma), and macOS 13+ (preview, with Homebrew).
 #
 # It runs under macOS's own bash 3.2 too: no ${var,,}, associative arrays or mapfile on the
 # paths macOS takes, and empty arrays are expanded as ${a[@]+"${a[@]}"} (set -u).
@@ -622,7 +622,7 @@ ARCH_GNOME_PKGS=(python python-pillow pyside6 wl-clipboard libnotify ttf-materia
 DEB_REQUIRED=(python3 python3-venv python3-pil wl-clipboard libnotify-bin libglib2.0-bin xdg-utils fontconfig
               libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
               libxcb-xkb1 libxkbcommon-x11-0 libegl1 libxext6)
-# Fedora and openSUSE with GNOME: PySide6 is packaged (its dependencies bring Qt and the X11 plugin);
+# Fedora and openSUSE (GNOME, KDE Plasma): PySide6 is packaged (its dependencies bring Qt and the X11 plugin);
 # openSUSE ships the QML modules (QtQuick, Shapes, Effects) in a package of their own
 FEDORA_REQUIRED=(python3 python3-pillow python3-pyside6 wl-clipboard libnotify glib2 xdg-utils fontconfig)
 SUSE_REQUIRED=(python3 python3-Pillow python3-pyside6 qt6-declarative-imports wl-clipboard libnotify-tools glib2-tools

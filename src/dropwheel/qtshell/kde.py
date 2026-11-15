@@ -9,7 +9,8 @@ and click-through are :mod:`gnome`'s X11 code.  The questions are answered like 
   6.2), so Shift is seen during a drag from Dolphin; the mouse buttons are seen only over X windows.
 * **a drag in progress** (Wayland): KWin claims the ``XdndSelection`` of XWayland every time a
   Wayland drag starts, which XFixes reports.  The end of a drag is not reported, so a drag
-  counts as held for :data:`DRAG_S` seconds after it started.
+  counts as held for :data:`DRAG_S` seconds after it started: wrongly so after a short drag,
+  and a drag longer than that is no longer seen.
 * **the pointer position** (Wayland): the Dropwheel KWin script (``integrations/kde/``) calls
   ``io.github.haxurus.Dropwheel.SetPointer(x, y, width, height)`` on the host while the
   pointer moves (KWin's ``workspace.cursorPos``; XWayland only knows it over X windows).  The
@@ -145,11 +146,25 @@ def set_pointer(x: float, y: float, width: float, height: float) -> None:
     may scale the X11 screen when "Legacy applications: apply scaling themselves" is chosen)."""
     from PySide6.QtGui import QGuiApplication
 
-    screen = QGuiApplication.primaryScreen()
-    if screen is None or width <= 0 or height <= 0:
-        return
-    g = screen.virtualGeometry()
-    _state["pushed"] = (g.x() + round(x * g.width() / width), g.y() + round(y * g.height() / height))
+    rects = [(s.geometry().x(), s.geometry().y(), s.geometry().width(), s.geometry().height(),
+              s.devicePixelRatio()) for s in QGuiApplication.screens()]
+    pushed = to_qt(x, y, width, height, rects)
+    if pushed is not None:
+        _state["pushed"] = pushed
+
+
+def to_qt(x: float, y: float, width: float, height: float,
+          rects: list[tuple[int, int, int, int, float]]) -> tuple[int, int] | None:
+    """KWin's position to Qt's, given each screen's Qt geometry and device pixel ratio.  Qt's xcb
+    plugin keeps every screen's origin in X11 pixels but divides its size by the ratio, so the X11
+    pixel is found first (linear over the X11 root), then made relative to its screen's origin."""
+    if not rects or width <= 0 or height <= 0:
+        return None
+    nx = x * max(gx + gw * d for gx, _, gw, _, d in rects) / width
+    ny = y * max(gy + gh * d for _, gy, _, gh, d in rects) / height
+    gx, gy, _, _, d = next((r for r in rects if r[0] <= nx < r[0] + r[2] * r[4] and r[1] <= ny < r[1] + r[3] * r[4]),
+                           rects[0])
+    return gx + round((nx - gx) / d), gy + round((ny - gy) / d)
 
 
 # ================================================================================ D-Bus service
@@ -157,7 +172,7 @@ def set_pointer(x: float, y: float, width: float, height: float) -> None:
 def serve(on_open: Callable[[], None]) -> bool:
     """Own ``io.github.haxurus.Dropwheel`` on the session bus for the KWin script."""
     from PySide6.QtCore import ClassInfo, QObject, Slot
-    from PySide6.QtDBus import QDBusConnection
+    from PySide6.QtDBus import QDBusConnection, QDBusConnectionInterface
 
     @ClassInfo({"D-Bus Interface": INTERFACE})
     class Service(QObject):
@@ -173,8 +188,13 @@ def serve(on_open: Callable[[], None]) -> bool:
 
     bus = QDBusConnection.sessionBus()
     service = Service()
-    if not (bus.isConnected() and bus.registerObject(PATH, service, QDBusConnection.RegisterOption.ExportAllSlots)
-            and bus.registerService(SERVICE)):
+    if not (bus.isConnected() and bus.registerObject(PATH, service, QDBusConnection.RegisterOption.ExportAllSlots)):
+        log.warning("cannot own %s on the session bus: no pointer position or shortcut from KWin", SERVICE)
+        return False
+    # queued: a host that is still quitting keeps the name a moment longer, then the bus hands it over
+    reply = bus.interface().registerService(SERVICE, QDBusConnectionInterface.ServiceQueueOptions.QueueService,
+                                            QDBusConnectionInterface.ServiceReplacementOptions.DontAllowReplacement)
+    if not reply.isValid() or reply.value() not in (1, 2):  # ServiceRegistered, ServiceQueued
         log.warning("cannot own %s on the session bus: no pointer position or shortcut from KWin", SERVICE)
         return False
     _state["service"] = service  # keep it alive

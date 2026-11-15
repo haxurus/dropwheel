@@ -42,8 +42,8 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian and Ubuntu with GNOME or KDE
-> Plasma, on Fedora and openSUSE with GNOME, and in preview on Windows 10 and 11 and macOS 13 or later.**
+> **Dropwheel runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian, Ubuntu, Fedora and openSUSE
+> with GNOME or KDE Plasma, and in preview on Windows 10 and 11 and macOS 13 or later.**
 > The GNOME, KDE Plasma, Windows and macOS versions are new and have not yet run on a real GNOME, Plasma,
 > Windows or Mac machine: see [Platform support](#platform-support).
 >
@@ -89,7 +89,7 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 | Arch Linux, GNOME 45+ | **New**: the same wheel, through a small GNOME Shell extension. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Debian 13, Ubuntu 24.04 or later, GNOME | **New**: as above, installed with apt. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Fedora 43 or later, openSUSE Tumbleweed and Leap 16, GNOME | **New**: as above, installed with dnf or zypper. See [Dropwheel on GNOME](docs/GNOME.md) |
-| Arch Linux, Debian 13, Ubuntu or Kubuntu 25.04 or later, KDE Plasma 6 | **New**: the same wheel, through a small KWin script, on Wayland and X11. See [Dropwheel on KDE Plasma](docs/KDE.md) |
+| Arch Linux, Debian 13, Ubuntu or Kubuntu 25.04 or later, Fedora 43 or later, openSUSE Tumbleweed and Leap 16, KDE Plasma 6 | **New**: the same wheel, through a small KWin script, on Wayland and X11. See [Dropwheel on KDE Plasma](docs/KDE.md) |
 | Arch-based distributions | Expected to work with the same packages, not tested |
 | Other compositors, other distributions | Not yet |
 | Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
@@ -153,7 +153,7 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
 | [GNOME](docs/GNOME.md) | Debian, Ubuntu, Fedora, openSUSE and Arch with GNOME: installing, the extension, differences from Hyprland |
-| [KDE Plasma](docs/KDE.md) | Debian, Ubuntu and Arch with Plasma 6: installing, the KWin script, differences from Hyprland |
+| [KDE Plasma](docs/KDE.md) | Debian, Ubuntu, Fedora, openSUSE and Arch with Plasma 6: installing, the KWin script, differences from Hyprland |
 | [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 | [macOS](docs/MACOS.md) | The macOS preview, never run on a real Mac: Homebrew, the Finder Quick Action, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |

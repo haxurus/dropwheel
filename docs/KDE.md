@@ -1,6 +1,6 @@
 [Documentation](README.md) · [Italiano](KDE.it.md)
 
-# Dropwheel on KDE Plasma (Debian, Ubuntu, Arch)
+# Dropwheel on KDE Plasma (Debian, Ubuntu, Fedora, openSUSE, Arch)
 
 > [!WARNING]
 > **This version is new, and it has not been run in a real Plasma session yet.** The interface has run on
@@ -31,7 +31,7 @@ programs; on X11 nothing extra is needed for that.
 
 | | |
 |---|---|
-| **System** | Debian 13, Ubuntu or Kubuntu 25.04 or later, Arch Linux, with Plasma 6 (Plasma 5, as on Kubuntu 24.04, is not supported) |
+| **System** | Debian 13, Ubuntu or Kubuntu 25.04 or later, Fedora 43 or later, openSUSE Tumbleweed and Leap 16, Arch Linux, with Plasma 6 (Plasma 5, as on Kubuntu 24.04, is not supported) |
 | **Python** | 3.11 or later (already there on these systems) |
 | **Session** | Plasma on Wayland or on X11 |
 
@@ -43,7 +43,7 @@ curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh |
 
 The installer recognises the Plasma session and asks before every step:
 
-- the packages Dropwheel needs, installed with apt or pacman (sudo asks for your password once);
+- the packages Dropwheel needs, installed with apt, dnf, zypper or pacman (sudo asks for your password once);
 - which groups of optional features you want (images, PDF, OCR, documents, audio and video, archives,
   fonts, sharing): a numbered list, <kbd>Enter</kbd> takes them all;
 - on Debian and Ubuntu, a private Python environment in `~/.local/share/dropwheel/venv` with PySide6
@@ -85,9 +85,11 @@ describes the wheel itself.
 ## Differences from Hyprland
 
 - **How a drag is recognised.** On X11, as on GNOME and Windows, "Shift while the mouse button is held".
-  On Wayland KWin tells other programs when a drag starts but not when it ends, so a Shift tap within
-  10 seconds of the start of a drag counts as "during a drag". A drag that ends elsewhere leaves the wheel
-  open until those 10 seconds are over.
+  On Wayland KWin tells other programs when a drag starts but not when it ends, so Dropwheel treats the
+  10 seconds after the start of a drag as "during a drag". That is wrong both ways: after a short drag,
+  a Shift tap in the rest of those 10 seconds still opens the wheel for a drag, and the hot corner takes
+  the clicks meant for what is under it; a drag held longer than 10 seconds is no longer seen (start it
+  again, or use the Dolphin menu).
 - **Shift on Wayland** reaches Dropwheel because KWin passes the modifier keys to X11 programs (System
   Settings → Legacy X11 App Support, the default since Plasma 6.2). With *Never* there, Shift during a drag
   does nothing; `dropwheel doctor` says so.
@@ -109,7 +111,7 @@ describes the wheel itself.
 
 ## What comes next
 
-1. Testing on real Debian, Kubuntu and Arch machines, on Wayland and X11, with and without display scaling.
+1. Testing on real Debian, Kubuntu, Fedora, openSUSE and Arch machines, on Wayland and X11, with and without display scaling.
 2. Recognising the end of a drag on Wayland, if KWin's scripting API ever reports the mouse buttons.
 3. Colours that follow the Plasma colour scheme.
 

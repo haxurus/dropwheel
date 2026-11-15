@@ -132,9 +132,9 @@ ones under `DropwheelHost`).
   for the pointer and the Shift and button state; `gnome_setup.py` installs it with the shortcut and autostart.
 - On KDE Plasma (`kde.py`, chosen when `XDG_CURRENT_DESKTOP` contains `KDE`) the host also runs on X11 and
   reads Shift and the buttons with `XQueryPointer` (on Wayland KWin passes the modifier keys to XWayland:
-  `XwaylandEavesdrops`). On Wayland the host owns `io.github.haxurus.Dropwheel` and the KWin script
+  `XwaylandEavesdrops`). The host owns `io.github.haxurus.Dropwheel` (on Wayland and X11) and the KWin script
   (`integrations/kde/`) calls `SetPointer(x, y, width, height)` from `workspace.cursorPos` while the pointer
-  moves, and `Open()` from its `registerShortcut`; a Wayland drag is seen when it starts (KWin claims
+  moves (used on Wayland only), and `Open()` from its `registerShortcut`; a Wayland drag is seen when it starts (KWin claims
   XWayland's `XdndSelection`, reported by XFixes) and counts as held for 10 s, since its end is not reported.
   `kde_setup.py` installs the script into `~/.local/share/kwin/scripts`, enables it in `kwinrc` and calls
   KWin's `reconfigure`.

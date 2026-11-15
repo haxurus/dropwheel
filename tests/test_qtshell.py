@@ -372,6 +372,56 @@ def test_kde_pointer_is_scaled_to_qt():
         kde._state["pushed"] = before
 
 
+@pytest.mark.parametrize("d", [1, 1.5, 2])
+def test_kde_pointer_with_two_scaled_screens(d):
+    # two 1920x1080 monitors side by side; Qt's xcb keeps each origin in X11 pixels, sizes divided by d
+    w, h = round(1920 / d), round(1080 / d)
+    rects = [(0, 0, w, h, d), (1920, 0, w, h, d)]
+    assert kde.to_qt(10, 20, 2 * w, h, rects) == (10, 20)
+    # 40 logical pixels into the second monitor: X11 pixel 1920 + 40 * d, Qt's 1920 + 40
+    assert kde.to_qt(w + 40, 100, 2 * w, h, rects) == (1960, 100)
+    assert kde.to_qt(1, 1, 0, 0, rects) is None and kde.to_qt(1, 1, 10, 10, []) is None
+
+
+def test_kde_shift_state_when_kwinrc_has_no_setting(monkeypatch):
+    values = {}
+    monkeypatch.setattr(kde_setup, "_kwinrc", lambda group, key, value=None, **kw: values.get(key))
+    monkeypatch.setattr(kde_setup, "_dbus", lambda *a: None)
+    assert kde_setup.state()["shift"] is None  # KWin's default changed in Plasma 6.2
+    values["XwaylandEavesdrops"] = "None\n"
+    assert kde_setup.state()["shift"] is False
+    values["XwaylandEavesdrops"] = "Modifiers"
+    assert kde_setup.state()["shift"] is True
+
+
+def test_setup_kde_reloads_a_running_script(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("DROPWHEEL_DATA", str(ROOT))
+    calls, rc = [], {"Shortcut": "Ctrl+Alt+D"}
+
+    def kwinrc(group, key, value=None, *, delete=False):
+        calls.append(("kwinrc", key, value, delete))
+        return rc.get(key, "") if value is None and not delete else ""
+
+    monkeypatch.setattr(kde_setup, "_kwinrc", kwinrc)
+    monkeypatch.setattr(kde_setup, "_dbus", lambda dest, path, method, *a: calls.append(method) or "()")
+    monkeypatch.setattr(kde_setup.gnome_setup, "write_autostart", lambda cmd, say: True)
+    monkeypatch.setattr(kde_setup.gnome_setup, "install_font", lambda say: True)
+    say = lambda key, **fmt: None  # noqa: E731
+    assert kde_setup.install("ctrl+alt+d", dry=False, say=say) == 0
+    methods = [c for c in calls if isinstance(c, str)]
+    # same shortcut: unloaded (reconfigure alone keeps the old copy) and started again, shortcut kept
+    assert methods == ["org.kde.kwin.Scripting.unloadScript", "org.kde.KWin.reconfigure"]
+    calls.clear()
+    assert kde_setup.install("ctrl+alt+e", dry=False, say=say) == 0
+    assert "org.kde.KGlobalAccel.unregister" in calls  # or kglobalaccel keeps the old key
+    calls.clear()
+    assert kde_setup.remove(dry=False, say=say) == 0
+    methods = [c for c in calls if isinstance(c, str)]
+    assert methods[0] == "org.kde.kwin.Scripting.unloadScript" and not kde_setup.script_dir().exists()
+
+
 def test_the_kwin_script_matches_the_backend():
     pkg = ROOT / "integrations" / "kde" / kde.SCRIPT_ID
     meta = json.loads((pkg / "metadata.json").read_text(encoding="utf-8"))

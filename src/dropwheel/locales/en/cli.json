@@ -283,6 +283,7 @@
   "cli.doctor.kde_shift": "Shift on Wayland",
   "cli.doctor.kde_shift_ok": "KWin passes the modifier keys to X11 programs",
   "cli.doctor.kde_shift_off": "System Settings → Legacy X11 App Support is set to Never: allow at least the modifier keys, or Shift during a drag is not seen",
+  "cli.doctor.kde_shift_unknown": "not set: KWin's default depends on the Plasma version (the modifier keys from 6.2, nothing before): in System Settings → Legacy X11 App Support allow at least the modifier keys",
   "cli.setup.mac_service": "Added the Finder Quick Action \"{label}\" (right click → Quick Actions)",
   "cli.setup.mac_login": "Dropwheel will start by itself at every login ({path})",
   "cli.setup.mac_no_shortcut": "macOS has no wheel shortcut yet: press Shift while dragging, use the Quick Action, or run \"dropwheel open\"",

@@ -220,8 +220,12 @@ def main(argv: list[str] | None = None) -> int:
 
     qInstallMessageHandler(_qt_message)
     # (not on macOS: XQuartz sets DISPLAY there, and PySide6 has no xcb plugin for macOS)
-    if not (win32.WINDOWS or macos.MACOS) and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
+    preset = os.environ.get("QT_QPA_PLATFORM", "")
+    if not (win32.WINDOWS or macos.MACOS) and preset not in ("xcb", "offscreen") and os.environ.get("DISPLAY"):
         # GNOME, KDE: under XWayland the host may place its windows and keep them above the others
+        # (a session-wide "wayland" would leave it without pointer, Shift or click-through)
+        if preset:
+            log.warning("QT_QPA_PLATFORM=%s ignored: the Dropwheel host needs xcb (XWayland)", preset)
         os.environ["QT_QPA_PLATFORM"] = "xcb"
     app = QApplication(sys.argv[:1])
     from . import gnome

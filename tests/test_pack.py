@@ -817,11 +817,11 @@ def test_lua_module_survives_a_failing_bind() -> None:
 def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
-    assert "runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian and Ubuntu with GNOME or KDE\n> Plasma, on Fedora and openSUSE with GNOME, and in preview on Windows 10 and 11 and macOS 13 or later." in readme
+    assert "runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian, Ubuntu, Fedora and openSUSE\n> with GNOME or KDE Plasma, and in preview on Windows 10 and 11 and macOS 13 or later." in readme
     assert "have not yet run on a real GNOME, Plasma," in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
-    assert "funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian e Ubuntu con GNOME o KDE\n> Plasma, su Fedora e openSUSE con GNOME, e in anteprima su Windows 10 e 11 e macOS 13 o successivo." in italian
+    assert "funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian, Ubuntu, Fedora e openSUSE\n> con GNOME o KDE Plasma, e in anteprima su Windows 10 e 11 e macOS 13 o successivo." in italian
     assert "non sono ancora state eseguite su un vero" in italian
     assert "estendere Dropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
@@ -861,7 +861,7 @@ def test_setup_kde_round_trip_through_the_scripts(sandbox: Sandbox) -> None:
     calls = log.read_text(encoding="utf-8")
     assert "kwriteconfig6 --file kwinrc --group Plugins --key dropwheelEnabled true" in calls
     assert "--group Script-dropwheel --key Shortcut Ctrl+Alt+D" in calls
-    assert "org.kde.KWin.reconfigure" in calls
+    assert "org.kde.KWin.reconfigure" in calls and "org.kde.kwin.Scripting.unloadScript" in calls
     sandbox.uninstall("--yes")
     assert not script.exists() and not (sandbox.config / "autostart" / "dropwheel.desktop").exists()
     assert "--key dropwheelEnabled --delete" in log.read_text(encoding="utf-8")

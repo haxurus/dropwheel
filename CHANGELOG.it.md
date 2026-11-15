@@ -9,11 +9,12 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
 
 ### Aggiunto
 
-- **KDE Plasma 6 su Debian, Ubuntu e Arch**, Wayland e X11, non ancora provato in una vera sessione Plasma. Vedi
+- **KDE Plasma 6 su Debian, Ubuntu, Fedora, openSUSE e Arch**, Wayland e X11, non ancora provato in una vera sessione Plasma. Vedi
   [Dropwheel su KDE Plasma](docs/KDE.it.md). La stessa ruota e lo stesso host di GNOME.
   - Uno script di KWin dice a Dropwheel dove si trova il puntatore (su Wayland) tramite D-Bus e registra la
     scorciatoia (`trigger.shortcut`, poi Impostazioni di sistema → Scorciatoie → KWin).
-  - Shift e i tasti del mouse arrivano da XWayland o X11; un trascinamento da un programma Wayland conta dal suo inizio.
+  - Shift e i tasti del mouse arrivano da XWayland o X11; un trascinamento da un programma Wayland conta per 10 secondi
+    dal suo inizio (la fine non viene comunicata).
   - `dropwheel setup kde [--remove]`: lo script di KWin, l'avvio all'accesso e il font delle icone; `dropwheel doctor`
     controlla lo script e l'impostazione di KWin per il supporto delle applicazioni X11. `install.sh` riconosce
     Plasma (`--desktop kde`) e `uninstall.sh` rimuove lo script.

@@ -42,8 +42,8 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian e Ubuntu con GNOME o KDE
-> Plasma, su Fedora e openSUSE con GNOME, e in anteprima su Windows 10 e 11 e macOS 13 o successivo.** Le
+> **Dropwheel funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian, Ubuntu, Fedora e openSUSE
+> con GNOME o KDE Plasma, e in anteprima su Windows 10 e 11 e macOS 13 o successivo.** Le
 > versioni per GNOME, KDE Plasma, Windows e macOS sono nuove e non sono ancora state eseguite su un vero
 > computer con GNOME, Plasma, Windows o macOS: vedi
 > [Piattaforme supportate](#piattaforme-supportate).
@@ -90,7 +90,7 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 | Arch Linux, GNOME 45+ | **Nuovo**: la stessa ruota, tramite una piccola estensione di GNOME Shell. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
 | Debian 13, Ubuntu 24.04 o successivo, GNOME | **Nuovo**: come sopra, installato con apt. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
 | Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16, GNOME | **Nuovo**: come sopra, installato con dnf o zypper. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
-| Arch Linux, Debian 13, Ubuntu o Kubuntu 25.04 o successivo, KDE Plasma 6 | **Nuovo**: la stessa ruota, tramite un piccolo script di KWin, su Wayland e X11. Vedi [Dropwheel su KDE Plasma](docs/KDE.it.md) |
+| Arch Linux, Debian 13, Ubuntu o Kubuntu 25.04 o successivo, Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16, KDE Plasma 6 | **Nuovo**: la stessa ruota, tramite un piccolo script di KWin, su Wayland e X11. Vedi [Dropwheel su KDE Plasma](docs/KDE.it.md) |
 | Distribuzioni basate su Arch | Dovrebbero funzionare con gli stessi pacchetti, non provate |
 | Altri compositor, altre distribuzioni | Non ancora |
 | Windows 10 e 11 | **Anteprima**: la stessa ruota, le schede dei lavori e gli editor, Shift durante un trascinamento da Esplora file, angolo attivo, scorciatoia, menu contestuale. Non ancora provata su un vero Windows. Vedi [Dropwheel su Windows](docs/WINDOWS.it.md) |
@@ -155,7 +155,7 @@ La documentazione completa è nella cartella [docs](docs/README.it.md).
 | [Risoluzione dei problemi](docs/TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](docs/PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
 | [GNOME](docs/GNOME.it.md) | Debian, Ubuntu, Fedora, openSUSE e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
-| [KDE Plasma](docs/KDE.it.md) | Debian, Ubuntu e Arch con Plasma 6: installazione, lo script di KWin, differenze da Hyprland |
+| [KDE Plasma](docs/KDE.it.md) | Debian, Ubuntu, Fedora, openSUSE e Arch con Plasma 6: installazione, lo script di KWin, differenze da Hyprland |
 | [Windows](docs/WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 | [macOS](docs/MACOS.it.md) | L'anteprima per macOS, mai eseguita su un Mac vero: Homebrew, l'azione rapida del Finder, differenze da Linux |
 | [Architettura e sviluppo](docs/DEVELOPMENT.it.md) | Come stanno insieme i pezzi, avvio dal sorgente, test |
