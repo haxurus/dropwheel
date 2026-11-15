@@ -100,28 +100,27 @@ def cursor() -> tuple[int, int] | None:
     return round(p.x), round(p.y)
 
 
-_styled: dict[int, tuple[bool, bool]] = {}
-
-
 def set_window_style(wid: int, *, click_through: bool, no_activate: bool) -> None:
     """Input pass-through and the always-on-top behaviour of the window of the ``NSView`` ``wid``.
-    (``no_activate`` is the ``Qt.WindowDoesNotAcceptFocus`` flag, set by the caller.)"""
-    if not MACOS or not wid or _styled.get(wid) == (click_through, no_activate):
+    (``no_activate`` is the ``Qt.WindowDoesNotAcceptFocus`` flag, set by the caller.)  The window's
+    own state is checked each time, not a cache keyed by ``wid``: a freed view's address can come back."""
+    if not MACOS or not wid:
         return
     window = _msg(wid, "window")
     if not window:
         return
+    if (bool(_msg(window, "ignoresMouseEvents", restype=ctypes.c_bool)) == click_through
+            and _msg(window, "level", restype=ctypes.c_long) == STATUS_WINDOW_LEVEL):
+        return  # the mask timer asks every 30 ms
     _msg(window, "setIgnoresMouseEvents:", click_through, restype=None, argtypes=(ctypes.c_bool,))
     _msg(window, "setLevel:", STATUS_WINDOW_LEVEL, restype=None, argtypes=(ctypes.c_long,))
     _msg(window, "setCollectionBehavior:", JOIN_ALL_SPACES | FULL_SCREEN_AUXILIARY, restype=None,
          argtypes=(ctypes.c_ulong,))
     _msg(window, "setHidesOnDeactivate:", False, restype=None, argtypes=(ctypes.c_bool,))
-    _styled[wid] = (click_through, no_activate)
 
 
 def forget_window(wid: int) -> None:
-    """Qt may reset the window's settings when it hides it or changes its flags: apply them again."""
-    _styled.pop(wid, None)
+    """Nothing is cached per window (see :func:`set_window_style`)."""
 
 
 def _app() -> int | None:
@@ -130,7 +129,7 @@ def _app() -> int | None:
 
 
 def init_app() -> None:
-    """An accessory app: no Dock icon and no menu bar, like a menu bar utility."""
+    """An accessory app: no Dock icon; its (empty) menu bar shows only while one of its windows is active."""
     app = _app() if MACOS else None
     if app:
         _msg(app, "setActivationPolicy:", ACTIVATION_ACCESSORY, restype=ctypes.c_bool, argtypes=(ctypes.c_long,))

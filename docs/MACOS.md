@@ -23,7 +23,8 @@ and the actions are the same Python engine.
 | Finder: *Open in Dropwheel* under *Quick Actions* | **Preview** |
 | Start at login | **Preview**: a LaunchAgent |
 | Command line | **Preview**: every command, including `start`, `stop`, `open` |
-| Colour picker and file picker in the editors | **Preview**: Dropwheel's own picker and the macOS file dialog |
+| Colour picker in the editors | **Preview, untested**: needs the Screen Recording permission, see below |
+| File picker in the editors | **Preview**: the macOS file dialog |
 | Shortcut | Not yet: use Shift during a drag, the Quick Action or `dropwheel open` |
 | Colours from Caelestia | Not available: Dropwheel uses its built-in dark palette |
 | Desktop notifications | Not yet: the job cards show every result |
@@ -36,7 +37,7 @@ and the actions are the same Python engine.
 |---|---|
 | **System** | macOS 13 Ventura or later, Apple silicon or Intel |
 | **Homebrew** | From [brew.sh](https://brew.sh): Python and the optional programs come from there |
-| **Python** | 3.11 or later: `brew install python@3.13` (the `python3` of the Command Line Tools is too old) |
+| **Python** | 3.11 to 3.15 (the range PySide6-Essentials has wheels for): `brew install python@3.13`. The `python3` of the Command Line Tools is too old |
 
 **Install with one command**
 
@@ -127,12 +128,16 @@ The `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` va
   been checked on a real Mac.
 - **No shortcut yet.** A global shortcut needs Carbon's `RegisterEventHotKey`, which is not done yet.
   `trigger.shortcut` is ignored on macOS.
-- **No Dock icon.** Dropwheel runs as a background helper, without a Dock icon or a menu bar.
+- **No Dock icon.** Dropwheel runs as a background helper, without a Dock icon. While one of its windows
+  has the focus (an editor, for example) the menu bar shows Dropwheel's, almost empty, menu.
 - **Unsigned.** Dropwheel is not an app bundle and is not signed or notarised: it is Homebrew's Python
   running Dropwheel's code. Gatekeeper does not get involved, because nothing is downloaded through a
   browser, but macOS may show *Background Items Added* for the LaunchAgent (listed as Python, in System
   Settings → General → Login Items), and may ask whether Python may open files in Desktop, Documents or
   Downloads the first time an action works there.
+- **Colour picker.** Reading the colour under the pointer is a screen capture for macOS: the first time,
+  it asks to give Python the Screen Recording permission (System Settings → Privacy & Security →
+  Screen & System Audio Recording). Without it only the desktop background can be sampled. Untested.
 - **Colours.** Caelestia's colours do not exist on macOS: the interface uses its built-in dark palette.
 - **Actions that are not available.** AppImages, Linux disk images and distribution packages are not
   loaded at all. Setting the wallpaper, the monitor size preset, annotating with satty or swappy and
@@ -155,6 +160,7 @@ The `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` and `XDG_CACHE_HOME` va
 | *Open in Dropwheel* is not in the menu | Look under *Services* too. Turn it on in System Settings → Keyboard → Keyboard Shortcuts → Services, or log out and back in once |
 | Shift during a drag does nothing | Check that Dropwheel runs, then report your macOS version: whether macOS lets it read the Shift key is unverified |
 | The wheel opens in the wrong place, or behind a full-screen app | Report it with your screens and their scaling: none of this has been tried on a Mac |
+| The colour picker returns the wallpaper colour | Give Python the Screen Recording permission in System Settings → Privacy & Security, then `dropwheel restart` |
 | A program is reported as missing although it is installed | Run `dropwheel restart`; programs outside Homebrew's folders must be in the `PATH` of the session |
 
 ## What comes next

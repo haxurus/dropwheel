@@ -23,7 +23,8 @@ da PySide6, e le azioni sono lo stesso motore Python.
 | Finder: *Apri in Dropwheel* tra le *Azioni rapide* | **Anteprima** |
 | Avvio all'accesso | **Anteprima**: un LaunchAgent |
 | Riga di comando | **Anteprima**: tutti i comandi, compresi `start`, `stop`, `open` |
-| Selettore di colore e di file negli editor | **Anteprima**: il selettore di Dropwheel e la finestra dei file di macOS |
+| Selettore di colore negli editor | **Anteprima, non provata**: serve il permesso di Registrazione schermo, vedi sotto |
+| Selettore di file negli editor | **Anteprima**: la finestra dei file di macOS |
 | Scorciatoia | Non ancora: usa Shift durante un trascinamento, l'azione rapida oppure `dropwheel open` |
 | Colori di Caelestia | Non disponibili: Dropwheel usa la sua tavolozza scura |
 | Notifiche del desktop | Non ancora: le schede dei lavori mostrano ogni risultato |
@@ -36,7 +37,7 @@ da PySide6, e le azioni sono lo stesso motore Python.
 |---|---|
 | **Sistema** | macOS 13 Ventura o successivo, Apple silicon o Intel |
 | **Homebrew** | Da [brew.sh](https://brew.sh): Python e i programmi facoltativi arrivano da lì |
-| **Python** | 3.11 o successivo: `brew install python@3.13` (il `python3` dei Command Line Tools è troppo vecchio) |
+| **Python** | Da 3.11 a 3.15 (le versioni per cui PySide6-Essentials ha i wheel): `brew install python@3.13`. Il `python3` dei Command Line Tools è troppo vecchio |
 
 **Installazione con un comando**
 
@@ -128,13 +129,17 @@ Le variabili `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` e `XDG_CACHE_H
   né di Monitoraggio dell'input, ma non è stato verificato su un Mac vero.
 - **Ancora nessuna scorciatoia.** Una scorciatoia globale richiede `RegisterEventHotKey` di Carbon, che
   non è ancora fatto. Su macOS `trigger.shortcut` viene ignorato.
-- **Nessuna icona nel Dock.** Dropwheel gira come aiutante in background, senza icona nel Dock né barra
-  dei menu.
+- **Nessuna icona nel Dock.** Dropwheel gira come aiutante in background, senza icona nel Dock. Mentre una
+  delle sue finestre ha il focus (un editor, per esempio) la barra dei menu mostra il menu, quasi vuoto, di Dropwheel.
 - **Non firmato.** Dropwheel non è un pacchetto app e non è firmato né autenticato da Apple: è il Python
   di Homebrew che esegue il codice di Dropwheel. Gatekeeper non interviene, perché niente viene scaricato
   da un browser, ma macOS può mostrare *Elementi in background aggiunti* per il LaunchAgent (elencato come
   Python, in Impostazioni di Sistema → Generali → Elementi login), e può chiedere se Python può aprire i
   file di Scrivania, Documenti o Download la prima volta che un'azione lavora lì.
+- **Selettore di colore.** Per macOS leggere il colore sotto il puntatore è una registrazione dello schermo:
+  la prima volta chiede di dare a Python il permesso di Registrazione schermo (Impostazioni di Sistema →
+  Privacy e sicurezza → Registrazione schermo e audio di sistema). Senza, si può campionare solo lo sfondo
+  della scrivania. Non provato.
 - **Colori.** I colori di Caelestia non esistono su macOS: l'interfaccia usa la sua tavolozza scura.
 - **Azioni non disponibili.** AppImage, immagini disco Linux e pacchetti delle distribuzioni non vengono
   caricati affatto. Impostare lo sfondo, il formato delle dimensioni del monitor, annotare con satty o
@@ -158,6 +163,7 @@ Le variabili `XDG_CONFIG_HOME`, `XDG_DATA_HOME`, `XDG_STATE_HOME` e `XDG_CACHE_H
 | *Apri in Dropwheel* non è nel menu | Guarda anche tra i *Servizi*. Attivalo in Impostazioni di Sistema → Tastiera → Abbreviazioni da tastiera → Servizi, oppure esci e rientra una volta |
 | Shift durante un trascinamento non fa niente | Controlla che Dropwheel sia in esecuzione, poi segnala la tua versione di macOS: non è verificato che macOS gli lasci leggere il tasto Shift |
 | La ruota si apre nel posto sbagliato, o dietro un'app a tutto schermo | Segnalalo indicando i tuoi schermi e il loro ridimensionamento: niente di questo è stato provato su un Mac |
+| Il selettore di colore restituisce il colore dello sfondo | Dai a Python il permesso di Registrazione schermo in Impostazioni di Sistema → Privacy e sicurezza, poi `dropwheel restart` |
 | Un programma risulta mancante anche se è installato | Esegui `dropwheel restart`; i programmi fuori dalle cartelle di Homebrew devono essere nel `PATH` della sessione |
 
 ## Prossimi passi

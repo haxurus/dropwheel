@@ -23,7 +23,7 @@ from pathlib import Path
 from typing import Any
 
 from .. import config as cfgmod
-from .. import shellctl, util
+from .. import shellctl, tools, util
 from . import control, macos, win32
 
 log = logging.getLogger("dropwheel.qtshell")
@@ -60,6 +60,7 @@ def _setup_logging(foreground: bool) -> None:
 def _backend_env() -> None:
     """``DROPWHEEL_BACKEND`` (the daemon under ``pythonw``: no console window), ``DROPWHEEL_DATA``,
     ``PYTHONPATH`` for checkouts — what ``shellctl.shell_env`` gives ``qs`` on Linux."""
+    tools.extend_path()
     env = shellctl.shell_env()
     argv = [control.gui_python(), "-P", "-m", "dropwheel", "daemon"]
     env["DROPWHEEL_BACKEND"] = shlex.join(argv)
@@ -223,6 +224,9 @@ def main(argv: list[str] | None = None) -> int:
     if not (win32.WINDOWS or macos.MACOS) and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
         # GNOME, KDE: under XWayland the host may place its windows and keep them above the others
         os.environ["QT_QPA_PLATFORM"] = "xcb"
+    if macos.MACOS:
+        # keep Qt from turning the process into a regular Dock app before init_app makes it an accessory
+        os.environ.setdefault("QT_MAC_DISABLE_FOREGROUND_APPLICATION_TRANSFORM", "1")
     app = QApplication(sys.argv[:1])
     from . import gnome
 

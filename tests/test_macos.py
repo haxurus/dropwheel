@@ -67,6 +67,40 @@ def test_install_hint_uses_brew(mac):
     assert tools.install_hint(["7z", "gs", "qrencode", "pdftoppm"]) == "brew install sevenzip ghostscript qrencode poppler"
     assert "pacman" not in tools.install_hint(["exiftool", "magick", "yt-dlp", "qpdf", "pandoc"])
     assert tools.install_hint(["rembg"]) == "pipx install 'rembg[cpu,cli]'"
+    assert tools.install_hint(["gpg", "woff2_compress", "ebook-meta"]) == \
+        "brew install gnupg woff2 && brew install --cask calibre"
+
+
+def test_extend_path_adds_homebrew_once(mac, monkeypatch):
+    """A LaunchAgent gets launchd's PATH: the tools Dropwheel starts must find ffmpeg, gs, tesseract."""
+    monkeypatch.setattr(tools, "EXTRA_DIRS", ("/opt/homebrew/bin", "/usr/bin"))
+    monkeypatch.setenv("PATH", "/usr/bin:/bin")
+    tools.extend_path()
+    tools.extend_path()
+    assert os.environ["PATH"] == "/usr/bin:/bin:/opt/homebrew/bin"
+
+
+def test_extend_path_leaves_other_systems_alone(monkeypatch):
+    monkeypatch.setattr(tools, "MACOS", False)
+    monkeypatch.setenv("PATH", "/usr/bin")
+    tools.extend_path()
+    assert os.environ["PATH"] == "/usr/bin"
+
+
+def test_stop_share_never_signals_a_pid_on_macos(home, monkeypatch):
+    """No /proc to tell a reused pid apart, and the state survives a reboot: remove the state file
+    (the server watches it) instead of sending a signal to whatever owns the pid now."""
+    from dropwheel import share
+
+    monkeypatch.setattr(sys, "platform", "darwin")
+    monkeypatch.setattr(share, "shares_dir", lambda: home)
+    (home / "abcd.json").write_text(json.dumps({"pid": 4242}))
+    monkeypatch.setattr(share, "_pid_alive", lambda pid: (home / "abcd.json").exists())
+    monkeypatch.setattr(share, "_is_our_server", lambda pid, sid: True)
+    kills = []
+    monkeypatch.setattr(share.os, "kill", lambda *a: kills.append(a))
+    assert share.stop_share("abcd", wait=0.5) is True
+    assert kills == [] and not (home / "abcd.json").exists()
 
 
 def test_linux_names_map_to_macos_programs(mac, monkeypatch):
@@ -262,20 +296,37 @@ def test_backend_reads_shift_buttons_and_cursor(quartz):
     assert m.register_hotkey(1, 0, 0) is False
 
 
-def test_backend_window_style_is_applied_once(quartz, monkeypatch):
+def test_backend_window_style_follows_the_live_window_state(quartz, monkeypatch):
     m = quartz.mod
     calls = []
-    monkeypatch.setattr(m, "_msg", lambda obj, sel, *args, **kw: calls.append((sel, args)) or 0xBEEF)
+    window = {"ignoresMouseEvents": False, "level": 0}
+
+    def msg(obj, sel, *args, **kw):
+        calls.append((sel, args))
+        if sel == "window":
+            return 0xBEEF
+        if sel in window:
+            return window[sel]
+        if sel == "setIgnoresMouseEvents:":
+            window["ignoresMouseEvents"] = args[0]
+        if sel == "setLevel:":
+            window["level"] = args[0]
+        return None
+
+    monkeypatch.setattr(m, "_msg", msg)
     m.set_window_style(0x10, click_through=True, no_activate=True)
-    assert [c[0] for c in calls] == ["window", "setIgnoresMouseEvents:", "setLevel:", "setCollectionBehavior:",
-                                     "setHidesOnDeactivate:"]
-    assert calls[1][1] == (True,) and calls[3][1] == (m.JOIN_ALL_SPACES | m.FULL_SCREEN_AUXILIARY,)
+    assert [c[0] for c in calls if c[0].startswith("set")] == [
+        "setIgnoresMouseEvents:", "setLevel:", "setCollectionBehavior:", "setHidesOnDeactivate:"]
+    assert ("setCollectionBehavior:", (m.JOIN_ALL_SPACES | m.FULL_SCREEN_AUXILIARY,)) in calls
     calls.clear()
     m.set_window_style(0x10, click_through=True, no_activate=True)
-    assert calls == []  # the mask timer asks every 30 ms
-    m.forget_window(0x10)
+    assert not [c for c in calls if c[0].startswith("set")]  # the mask timer asks every 30 ms
+    window["level"] = 0  # Qt reset it, or a new window got the same NSView address
+    m.set_window_style(0x10, click_through=True, no_activate=True)
+    assert ("setLevel:", (m.STATUS_WINDOW_LEVEL,)) in calls
+    calls.clear()
     m.set_window_style(0x10, click_through=False, no_activate=True)
-    assert calls[1] == ("setIgnoresMouseEvents:", (False,))
+    assert ("setIgnoresMouseEvents:", (False,)) in calls
 
 
 def test_backend_is_inert_off_macos():
@@ -313,3 +364,22 @@ def test_install_sh_on_macos_uses_homebrew_and_skips_the_linux_files(tmp_path):
     assert (box.home / ".local" / "bin" / "dropwheel").is_file()
     assert not (box.data / "applications" / "dropwheel.desktop").exists()
     assert not (box.data / "icons").exists()
+
+
+def test_install_sh_on_macos_finds_homebrews_versioned_python(tmp_path):
+    """python@3.13 installs only ``bin/python3.13``: the installer must pick it over other pythons."""
+    from test_pack import BASH, ROOT as REPO, Sandbox
+
+    if BASH is None:
+        pytest.skip("bash not available")
+    box = Sandbox(tmp_path)
+    prefix = tmp_path / "homebrew"
+    (prefix / "bin").mkdir(parents=True)
+    (prefix / "bin" / "python3.13").symlink_to(sys.executable)
+    box.add_tool("uname", "#!/bin/sh\necho Darwin\n")
+    box.add_tool("sw_vers", "#!/bin/sh\necho 14.5\n")
+    box.add_tool("brew", f'#!/bin/sh\n[ "$1" = --prefix ] && echo {prefix}\nexit 0\n')
+    result = box.run(REPO / "install.sh", "--no-start", "--no-file-managers", "--no-packages", "--yes",
+                     "--no-hyprland")
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert f"{prefix}/bin/python3.13 -m venv" in result.stdout

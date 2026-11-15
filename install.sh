@@ -549,12 +549,20 @@ if [[ ! -e $SCRIPT_DIR/src/dropwheel/__init__.py ]]; then
     fi
     SRC_CLONE="$HOME/.local/src/dropwheel"
     step "$(t 'Scarico Dropwheel' 'Downloading Dropwheel')"
-    if ! command -v git >/dev/null 2>&1; then
+    have_git=0
+    if command -v git >/dev/null 2>&1; then have_git=1; fi
+    # macOS: /usr/bin/git is only a stub until the Command Line Tools are installed
+    if (( MACOS && have_git )) && [[ $(command -v git) == /usr/bin/git ]] && ! xcode-select -p >/dev/null 2>&1; then
+        have_git=0
+    fi
+    if (( ! have_git )); then
         if (( DO_PACKAGES )) && interactive && ask "$(t 'Serve git. Lo installo ora?' 'git is needed. Install it now?')" y n; then
             case $DISTRO in
                 macos)
-                    [[ -n $BREW ]] || die "$(t 'Senza Homebrew: xcode-select --install installa git.' 'Without Homebrew: xcode-select --install installs git.')"
-                    "$BREW" install git ;;
+                    [[ -n $BREW ]] || die "$(t 'Senza Homebrew: esegui xcode-select --install (installa git), poi riprova.' \
+                                               'Without Homebrew: run xcode-select --install (it installs git), then try again.')"
+                    "$BREW" install git || die "brew install git"
+                    hash -r ;;
                 debian) as_root apt-get install -y git ;;
                 fedora) as_root dnf install -y git ;;
                 suse) as_root zypper --non-interactive install git ;;
@@ -580,19 +588,27 @@ for required in src/dropwheel/__init__.py src/dropwheel/__main__.py shell/shell.
     [[ -e $SCRIPT_DIR/$required ]] || die "$(t 'File mancante nel sorgente' 'Missing file in the source tree'): $required"
 done
 
-python_ok() { [[ -x $1 ]] && "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; }
+# 3.11 up to the last version PySide6-Essentials publishes wheels for (requires_python <3.16)
+python_ok() { [[ -x $1 ]] && "$1" -c 'import sys; sys.exit(0 if (3, 11) <= sys.version_info[:2] < (3, 16) else 1)' 2>/dev/null; }
 if [[ -z $PYTHON_BIN ]] && (( MACOS )); then
-    # /usr/bin/python3 is the Command Line Tools' 3.9: Homebrew's Python instead
+    # /usr/bin/python3 is the Command Line Tools' 3.9: Homebrew's Python instead. python@3.13 installs
+    # only bin/python3.13 (the unversioned links stay in its libexec), so look for versioned names too.
     BREW_PREFIX=""
     if [[ -n $BREW ]]; then BREW_PREFIX=$("$BREW" --prefix 2>/dev/null || true); fi
-    if [[ -n $BREW_PREFIX ]] && ! python_ok "$BREW_PREFIX/bin/python3" && (( DO_PACKAGES )) \
+    pick_mac_python() {
+        local cand
+        for cand in "$BREW_PREFIX/bin/python3.13" "$BREW_PREFIX/bin/python3" "$BREW_PREFIX"/bin/python3.1[1-5] \
+                    "$(command -v python3 || true)"; do
+            if [[ -z $PYTHON_BIN ]] && python_ok "$cand"; then PYTHON_BIN=$cand; fi
+        done
+    }
+    pick_mac_python
+    if [[ -z $PYTHON_BIN && -n $BREW_PREFIX ]] && (( DO_PACKAGES )) \
             && ask "$(t 'Serve Python 3.11 o più recente. Installo python@3.13 con Homebrew?' \
                         'Python 3.11 or newer is needed. Install python@3.13 with Homebrew?')" y n; then
         "$BREW" install python@3.13 || warn "brew install python@3.13"
+        pick_mac_python
     fi
-    for cand in "$BREW_PREFIX/bin/python3" "$(command -v python3 || true)"; do
-        if [[ -z $PYTHON_BIN ]] && python_ok "$cand"; then PYTHON_BIN=$cand; fi
-    done
     [[ -n $PYTHON_BIN ]] || die "$(t 'Serve Python 3.11 o più recente: brew install python@3.13' \
                                      'Python 3.11 or newer is required: brew install python@3.13')"
 fi
