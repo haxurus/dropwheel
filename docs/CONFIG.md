@@ -2,12 +2,12 @@
 
 **English** · [Italiano](CONFIG.it.md)
 
-This document describes **every** Dropwheel setting. For general use, see the
-[README](../README.md).
+This document describes **every** Dropwheel setting. For general use, see
+[Using Dropwheel](USAGE.md) and the [documentation index](README.md).
 
 - **File:** `~/.config/dropwheel/config.toml` (more precisely
-  `$XDG_CONFIG_HOME/dropwheel/config.toml`). The `DROPWHEEL_CONFIG` environment variable points to a
-  different file.
+  `$XDG_CONFIG_HOME/dropwheel/config.toml`; on Windows `%APPDATA%\dropwheel\config.toml`). The
+  `DROPWHEEL_CONFIG` environment variable points to a different file.
 - **Format:** [TOML](https://toml.io/en/). The file is optional: every missing key has a default.
 - **Commented starting file** (Italian and English):
 
@@ -124,7 +124,7 @@ open_after = true
 
 - **`shift`**: `false` ignores Shift (the hot corner, SUPER+ALT+D, the file manager and the command
   line remain). To stop Shift from reaching Dropwheel at all, you can also empty `SHIFT_KEYS` in the
-  Lua module (see the README).
+  Lua module (see [Installing Dropwheel](INSTALL.md#quick-start)).
 - **`dnd_check`**: before opening the wheel, Dropwheel uses `hyprctl -j monitors` to check that a drag
   is really in progress, so Shift does not open the wheel while you type. With `false`, the wheel opens
   on every Shift and closes by itself after 1.2 seconds if no drag arrives. This is useful only for

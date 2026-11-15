@@ -47,6 +47,8 @@ __all__ = [
 #: Terminal emulators accepted by :func:`dropwheel.util.launch_terminal` (any one is enough).
 TERMINALS = ("foot", "kitty", "alacritty", "wezterm", "ghostty", "konsole", "gnome-terminal", "xfce4-terminal",
              "xdg-terminal-exec", "xterm")
+if tools.WINDOWS:
+    TERMINALS = ("cmd",)  # util.launch_terminal opens a cmd.exe console there
 
 _CHUNK = 4 * 1024 * 1024
 

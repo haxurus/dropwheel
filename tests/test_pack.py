@@ -76,7 +76,8 @@ def test_packaging_files_have_unix_line_endings() -> None:
     """A CR is fatal on Linux (``pkgname=dropwheel\\r``, ``Exec=dropwheel open %F\\r``) but invisible
     here: Git Bash on the Windows development machine ignores it, and so does ``read_text``."""
     files = [ROOT / name for name in ("PKGBUILD", "Makefile", "install.sh", "uninstall.sh", "dropwheel.install",
-                                      "pyproject.toml", "README.md", "README.it.md", "LICENSE", ".gitignore")]
+                                      "pyproject.toml", "README.md", "README.it.md", "CHANGELOG.md", "CHANGELOG.it.md",
+                                      "LICENSE", ".gitignore")]
     files += sorted((ROOT / "docs").glob("*.md"))
     for folder in (INTEGRATIONS, ROOT / "assets"):
         files += sorted(path for path in folder.rglob("*") if path.is_file())
@@ -254,7 +255,7 @@ def test_makefile_uninstall_keeps_what_it_did_not_install() -> None:
 
 def test_update_instructions_force_a_rebuild() -> None:
     """pkgver does not change between commits: without -f makepkg reinstalls the previous build."""
-    for name, heading in (("README.it.md", "**Aggiornare**"), ("README.md", "**Updating**")):
+    for name, heading in (("docs/INSTALL.it.md", "**Aggiornare**"), ("docs/INSTALL.md", "**Updating**")):
         update = _read(name).split(heading, 1)[1].split("\n## ", 1)[0]
         assert "makepkg -sif" in update
         assert not re.search(r"makepkg -si(?!f)", update)
@@ -720,7 +721,8 @@ def _lua_list(table) -> list:
     return [table[i] for i in range(1, len(table) + 1)]
 
 
-@pytest.mark.parametrize("name, label", [("README.md", "| Layer rules |"), ("README.it.md", "| Regole dei layer |")])
+@pytest.mark.parametrize("name, label", [("docs/INSTALL.md", "| Layer rules |"),
+                                         ("docs/INSTALL.it.md", "| Regole dei layer |")])
 def test_readme_describes_the_layer_rules_of_the_module(name, label) -> None:
     """The dialog is full-screen with its own scrim: blurring it would blur the whole screen."""
     row = next(line for line in _read(name).splitlines() if line.startswith(label))

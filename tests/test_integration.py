@@ -538,7 +538,7 @@ def _toml_blocks(path: Path) -> list[str]:
     return re.findall(r"```toml\n(.*?)```", path.read_text(encoding="utf-8"), flags=re.S)
 
 
-@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md"])
+@pytest.mark.parametrize("doc", ["docs/USAGE.md", "docs/USAGE.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md"])
 def test_documented_toml_examples_load_cleanly(tmp_path, doc):
     """Every TOML example of the user documentation is a valid configuration (no warnings)."""
     blocks = _toml_blocks(ROOT / doc)
@@ -550,7 +550,11 @@ def test_documented_toml_examples_load_cleanly(tmp_path, doc):
         assert cfg["_warnings"] == [], f"{doc} example #{i + 1}: {cfg['_warnings']}\n{block}"
 
 
-@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md"])
+#: Every user guide, in both languages (docs/README.md is the documentation index).
+GUIDES = ["docs/INSTALL.md", "docs/INSTALL.it.md", "docs/USAGE.md", "docs/USAGE.it.md", "docs/FEATURES.md", "docs/FEATURES.it.md", "docs/CLI.md", "docs/CLI.it.md", "docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md", "docs/PRIVACY.md", "docs/PRIVACY.it.md", "docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md", "docs/WINDOWS.md", "docs/WINDOWS.it.md", "docs/README.md", "docs/README.it.md"]
+
+
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", *GUIDES, "docs/CONFIG.md", "docs/CONFIG.it.md"])
 def test_documented_action_ids_exist(loaded, doc):
     """The ids the documentation tells users to write: a wrong one does nothing, silently."""
     known = {spec.id for spec in registry.all_actions()}
@@ -586,8 +590,9 @@ def test_function_reference_is_current(loaded, doc, word):
     assert f"**{len(registry.all_actions())} {word}**" in text
 
 
-@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "docs/CONFIG.md", "docs/CONFIG.it.md",
-                                 "docs/ARCHITECTURE.md", "docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md"])
+@pytest.mark.parametrize("doc", ["README.md", "README.it.md", "CHANGELOG.md", "CHANGELOG.it.md", *GUIDES,
+                                 "docs/CONFIG.md", "docs/CONFIG.it.md", "docs/ARCHITECTURE.md", "docs/FUNCTIONS.md",
+                                 "docs/FUNCTIONS.it.md"])
 def test_documentation_links_resolve(doc):
     """Local links point at real files, and anchors at real headings of the English and Italian docs."""
     path = ROOT / doc
@@ -625,7 +630,8 @@ def _doc_structure(path: Path) -> dict:
 
 
 @pytest.mark.parametrize("original, translation", [("README.md", "README.it.md"), ("docs/CONFIG.md", "docs/CONFIG.it.md"),
-                                                   ("docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md")])
+                                                   ("docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md"),
+                                                   ("CHANGELOG.md", "CHANGELOG.it.md"), ("docs/INSTALL.md", "docs/INSTALL.it.md"), ("docs/USAGE.md", "docs/USAGE.it.md"), ("docs/FEATURES.md", "docs/FEATURES.it.md"), ("docs/CLI.md", "docs/CLI.it.md"), ("docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md"), ("docs/PRIVACY.md", "docs/PRIVACY.it.md"), ("docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md"), ("docs/WINDOWS.md", "docs/WINDOWS.it.md"), ("docs/README.md", "docs/README.it.md")])
 def test_translations_stay_in_sync(original, translation):
     """Changing one language only is a bug: both versions have the same structure, images and links."""
     assert _doc_structure(ROOT / original) == _doc_structure(ROOT / translation)

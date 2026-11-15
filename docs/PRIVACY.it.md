@@ -1,0 +1,25 @@
+[Documentazione](README.it.md) · [English](PRIVACY.md)
+
+# Privacy e sicurezza
+
+- **Tutto è locale.** Niente telemetria, servizi cloud o account.
+- **La rete viene usata solo quando lo chiedi:**
+  - *Il codice QR per il telefono* avvia un server HTTP temporaneo nella rete locale, su una porta e un
+    indirizzo casuali, che offre solo i file scelti e si spegne dopo 15 minuti o quando chiudi la scheda.
+  - *KDE Connect e LocalSend* inviano ai tuoi dispositivi associati.
+  - *I link trascinati* vengono scaricati solo dal sito di quel link.
+  - *I modelli AI* vengono scaricati solo quando installi o usi per la prima volta la funzione.
+- **Nulla di ciò che trascini viene eseguito.** Macro dei documenti e JavaScript dei PDF non partono mai,
+  un'AppImage viene ispezionata senza avviarla, e le immagini remote nel Markdown e i riferimenti esterni negli
+  SVG non vengono scaricati.
+- **I file non fidati sono trattati con prudenza.** Le voci pericolose degli archivi, come percorsi assoluti,
+  `..` e link che puntano fuori dall'archivio, vengono rifiutate, e ci sono protezioni contro gli archivi e i
+  documenti bomba.
+- **Le password** restano in memoria solo per il lavoro che le usa.
+
+Quando oscuri un'immagine, sfocatura e pixel possono essere reversibili sul testo. Per i dati sensibili usa un
+riquadro pieno.
+
+---
+
+← [Precedente](TROUBLESHOOTING.it.md) · [Successivo](DEVELOPMENT.it.md) →

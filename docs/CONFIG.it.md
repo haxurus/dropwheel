@@ -2,12 +2,12 @@
 
 [English](CONFIG.md) · **Italiano**
 
-Questo documento descrive **tutte** le impostazioni di Dropwheel. Per l'uso generale vedi il
-[README](../README.it.md).
+Questo documento descrive **tutte** le impostazioni di Dropwheel. Per l'uso generale vedi
+[Usare Dropwheel](USAGE.it.md) e l'[indice della documentazione](README.it.md).
 
 - **File:** `~/.config/dropwheel/config.toml` (più precisamente
-  `$XDG_CONFIG_HOME/dropwheel/config.toml`). La variabile d'ambiente `DROPWHEEL_CONFIG` permette
-  di indicarne un altro.
+  `$XDG_CONFIG_HOME/dropwheel/config.toml`; su Windows `%APPDATA%\dropwheel\config.toml`). La
+  variabile d'ambiente `DROPWHEEL_CONFIG` permette di indicarne un altro.
 - **Formato:** [TOML](https://toml.io/it/). Il file è facoltativo: ogni chiave mancante ha un
   valore predefinito.
 - **File di partenza commentato** (italiano e inglese):
@@ -126,7 +126,7 @@ open_after = true
 
 - **`shift`**: `false` ignora Shift (restano l'angolo attivo, SUPER+ALT+D, il file manager e la
   riga di comando). Per non far arrivare proprio Shift a Dropwheel puoi anche svuotare
-  `SHIFT_KEYS` nel modulo Lua (vedi il README).
+  `SHIFT_KEYS` nel modulo Lua (vedi [Installare Dropwheel](INSTALL.it.md#per-iniziare)).
 - **`dnd_check`**: prima di aprire la ruota Dropwheel verifica con `hyprctl -j monitors` che un
   trascinamento sia davvero in corso, così Shift non apre la ruota mentre scrivi. Con `false` la
   ruota si apre a ogni Shift e si richiude da sola dopo 1,2 secondi se non arriva nessun
