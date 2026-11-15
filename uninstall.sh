@@ -306,7 +306,7 @@ remove_module_copy() {
     hypr_changed=1
 }
 
-if (( ! KEEP_HYPRLAND )); then
+if (( ! KEEP_HYPRLAND && ! MACOS )); then
     step "Hyprland"
     strip_loader "$XDG_CONFIG_HOME_DIR/caelestia/hypr-user.lua"
     strip_loader "$XDG_CONFIG_HOME_DIR/hypr/hyprland.lua"
@@ -394,8 +394,15 @@ fi
 # Settings, history, cache, Whisper models, saved wallpapers (--purge)
 # --------------------------------------------------------------------------------------------
 
-user_dirs=("$XDG_CONFIG_HOME_DIR/dropwheel" "$XDG_STATE_HOME_DIR/dropwheel" "$XDG_CACHE_HOME_DIR/dropwheel"
-           "$XDG_DATA_HOME_DIR/dropwheel/whisper" "$XDG_DATA_HOME_DIR/dropwheel/wallpapers")
+if (( MACOS )); then
+    # settings, history and Whisper models share ~/Library/Application Support/dropwheel there
+    user_dirs=("$XDG_CONFIG_HOME_DIR/dropwheel")
+    if [[ $XDG_STATE_HOME_DIR != "$XDG_CONFIG_HOME_DIR" ]]; then user_dirs+=("$XDG_STATE_HOME_DIR/dropwheel"); fi
+    user_dirs+=("$XDG_CACHE_HOME_DIR/dropwheel")
+else
+    user_dirs=("$XDG_CONFIG_HOME_DIR/dropwheel" "$XDG_STATE_HOME_DIR/dropwheel" "$XDG_CACHE_HOME_DIR/dropwheel"
+               "$XDG_DATA_HOME_DIR/dropwheel/whisper" "$XDG_DATA_HOME_DIR/dropwheel/wallpapers")
+fi
 present=()
 for d in "${user_dirs[@]}"; do
     [[ -e $d ]] && present+=("$d")

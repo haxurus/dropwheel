@@ -22,7 +22,9 @@
   ogni avvio ed è salvato nella tua cartella della cache. Dropwheel legge lo stato di Shift e dei tasti del
   mouse; non installa hook della tastiera e non registra tasti. Su macOS l'azione rapida del Finder e il
   LaunchAgent scritti da `dropwheel setup macos` si limitano ad avviare Dropwheel, e appunti e Cestino passano
-  da macOS stesso (`pbcopy`, `osascript`), senza Apple Events verso altre app.
+  da macOS stesso (`pbcopy`, `osascript`), senza Apple Events verso altre app. Il selettore di colore
+  degli editor legge il solo pixel su cui fai clic; per questo macOS chiede il permesso di Registrazione
+  schermo (per Python), e senza di esso si può campionare solo lo sfondo della scrivania.
 - **Nulla di ciò che trascini viene eseguito.** Macro dei documenti e JavaScript dei PDF non partono mai,
   un'AppImage viene ispezionata senza avviarla, e le immagini remote nel Markdown e i riferimenti esterni negli
   SVG non vengono scaricati.

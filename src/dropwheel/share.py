@@ -381,9 +381,10 @@ def stop_share(share_id: str, wait: float = 3.0) -> bool:
         return False
     pid = int(state.get("pid") or 0)
     was_running = bool(pid) and _pid_alive(pid) and _is_our_server(pid, share_id)
-    if was_running and os.name == "nt":
-        # os.kill() there is TerminateProcess on whatever now owns the pid: never send it.  The server
-        # stops by itself within 2 s once its state file is gone (watch_state in serve_share).
+    if was_running and (os.name == "nt" or sys.platform == "darwin"):
+        # os.kill() there is TerminateProcess on whatever now owns the pid, and macOS has no /proc to
+        # tell a reused pid apart: never send it.  The server stops by itself within 2 s once its
+        # state file is gone (watch_state in serve_share).
         _remove_files(share_id)
         deadline = time.monotonic() + wait
         while time.monotonic() < deadline and _pid_alive(pid):

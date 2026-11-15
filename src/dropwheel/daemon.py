@@ -818,6 +818,7 @@ def main(argv: list[str] | None = None) -> int:
     args = list(sys.argv[1:] if argv is None else argv)
     debug = "--debug" in args or os.environ.get("DROPWHEEL_DEBUG", "").lower() in ("1", "true", "yes")
     _supervise()
+    tools.extend_path()
     inp, out = _protocol_streams()
     _setup_logging(None, debug)
     try:

@@ -21,7 +21,9 @@
   start and is stored in your own cache folder. Dropwheel reads the state of Shift and of the mouse
   buttons; it installs no keyboard hook and records no keys. On macOS the Finder Quick Action and the
   LaunchAgent written by `dropwheel setup macos` only start Dropwheel, and the clipboard and the trash go
-  through macOS itself (`pbcopy`, `osascript`), without Apple Events to other apps.
+  through macOS itself (`pbcopy`, `osascript`), without Apple Events to other apps. The colour picker of
+  the editors reads the one pixel you click; for that macOS asks for the Screen Recording permission
+  (for Python), and without it only the desktop background can be sampled.
 - **Nothing you drop is executed.** Document macros and PDF JavaScript never run, an AppImage is
   inspected without starting it, and remote images in Markdown and external references in SVG are not
   fetched.

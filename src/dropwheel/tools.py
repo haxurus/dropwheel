@@ -24,6 +24,7 @@ from typing import Iterable
 __all__ = [
     "Tool", "TOOLS", "path", "have", "missing", "install_hint", "report", "refresh",
     "display_name", "packages_for", "aur_helper", "WINDOWS", "MACOS", "distro", "qt_frontend",
+    "extend_path",
 ]
 
 #: Running on Windows: binary names, search dirs and install hints differ (see the ``_NT_*`` tables).
@@ -68,7 +69,8 @@ elif MACOS:
     # a LaunchAgent or a Quick Action runs with PATH=/usr/bin:/bin:/usr/sbin:/sbin: add Homebrew
     # (Apple Silicon, then Intel) and the app bundles that ship a command line
     EXTRA_DIRS = ("/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin",
-                  "/Applications/LibreOffice.app/Contents/MacOS", os.path.expanduser("~/.local/bin"),
+                  "/Applications/LibreOffice.app/Contents/MacOS", "/Applications/Inkscape.app/Contents/MacOS",
+                  "/Applications/calibre.app/Contents/MacOS", os.path.expanduser("~/.local/bin"),
                   "/usr/bin", "/bin", "/usr/sbin")
 
 
@@ -479,6 +481,15 @@ def _nt_which(binary: str) -> str | None:
     return None
 
 
+def extend_path() -> None:
+    """macOS: append :data:`EXTRA_DIRS` to ``PATH`` (launchd's is /usr/bin:/bin:/usr/sbin:/sbin), so the
+    tools Dropwheel starts find the ones they start in turn (ocrmypdf → tesseract, yt-dlp → ffmpeg)."""
+    if not MACOS:
+        return
+    parts = [d for d in os.environ.get("PATH", "").split(os.pathsep) if d]
+    os.environ["PATH"] = os.pathsep.join(parts + [d for d in EXTRA_DIRS if d not in parts])
+
+
 def _which(binary: str) -> str | None:
     if WINDOWS:
         return _nt_which(binary)
@@ -806,7 +817,7 @@ _MAC_BREW = {
     "unpaper": "unpaper", "typst": "typst", "tectonic": "tectonic", "jq": "jq", "yq": "yq", "unar": "unar",
     "lsar": "unar", "whisper-cli": "whisper.cpp", "mkvmerge": "mkvtoolnix", "mkvextract": "mkvtoolnix",
     "sox": "sox", "zstd": "zstd", "pigz": "pigz", "lz4": "lz4", "inkscape": "--cask inkscape",
-    "ebook-convert": "--cask calibre",
+    "ebook-convert": "--cask calibre", "ebook-meta": "--cask calibre", "gpg": "gnupg", "woff2_compress": "woff2",
     **dict.fromkeys(("cwebp", "dwebp", "gif2webp", "img2webp", "webpmux"), "webp"),
     **dict.fromkeys(("avifenc", "avifdec"), "libavif"),
     **dict.fromkeys(("heif-enc", "heif-dec"), "libheif"),

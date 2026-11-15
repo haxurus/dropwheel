@@ -86,6 +86,8 @@ class ColourPick:
         from PySide6.QtGui import QGuiApplication
         from PySide6.QtWidgets import QWidget
 
+        from . import macos
+
         self.done = done
         self.windows: list[Any] = []
         outer = self
@@ -111,6 +113,8 @@ class ColourPick:
             w.setCursor(Qt.CursorShape.CrossCursor)
             w.setGeometry(screen.geometry())
             w.show()
+            if macos.ACTIVE:  # above full-screen apps and on every Space, like the wheel
+                macos.set_window_style(int(w.winId()), click_through=False, no_activate=False)
             self.windows.append(w)
         if self.windows:
             self.windows[0].activateWindow()
