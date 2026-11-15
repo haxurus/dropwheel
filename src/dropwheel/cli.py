@@ -63,9 +63,9 @@ if tools.WINDOWS:
     REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"), ("py:PySide6", "PySide6-Essentials"))
 elif tools.qt_frontend():
     # GNOME: PySide6 hosts the shell (dropwheel setup gnome adds the Shell extension it reads)
-    _deb = tools.distro() == "debian"
-    REQUIRED_TOOLS = (("py:PIL", "python3-pil" if _deb else "python-pillow"),
-                      ("py:PySide6", "PySide6-Essentials" if _deb else "pyside6"),
+    _pil, _pyside = {"debian": ("python3-pil", "PySide6-Essentials"), "fedora": ("python3-pillow", "python3-pyside6"),
+                     "suse": ("python3-Pillow", "python3-pyside6")}.get(tools.distro(), ("python-pillow", "pyside6"))
+    REQUIRED_TOOLS = (("py:PIL", _pil), ("py:PySide6", _pyside),
                       ("wl-copy", "wl-clipboard"), ("wl-paste", "wl-clipboard"))
 
 #: Programs that are a personal choice (terminals, file managers, viewers, package helpers…):

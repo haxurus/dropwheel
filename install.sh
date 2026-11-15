@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland or GNOME).
+# Dropwheel — interactive installer for Arch Linux (Hyprland or GNOME), Debian, Ubuntu, Fedora and
+# openSUSE (GNOME).
 #
 #   ./install.sh                 asks everything, installs into ~/.local and starts Dropwheel
 #   curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -13,10 +14,11 @@
 #   ~/.local/bin/dropwheel                      launcher (python3 -m dropwheel, PYTHONPATH set)
 #   ~/.local/share/applications/dropwheel.desktop, ~/.local/share/icons/hicolor/…/dropwheel.svg
 #
-# Packages are installed with pacman or apt only after you say yes, from a terminal (sudo asks
-# for your password once); without a terminal the commands are printed instead. Everything else
-# stays in your home directory. On Debian and Ubuntu the Python modules go into a private
-# environment (~/.local/share/dropwheel/venv), never into the system Python.
+# Packages are installed with pacman, apt, dnf or zypper only after you say yes, from a terminal
+# (sudo asks for your password once); without a terminal the commands are printed instead.
+# Everything else stays in your home directory. On Debian, Ubuntu, Fedora and openSUSE the Python
+# modules pip installs go into a private environment (~/.local/share/dropwheel/venv), never into the
+# system Python; on Debian and Ubuntu PySide6 too (Fedora and openSUSE package it).
 
 set -euo pipefail
 
@@ -306,16 +308,21 @@ install_launcher() {
 }
 
 pkg_installed() {
-    if [[ ${DISTRO:-arch} == debian ]]; then
-        [[ $(dpkg-query -W -f='${Status}' -- "$1" 2>/dev/null) == *"install ok installed"* ]]
-    else
-        pacman -Qq -- "$1" >/dev/null 2>&1
-    fi
+    case ${DISTRO:-arch} in
+        debian) [[ $(dpkg-query -W -f='${Status}' -- "$1" 2>/dev/null) == *"install ok installed"* ]] ;;
+        fedora|suse) rpm -q --whatprovides "$1" >/dev/null 2>&1 ;;  # also a capability (python3-Pillow)
+        *) pacman -Qq -- "$1" >/dev/null 2>&1 ;;
+    esac
 }
 
-# apt knows the package (Debian and Ubuntu releases differ: unknown names are skipped)
+# the package manager knows the package (releases differ: unknown names are skipped)
+# shortcut: dnf and zypper are asked once per package, slower than apt; fine for ~30 names
 pkg_available() {
-    apt-cache show --no-all-versions -- "$1" >/dev/null 2>&1
+    case $DISTRO in
+        fedora) dnf -q info "$1" >/dev/null 2>&1 ;;
+        suse) zypper -q -n search --provides --match-exact "$1" >/dev/null 2>&1 ;;
+        *) apt-cache show --no-all-versions -- "$1" >/dev/null 2>&1 ;;
+    esac
 }
 
 in_hyprland_session() {
@@ -402,9 +409,16 @@ if [[ -r $OS_RELEASE ]]; then
     DISTRO_NAME=$(. "$OS_RELEASE" && printf '%s' "${PRETTY_NAME:-${NAME:-Linux}}")
     case " ${os_id,,} " in
         *" debian "*|*" ubuntu "*) DISTRO=debian ;;
+        *" fedora "*|*" rhel "*|*" centos "*) DISTRO=fedora ;;
+        *suse*) DISTRO=suse ;;  # opensuse-tumbleweed, opensuse-leap, sles
     esac
 fi
-[[ $DISTRO == arch ]] && ! command -v pacman >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1 && DISTRO=debian
+if [[ $DISTRO == arch ]] && ! command -v pacman >/dev/null 2>&1; then
+    if command -v apt-get >/dev/null 2>&1; then DISTRO=debian
+    elif command -v dnf >/dev/null 2>&1; then DISTRO=fedora
+    elif command -v zypper >/dev/null 2>&1; then DISTRO=suse
+    fi
+fi
 
 if [[ -z $DESKTOP ]]; then
     if in_hyprland_session; then
@@ -415,7 +429,7 @@ if [[ -z $DESKTOP ]]; then
         DESKTOP=hyprland
     elif command -v gnome-shell >/dev/null 2>&1; then
         DESKTOP=gnome
-    elif [[ $DISTRO == debian ]]; then
+    elif [[ $DISTRO != arch ]]; then
         DESKTOP=gnome
     else
         DESKTOP=hyprland
@@ -423,9 +437,9 @@ if [[ -z $DESKTOP ]]; then
 fi
 DESKTOP=${DESKTOP,,}
 [[ $DESKTOP == hyprland || $DESKTOP == gnome ]] || die "$(t '--desktop: hyprland oppure gnome' '--desktop: hyprland or gnome')"
-if [[ $DISTRO == debian && $DESKTOP == hyprland ]]; then
-    warn "$(t 'Su Debian e Ubuntu Dropwheel supporta GNOME: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu.' \
-              'On Debian and Ubuntu Dropwheel supports GNOME: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.')"
+if [[ $DISTRO != arch && $DESKTOP == hyprland ]]; then
+    warn "$(t "Su $DISTRO_NAME Dropwheel supporta GNOME: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu." \
+              "On $DISTRO_NAME Dropwheel supports GNOME: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.")"
 fi
 
 if [[ $DESKTOP == gnome ]]; then desktop_label="GNOME"; else desktop_label="Hyprland"; fi
@@ -458,7 +472,12 @@ if [[ ! -e $SCRIPT_DIR/src/dropwheel/__init__.py ]]; then
     step "$(t 'Scarico Dropwheel' 'Downloading Dropwheel')"
     if ! command -v git >/dev/null 2>&1; then
         if (( DO_PACKAGES )) && interactive && ask "$(t 'Serve git. Lo installo ora?' 'git is needed. Install it now?')" y n; then
-            if [[ $DISTRO == debian ]]; then as_root apt-get install -y git; else as_root pacman -S --needed --noconfirm git; fi
+            case $DISTRO in
+                debian) as_root apt-get install -y git ;;
+                fedora) as_root dnf install -y git ;;
+                suse) as_root zypper --non-interactive install git ;;
+                *) as_root pacman -S --needed --noconfirm git ;;
+            esac
         else
             die "$(t 'Installa git e riprova.' 'Install git and try again.')"
         fi
@@ -486,13 +505,13 @@ if [[ -z $PYTHON_BIN ]]; then
         PYTHON_BIN=$(command -v python3 || true)
     fi
 fi
-[[ -n $PYTHON_BIN && -x $PYTHON_BIN ]] || die "$(t 'Python 3 non trovato: sudo pacman -S python (Arch) oppure sudo apt install python3 (Debian, Ubuntu)' 'Python 3 not found: sudo pacman -S python (Arch) or sudo apt install python3 (Debian, Ubuntu)')"
+[[ -n $PYTHON_BIN && -x $PYTHON_BIN ]] || die "$(t 'Python 3 non trovato: sudo pacman -S python (Arch), sudo apt install python3 (Debian, Ubuntu), sudo dnf install python3 (Fedora) oppure sudo zypper install python3 (openSUSE)' 'Python 3 not found: sudo pacman -S python (Arch), sudo apt install python3 (Debian, Ubuntu), sudo dnf install python3 (Fedora) or sudo zypper install python3 (openSUSE)')"
 if ! "$PYTHON_BIN" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; then
     die "$(t 'Serve Python 3.11 o più recente' 'Python 3.11 or newer is required'): $("$PYTHON_BIN" -V 2>&1)"
 fi
 
 # --------------------------------------------------------------------------------------------
-# Dependencies: checked, then installed with pacman or apt once you say yes
+# Dependencies: checked, then installed with pacman, apt, dnf or zypper once you say yes
 # --------------------------------------------------------------------------------------------
 
 # Arch with Hyprland (the same list as the PKGBUILD's depends)
@@ -505,6 +524,11 @@ ARCH_GNOME_PKGS=(python python-pillow pyside6 wl-clipboard libnotify ttf-materia
 DEB_REQUIRED=(python3 python3-venv python3-pil wl-clipboard libnotify-bin libglib2.0-bin xdg-utils fontconfig
               libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
               libxcb-xkb1 libxkbcommon-x11-0 libegl1 libxext6)
+# Fedora and openSUSE with GNOME: PySide6 is packaged (its dependencies bring Qt and the X11 plugin);
+# openSUSE ships the QML modules (QtQuick, Shapes, Effects) in a package of their own
+FEDORA_REQUIRED=(python3 python3-pillow python3-pyside6 wl-clipboard libnotify glib2 xdg-utils fontconfig)
+SUSE_REQUIRED=(python3 python3-Pillow python3-pyside6 qt6-declarative-imports wl-clipboard libnotify-tools glib2-tools
+               xdg-utils fontconfig)
 
 # "Italian label|English label|packages" ("a/b" = suggest a, b also counts as installed)
 OPTIONAL_GROUPS=(
@@ -533,29 +557,63 @@ DEB_GROUPS=(
     "Condivisione e sistema|Sharing and system|zenity gnupg trash-cli udisks2|send2trash"
 )
 
-if [[ $DISTRO == debian ]]; then
-    PKG_TOOL=apt-get
-else
-    PKG_TOOL=pacman
-fi
+# Fedora: "labels|dnf packages|pip modules" (RPM Fusion's ffmpeg when that repository is enabled)
+FEDORA_GROUPS=(
+    "Immagini|Images|ImageMagick librsvg2-tools oxipng pngquant jpegoptim libjpeg-turbo-utils gifsicle|pillow-heif pillow-jxl-plugin"
+    "Metadati|Metadata|perl-Image-ExifTool mat2|"
+    "PDF|PDF|qpdf ghostscript poppler-utils|pymupdf pypdf pikepdf"
+    "OCR e codici QR|OCR and QR codes|tesseract tesseract-langpack-ita tesseract-langpack-eng zbar ocrmypdf|qrcode"
+    "Documenti|Documents|libreoffice pandoc-cli|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
+    "Audio e video|Audio and video|ffmpeg/ffmpeg-free|mutagen"
+    "Archivi|Archives|7zip unrar|py7zr rarfile"
+    "Font|Fonts|fonttools woff2-tools|fonttools brotli"
+    "Condivisione e sistema|Sharing and system|zenity gnupg2 trash-cli udisks2|send2trash"
+)
+
+# openSUSE Tumbleweed and Leap: "labels|zypper packages|pip modules" (some are Tumbleweed only)
+SUSE_GROUPS=(
+    "Immagini|Images|ImageMagick rsvg-convert oxipng pngquant jpegoptim libjpeg-turbo gifsicle|pillow-heif pillow-jxl-plugin"
+    "Metadati|Metadata|exiftool|"
+    "PDF|PDF|qpdf ghostscript poppler-tools|pymupdf pypdf pikepdf"
+    "OCR e codici QR|OCR and QR codes|tesseract-ocr tesseract-ocr-traineddata-ita tesseract-ocr-traineddata-eng zbar python3-ocrmypdf|qrcode"
+    "Documenti|Documents|libreoffice pandoc-cli typst|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
+    "Audio e video|Audio and video|ffmpeg|mutagen"
+    "Archivi|Archives|7zip unrar|py7zr rarfile"
+    "Font|Fonts|python3-FontTools woff2|fonttools brotli"
+    "Condivisione e sistema|Sharing and system|zenity gpg2 trash-cli udisks2|send2trash"
+)
+
+case $DISTRO in
+    debian) PKG_TOOL=apt-get ;;
+    fedora) PKG_TOOL=dnf ;;
+    suse) PKG_TOOL=zypper ;;
+    *) PKG_TOOL=pacman ;;
+esac
 can_install() { (( DO_PACKAGES )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; }
 
 install_cmd_text() {
-    if [[ $DISTRO == debian ]]; then printf 'sudo apt install %s' "$*"; else printf 'sudo pacman -S --needed %s' "$*"; fi
+    case $DISTRO in
+        debian) printf 'sudo apt install %s' "$*" ;;
+        fedora) printf 'sudo dnf install %s' "$*" ;;
+        suse) printf 'sudo zypper install %s' "$*" ;;
+        *) printf 'sudo pacman -S --needed %s' "$*" ;;
+    esac
 }
 
 APT_UPDATED=0
 install_pkgs() {
     (( $# )) || return 0
-    if [[ $DISTRO == debian ]]; then
-        if (( ! APT_UPDATED )); then
-            as_root apt-get update || warn "apt-get update"
-            APT_UPDATED=1
-        fi
-        as_root apt-get install -y -- "$@"
-    else
-        as_root pacman -S --needed --noconfirm -- "$@"
-    fi
+    case $DISTRO in
+        debian)
+            if (( ! APT_UPDATED )); then
+                as_root apt-get update || warn "apt-get update"
+                APT_UPDATED=1
+            fi
+            as_root apt-get install -y -- "$@" ;;
+        fedora) as_root dnf install -y "$@" ;;
+        suse) as_root zypper --non-interactive install "$@" ;;
+        *) as_root pacman -S --needed --noconfirm -- "$@" ;;
+    esac
 }
 
 # the first of "a/b" that is installed, else the first one the package manager knows
@@ -566,7 +624,7 @@ pick_alternative() {
     for alt in "${alts[@]}"; do
         pkg_installed "$alt" && return 1
     done
-    if [[ $DISTRO == debian ]]; then
+    if [[ $DISTRO != arch ]]; then
         for alt in "${alts[@]}"; do
             if pkg_available "$alt"; then printf '%s' "$alt"; return 0; fi
         done
@@ -583,6 +641,10 @@ PIP_MODULES=()
 step "$(t 'Dipendenze' 'Dependencies')"
 if [[ $DISTRO == debian ]]; then
     required_list=("${DEB_REQUIRED[@]}")
+elif [[ $DISTRO == fedora ]]; then
+    required_list=("${FEDORA_REQUIRED[@]}")
+elif [[ $DISTRO == suse ]]; then
+    required_list=("${SUSE_REQUIRED[@]}")
 elif [[ $DESKTOP == gnome ]]; then
     required_list=("${ARCH_GNOME_PKGS[@]}")
 else
@@ -613,11 +675,12 @@ if command -v "$PKG_TOOL" >/dev/null 2>&1; then
     group_labels=()
     group_pkgs=()
     group_pip=()
-    if [[ $DISTRO == debian ]]; then
-        groups=("${DEB_GROUPS[@]}")
-    else
-        groups=("${OPTIONAL_GROUPS[@]}")
-    fi
+    case $DISTRO in
+        debian) groups=("${DEB_GROUPS[@]}") ;;
+        fedora) groups=("${FEDORA_GROUPS[@]}") ;;
+        suse) groups=("${SUSE_GROUPS[@]}") ;;
+        *) groups=("${OPTIONAL_GROUPS[@]}") ;;
+    esac
     for group in "${groups[@]}"; do
         IFS='|' read -r label_it label_en pkgs pip_mods <<< "$group"
         group_missing=()
@@ -695,9 +758,27 @@ else
     warn "$(t "$PKG_TOOL non trovato: controllo delle dipendenze saltato." "$PKG_TOOL not found: dependency check skipped.")"
 fi
 
-# --- Debian and Ubuntu: Dropwheel's own Python environment (PySide6 and the chosen modules)
+# --- Debian and Ubuntu: Dropwheel's own Python environment (PySide6 and the chosen modules);
+#     Fedora and openSUSE: only when pip has modules to install (PySide6 comes from the system)
 VENV_DIR="$PREFIX/share/dropwheel/venv"
-if [[ $DISTRO == debian ]] && (( ! DO_PACKAGES )); then
+if [[ $DISTRO == fedora || $DISTRO == suse ]] && { (( ${#PIP_MODULES[@]} )) || [[ -x $VENV_DIR/bin/python ]]; }; then
+    step "$(t 'Ambiente Python' 'Python environment')"
+    if [[ -x $VENV_DIR/bin/python ]] || "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR"; then
+        if (( ${#PIP_MODULES[@]} )); then
+            info "$(t 'Installo con pip:' 'Installing with pip:') ${PIP_MODULES[*]}"
+            if "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade -- "${PIP_MODULES[@]}"; then
+                ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
+            else
+                warn "$(t 'pip non è riuscito a installare tutto: riprova più tardi con' 'pip could not install everything: try again later with')"
+                cmd "$VENV_DIR/bin/python -m pip install ${PIP_MODULES[*]}"
+            fi
+        fi
+        PYTHON_BIN="$VENV_DIR/bin/python"
+    else
+        warn "$(t "Impossibile creare l'ambiente Python ($PYTHON_BIN -m venv): moduli pip saltati" \
+                  "Cannot create the Python environment ($PYTHON_BIN -m venv): pip modules skipped")"
+    fi
+elif [[ $DISTRO == debian ]] && (( ! DO_PACKAGES )); then
     info "$(t 'Ambiente Python saltato (--no-packages). Per crearlo:' 'Python environment skipped (--no-packages). To create it:')"
     cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR && $VENV_DIR/bin/python -m pip install PySide6-Essentials"
 elif [[ $DISTRO == debian ]]; then

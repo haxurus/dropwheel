@@ -817,11 +817,11 @@ def test_lua_module_survives_a_failing_bind() -> None:
 def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
-    assert "runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME" in readme
+    assert "runs on Arch Linux with Hyprland or GNOME, on Debian, Ubuntu, Fedora and openSUSE with GNOME" in readme
     assert "have not yet run on a real GNOME or\n> Windows machine" in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
-    assert "funziona su Arch Linux con Hyprland o GNOME, su Debian e Ubuntu con GNOME" in italian
+    assert "funziona su Arch Linux con Hyprland o GNOME, su Debian, Ubuntu, Fedora e openSUSE con GNOME" in italian
     assert "non sono ancora state eseguite su un vero" in italian
     assert "estendere Dropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
@@ -847,3 +847,64 @@ def test_install_never_installs_packages_without_a_terminal(sandbox: Sandbox) ->
     result = sandbox.install("--no-mime-guard", "--no-hyprland")
     assert "SUDO-RAN" not in result.stdout + result.stderr
     assert "sudo pacman -S --needed" in result.stdout
+
+
+_RPM_SYSTEMS = {
+    "fedora": ('ID=fedora\nNAME="Fedora Linux"\n', "dnf", "sudo dnf install python3-pillow python3-pyside6"),
+    "suse": ('ID="opensuse-tumbleweed"\nID_LIKE="opensuse suse"\n', "zypper",
+             "sudo zypper install python3-Pillow python3-pyside6 qt6-declarative-imports"),
+}
+
+
+def _rpm_system(box: Sandbox, system: str) -> dict:
+    """Stub rpm (only python3 installed), dnf or zypper (everything known but mat2) and sudo, all logged."""
+    os_release, manager, _ = _RPM_SYSTEMS[system]
+    (box.home / "os-release").write_text(os_release, encoding="utf-8")
+    log = _posix(box.home / "commands.log")
+    box.add_tool("rpm", f'#!/bin/sh\necho "rpm $*" >> \'{log}\'\n[ "$3" = python3 ]\n')
+    box.add_tool(manager, f'#!/bin/sh\necho "{manager} $*" >> \'{log}\'\n'
+                 'case " $* " in *" mat2 "*) exit 104 ;; esac\nexit 0\n')
+    box.add_tool("sudo", f'#!/bin/sh\necho "sudo $*" >> \'{log}\'\n[ "$1" = -- ] && shift\nexec "$@"\n')
+    return {"DROPWHEEL_OS_RELEASE": _posix(box.home / "os-release"), "XDG_CURRENT_DESKTOP": "GNOME"}
+
+
+def _commands(box: Sandbox) -> list[str]:
+    log = box.home / "commands.log"
+    return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+
+
+@pytest.mark.parametrize("system", sorted(_RPM_SYSTEMS))
+def test_install_on_fedora_and_opensuse_prints_the_native_commands(sandbox: Sandbox, system: str) -> None:
+    """Without a terminal the dnf / zypper commands are printed, and sudo never runs."""
+    env = _rpm_system(sandbox, system)
+    result = sandbox.run(ROOT / "install.sh", "--no-start", "--no-file-managers", "--yes", "--no-mime-guard",
+                         "--no-hyprland", "--python", _posix(sandbox.python), env=env)
+    assert result.returncode == 0, result.stdout + result.stderr
+    assert _RPM_SYSTEMS[system][2] in result.stdout
+    assert not [line for line in _commands(sandbox) if line.startswith("sudo")]
+    assert "GNOME" in result.stdout and "apt install" not in result.stdout and "pacman" not in result.stdout
+
+
+@pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
+@pytest.mark.parametrize("system", sorted(_RPM_SYSTEMS))
+def test_interactive_install_on_fedora_and_opensuse_uses_the_native_manager(sandbox: Sandbox, system: str) -> None:
+    """From a terminal: yes to the required packages and to the Metadata group (2), defaults elsewhere."""
+    env = _rpm_system(sandbox, system)
+    master, slave = os.openpty()
+    with subprocess.Popen(
+        [BASH, _posix(ROOT / "install.sh"), "--no-start", "--no-file-managers", "--no-mime-guard", "--no-hyprland",
+         "--python", _posix(sandbox.python)],
+        cwd=sandbox.home, env={**sandbox.env, **env}, stdin=slave, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, encoding="utf-8", errors="replace",
+    ) as proc:
+        os.close(slave)
+        os.write(master, b"\n\n2\n" + b"\n" * 20)  # start, install the required ones, group 2, defaults
+        out, _ = proc.communicate(timeout=180)
+    os.close(master)
+    assert proc.returncode == 0, out
+    install = "dnf install -y" if system == "fedora" else "zypper --non-interactive install"
+    required = [line for line in _commands(sandbox) if line.startswith(f"sudo -- {install} ")]
+    assert required and "python3-pyside6" in required[0] and " python3 " not in required[0] + " ", out
+    exif = "perl-Image-ExifTool" if system == "fedora" else "exiftool"
+    assert f"sudo -- {install} {exif}" in _commands(sandbox), out  # mat2 is unknown there: skipped
+    assert not (sandbox.data / "dropwheel" / "venv").exists()  # no pip module was chosen

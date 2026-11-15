@@ -12,6 +12,7 @@
 <p align="center">
   <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-Hyprland%20%7C%20GNOME-1793d1?logo=archlinux&logoColor=white">
   <img alt="Debian e Ubuntu con GNOME" src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu-GNOME-a80030?logo=debian&logoColor=white">
+  <img alt="Fedora e openSUSE con GNOME" src="https://img.shields.io/badge/Fedora%20%7C%20openSUSE-GNOME-51a2da?logo=fedora&logoColor=white">
   <img alt="Windows 10 e 11, anteprima" src="https://img.shields.io/badge/Windows-preview-0078d4">
   <img alt="Hyprland 0.57 o successivo" src="https://img.shields.io/badge/Hyprland-0.57%2B-58e1ff">
   <img alt="Quickshell 0.3.2 o successivo" src="https://img.shields.io/badge/Quickshell-0.3.2%2B-6f334a">
@@ -41,8 +42,8 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel funziona su Arch Linux con Hyprland o GNOME, su Debian e Ubuntu con GNOME, e in anteprima su
-> Windows 10 e 11.** Le versioni per GNOME e Windows sono nuove e non sono ancora state eseguite su un vero
+> **Dropwheel funziona su Arch Linux con Hyprland o GNOME, su Debian, Ubuntu, Fedora e openSUSE con GNOME, e
+> in anteprima su Windows 10 e 11.** Le versioni per GNOME e Windows sono nuove e non sono ancora state eseguite su un vero
 > computer con GNOME o Windows: vedi [Piattaforme supportate](#piattaforme-supportate).
 >
 > Questa è una versione iniziale. Il codice ha un'ampia suite di test automatici, ma il flusso completo di
@@ -86,6 +87,7 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 | Arch Linux, Hyprland 0.57+, senza Caelestia | **Supportata**, con una tavolozza scura integrata |
 | Arch Linux, GNOME 45+ | **Nuovo**: la stessa ruota, tramite una piccola estensione di GNOME Shell. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
 | Debian 13, Ubuntu 24.04 o successivo, GNOME | **Nuovo**: come sopra, installato con apt. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
+| Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16, GNOME | **Nuovo**: come sopra, installato con dnf o zypper. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
 | Distribuzioni basate su Arch | Dovrebbero funzionare con gli stessi pacchetti, non provate |
 | KDE Plasma, altri compositor, altre distribuzioni | Non ancora |
 | Windows 10 e 11 | **Anteprima**: la stessa ruota, le schede dei lavori e gli editor, Shift durante un trascinamento da Esplora file, angolo attivo, scorciatoia, menu contestuale. Non ancora provata su un vero Windows. Vedi [Dropwheel su Windows](docs/WINDOWS.it.md) |
@@ -107,7 +109,7 @@ motore attraverso un piccolo protocollo JSON:
 | Riga di comando | Non richiede un compositor | Quasi niente: un primo passo naturale su una nuova piattaforma |
 | Attivazione | Scorciatoie globali di Hyprland e `hyprctl`; su GNOME, un'estensione della Shell; su Windows, lo stato di Shift e del mouse e una scorciatoia registrata | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
 | Ruota e finestre | Quickshell, Wayland layer-shell; su GNOME e Windows, lo stesso QML ospitato da PySide6 | KDE e macOS potrebbero partire dall'host PySide6 |
-| Pacchetti | `PKGBUILD`; `install.sh` interattivo (Arch, Debian, Ubuntu) e `install.ps1` (Windows) | Pacchetti nativi per ogni sistema |
+| Pacchetti | `PKGBUILD`; `install.sh` interattivo (Arch, Debian, Ubuntu, Fedora, openSUSE) e `install.ps1` (Windows) | Pacchetti nativi per ogni sistema |
 
 Se vorresti Dropwheel sul tuo sistema, una
 [segnalazione](https://github.com/haxurus/dropwheel/issues) che descrive la tua configurazione è un utile
@@ -115,7 +117,7 @@ punto di partenza.
 
 ## Per iniziare
 
-Su **Arch Linux, Debian o Ubuntu**, in un terminale:
+Su **Arch Linux, Debian, Ubuntu, Fedora o openSUSE**, in un terminale:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -148,7 +150,7 @@ La documentazione completa è nella cartella [docs](docs/README.it.md).
 | [Riferimento delle funzioni](docs/FUNCTIONS.it.md) | Ogni azione, anello per anello, con i programmi che richiede |
 | [Risoluzione dei problemi](docs/TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](docs/PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
-| [GNOME](docs/GNOME.it.md) | Debian, Ubuntu e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
+| [GNOME](docs/GNOME.it.md) | Debian, Ubuntu, Fedora, openSUSE e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
 | [Windows](docs/WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 | [Architettura e sviluppo](docs/DEVELOPMENT.it.md) | Come stanno insieme i pezzi, avvio dal sorgente, test |
 | [Registro delle modifiche](CHANGELOG.it.md) | Cosa è cambiato in ogni versione |

@@ -12,6 +12,7 @@
 <p align="center">
   <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-Hyprland%20%7C%20GNOME-1793d1?logo=archlinux&logoColor=white">
   <img alt="Debian and Ubuntu with GNOME" src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu-GNOME-a80030?logo=debian&logoColor=white">
+  <img alt="Fedora and openSUSE with GNOME" src="https://img.shields.io/badge/Fedora%20%7C%20openSUSE-GNOME-51a2da?logo=fedora&logoColor=white">
   <img alt="Windows 10 and 11, preview" src="https://img.shields.io/badge/Windows-preview-0078d4">
   <img alt="Hyprland 0.57 or later" src="https://img.shields.io/badge/Hyprland-0.57%2B-58e1ff">
   <img alt="Quickshell 0.3.2 or later" src="https://img.shields.io/badge/Quickshell-0.3.2%2B-6f334a">
@@ -41,8 +42,8 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME, and in preview
-> on Windows 10 and 11.** The GNOME and Windows versions are new and have not yet run on a real GNOME or
+> **Dropwheel runs on Arch Linux with Hyprland or GNOME, on Debian, Ubuntu, Fedora and openSUSE with GNOME,
+> and in preview on Windows 10 and 11.** The GNOME and Windows versions are new and have not yet run on a real GNOME or
 > Windows machine: see [Platform support](#platform-support).
 >
 > This is an early release. The code has an extensive automated test suite, but the complete
@@ -86,6 +87,7 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 | Arch Linux, Hyprland 0.57+, without Caelestia | **Supported**, with a built-in dark palette |
 | Arch Linux, GNOME 45+ | **New**: the same wheel, through a small GNOME Shell extension. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Debian 13, Ubuntu 24.04 or later, GNOME | **New**: as above, installed with apt. See [Dropwheel on GNOME](docs/GNOME.md) |
+| Fedora 43 or later, openSUSE Tumbleweed and Leap 16, GNOME | **New**: as above, installed with dnf or zypper. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Arch-based distributions | Expected to work with the same packages, not tested |
 | KDE Plasma, other compositors, other distributions | Not yet |
 | Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
@@ -107,14 +109,14 @@ through a small JSON protocol:
 | Command line | Needs no compositor | Mostly nothing: a natural first step on a new platform |
 | Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
 | Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME and Windows, the same QML hosted by PySide6 | KDE and macOS could start from the PySide6 host |
-| Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) | Native packages for each system |
+| Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu, Fedora, openSUSE) and `install.ps1` (Windows) | Native packages for each system |
 
 If you would like to see Dropwheel on your system, an
 [issue](https://github.com/haxurus/dropwheel/issues) describing your setup is a useful start.
 
 ## Quick start
 
-On **Arch Linux, Debian or Ubuntu**, in a terminal:
+On **Arch Linux, Debian, Ubuntu, Fedora or openSUSE**, in a terminal:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -147,7 +149,7 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Function reference](docs/FUNCTIONS.md) | Every action, ring by ring, with the programs it needs |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
-| [GNOME](docs/GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
+| [GNOME](docs/GNOME.md) | Debian, Ubuntu, Fedora, openSUSE and Arch with GNOME: installing, the extension, differences from Hyprland |
 | [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |
 | [Changelog](CHANGELOG.md) | What changed in each version |

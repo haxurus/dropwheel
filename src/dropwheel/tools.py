@@ -1,4 +1,4 @@
-"""External dependency discovery and install hints (Arch, Debian and Ubuntu, Windows).
+"""External dependency discovery and install hints (Arch, Debian and Ubuntu, Fedora, openSUSE, Windows).
 
 Every external program or optional Python module an action may need has a *tool name*
 (``"ffmpeg"``, ``"exiftool"``, ``"py:pymupdf"``).  Actions list them in ``requires=``; the menu
@@ -66,14 +66,19 @@ if WINDOWS:
 
 @lru_cache(maxsize=1)
 def distro() -> str:
-    """``"debian"`` for Debian, Ubuntu and their derivatives (apt), otherwise ``"arch"``."""
-    try:
-        with open("/etc/os-release", encoding="utf-8") as fh:
+    """``"debian"`` for Debian, Ubuntu and their derivatives (apt), ``"fedora"`` for Fedora, RHEL and
+    their derivatives (dnf), ``"suse"`` for openSUSE and SLE (zypper), otherwise ``"arch"``."""
+    try:  # DROPWHEEL_OS_RELEASE: for the tests, as in install.sh
+        with open(os.environ.get("DROPWHEEL_OS_RELEASE") or "/etc/os-release", encoding="utf-8") as fh:
             fields = dict(line.rstrip("\n").split("=", 1) for line in fh if "=" in line)
     except OSError:
         return "arch"
-    ids = (fields.get("ID", "") + " " + fields.get("ID_LIKE", "")).replace('"', "").lower().split()
-    return "debian" if {"debian", "ubuntu"} & set(ids) else "arch"
+    ids = set((fields.get("ID", "") + " " + fields.get("ID_LIKE", "")).replace('"', "").lower().split())
+    if {"debian", "ubuntu"} & ids:
+        return "debian"
+    if {"fedora", "rhel", "centos"} & ids:
+        return "fedora"
+    return "suse" if any("suse" in i for i in ids) else "arch"  # opensuse-tumbleweed, opensuse-leap, sles
 
 
 def qt_frontend() -> bool:
@@ -620,8 +625,8 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         names = [names]
     if WINDOWS:
         return _nt_install_hint(names)
-    if distro() == "debian":
-        return _deb_install_hint(names)
+    if distro() in _NATIVE:
+        return _deb_install_hint(names, *_NATIVE[distro()])
     groups = packages_for(names)
     cmds: list[str] = []
     if groups["repo"]:
@@ -661,14 +666,66 @@ _DEB = {
 }
 
 
+#: Arch packages that no Fedora or openSUSE repository has (AUR, Arch-only or not packaged there).
+_NO_RPM = dict.fromkeys((
+    "caelestia-cli", "epubcheck", "gifski", "localsend-bin", "localsend-cli-bin", "pacman", "paru", "yay",
+    "prettier", "python-markitdown", "python-openai-whisper", "python-pdf2docx", "realesrgan-ncnn-vulkan-bin",
+    "satty", "silicon", "svgo", "upscayl-bin", "vtracer", "waifu2x-ncnn-vulkan", "whisper-cpp"), "")
+
+#: Fedora (and RHEL derivatives): dnf packages whose name is not the Arch one; ``""`` = not packaged.
+#: Checked against the Fedora 44 repository (binaries in /usr/bin); "py:" keys are Python modules
+#: that dnf provides.  ffmpeg-free is Fedora's own build: RPM Fusion's "ffmpeg" replaces it.
+_DNF = {
+    **_NO_RPM,
+    "clang": "clang-tools-extra", "cups": "cups-client", "ffmpeg": "ffmpeg-free", "glibc": "glibc-common",
+    "gnupg": "gnupg2", "go-yq": "yq", "imagemagick": "ImageMagick", "img2pdf": "python3-img2pdf",
+    "kdeconnect": "kde-connect", "libarchive": "bsdtar", "libavif": "libavif-tools", "libheif": "libheif-tools",
+    "libjpeg-turbo": "libjpeg-turbo-utils", "libjxl": "libjxl-utils", "libreoffice-fresh": "libreoffice",
+    "librsvg": "librsvg2-tools", "libvips": "vips-tools", "libwebp-utils": "libwebp-tools",
+    "mkvtoolnix-cli": "mkvtoolnix", "mupdf-tools": "mupdf", "pdftk": "pdftk-java",
+    "perl-image-exiftool": "perl-Image-ExifTool", "poppler": "poppler-utils", "python-fonttools": "fonttools",
+    "python-pipx": "pipx", "python-pygments": "python3-pygments", "python-weasyprint": "weasyprint",
+    "rpm-tools": "rpm", "scour": "python3-scour", "shellcheck": "ShellCheck",
+    "tesseract-data-eng": "tesseract-langpack-eng", "tesseract-data-ita": "tesseract-langpack-ita",
+    "thunar": "Thunar", "unarchiver": "unar", "woff2": "woff2-tools",
+    "deno": "", "dex": "", "ghostty": "", "hyprland": "", "resvg": "", "swww": "", "tectonic": "", "typst": "",
+    "wezterm": "",
+    "py:PIL": "python3-pillow", "py:PySide6": "python3-pyside6",
+}
+
+#: openSUSE Tumbleweed and Leap: zypper packages (or capabilities) whose name is not the Arch one;
+#: ``""`` = not packaged.  Checked against Tumbleweed and Leap 16.0 (some are Tumbleweed only:
+#: install.sh skips what zypper does not know).  QML modules are a package of their own there.
+_ZYPPER = {
+    **_NO_RPM,
+    "cups": "cups-client", "glib2": "glib2-tools", "gnupg": "gpg2", "go-yq": "yq", "gtk3": "gtk3-tools",
+    "imagemagick": "ImageMagick", "img2pdf": "python3-img2pdf", "kdeconnect": "kdeconnect-kde",
+    "libarchive": "bsdtar", "libavif": "avif-tools", "libheif": "", "libjxl": "libjxl-tools",
+    "libnotify": "libnotify-tools", "libreoffice-fresh": "libreoffice", "librsvg": "rsvg-convert",
+    "libvips": "vips-tools", "libwebp-utils": "libwebp-tools", "mat2": "", "mkvtoolnix-cli": "mkvtoolnix",
+    "mupdf-tools": "mupdf", "ocrmypdf": "python3-ocrmypdf", "perl-image-exiftool": "exiftool",
+    "poppler": "poppler-tools", "python-fonttools": "python3-FontTools", "python-pipx": "python3-pipx",
+    "python-pygments": "python3-Pygments", "python-weasyprint": "python3-weasyprint", "rpm-tools": "rpm",
+    "ruff": "python3-ruff", "scour": "python3-scour", "shellcheck": "ShellCheck", "squashfs-tools": "squashfs",
+    "tesseract": "tesseract-ocr", "tesseract-data-eng": "tesseract-ocr-traineddata-eng",
+    "tesseract-data-ita": "tesseract-ocr-traineddata-ita", "unarchiver": "unar",
+    "py:PIL": "python3-Pillow", "py:PySide6": "python3-pyside6 qt6-declarative-imports",
+}
+
+#: Linux systems other than Arch: (install command, Arch → native package names).
+_NATIVE = {"debian": ("sudo apt install", _DEB), "fedora": ("sudo dnf install", _DNF),
+           "suse": ("sudo zypper install", _ZYPPER)}
+
+
 def _pip_name(tool: Tool) -> str:
     module = tool.module or tool.name[3:]
     return _NT_PIP.get(module) or tool.packages[0].removeprefix("python-")
 
 
-def _deb_install_hint(names: Iterable[str]) -> str:
-    """Debian and Ubuntu: ``sudo apt install`` for programs, pip for Python modules (in
-    Dropwheel's own environment when it has one)."""
+def _deb_install_hint(names: Iterable[str], install: str = "sudo apt install", table: dict = _DEB) -> str:
+    """Debian and Ubuntu, Fedora, openSUSE: ``install`` (``sudo apt install``…) for programs and for the
+    Python modules ``table`` lists, pip for the other modules (in Dropwheel's own environment when it
+    has one)."""
     apt: list[str] = []
     pip: list[str] = []
     custom: list[str] = []
@@ -677,12 +734,15 @@ def _deb_install_hint(names: Iterable[str]) -> str:
         if tool.install:
             custom.append(tool.install)
         elif tool.name.startswith("py:"):
-            pip.append(_pip_name(tool))
+            if tool.name in table:
+                apt += table[tool.name].split()
+            else:
+                pip.append(_pip_name(tool))
         else:
-            apt += [p for p in (_DEB.get(pkg, pkg) for pkg in tool.packages) if p]
+            apt += [p for pkg in tool.packages for p in table.get(pkg, pkg).split()]
     cmds = []
     if apt:
-        cmds.append("sudo apt install " + " ".join(dict.fromkeys(apt)))
+        cmds.append(f"{install} " + " ".join(dict.fromkeys(apt)))
     if pip:
         in_venv = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
         python = sys.executable if in_venv else "python3"

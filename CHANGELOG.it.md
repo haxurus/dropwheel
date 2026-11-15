@@ -16,6 +16,10 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
   - `dropwheel setup gnome [--remove]`: l'estensione, una scorciatoia personalizzata (`trigger.shortcut`) che
     esegue `dropwheel open`, l'avvio all'accesso e il font delle icone.
   - Indicazioni di installazione con `apt` su Debian e Ubuntu, e pip per i moduli Python.
+- **Fedora e openSUSE con GNOME** (Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16), non ancora provati su
+  un vero computer. `install.sh` li riconosce (e i derivati di RHEL), installa i pacchetti con dnf o zypper,
+  PySide6 compreso, e tiene un ambiente Python privato solo per ciò che installa pip; le indicazioni di
+  installazione e `dropwheel doctor` danno i nomi dei pacchetti di dnf e zypper.
 - **Installer interattivi.** `install.sh` (Arch, Debian, Ubuntu) e `install.ps1` (Windows) si aprono con il nome
   del progetto e i link, riconoscono il sistema e il desktop, e chiedono prima di ogni passo: i pacchetti
   obbligatori (installati con pacman, apt o winget dopo il tuo sì), i gruppi di funzioni facoltative da un
