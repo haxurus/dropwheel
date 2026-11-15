@@ -19,7 +19,6 @@ from __future__ import annotations
 import json
 import logging
 import math
-import os
 import re
 import shutil
 from pathlib import Path
@@ -27,7 +26,7 @@ from typing import Any, Callable, Iterable, Sequence
 
 from .. import i18n, tools, util
 from ..detect import FileInfo
-from ..errors import Cancelled, MissingTool, ToolError, UserError
+from ..errors import MissingTool, ToolError, UserError
 from ..jobs import Context, Result, atomic_target
 from ..registry import P, action, group, layout
 from . import _docs_engines as E

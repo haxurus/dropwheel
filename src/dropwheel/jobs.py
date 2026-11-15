@@ -173,6 +173,9 @@ def atomic_target(path: str | os.PathLike) -> Iterator[Path]:
 def _kill_proc(proc: subprocess.Popen, grace: float = KILL_GRACE) -> None:
     """SIGTERM the process group, SIGKILL after ``grace`` seconds."""
     posix = os.name == "posix" and hasattr(os, "killpg")
+    if tools.WINDOWS:
+        util.kill_tree(proc)  # no SIGTERM to send a console-less child: end the whole tree at once
+        return
     try:
         if posix:
             os.killpg(proc.pid, signal.SIGTERM)
@@ -669,9 +672,7 @@ class Context:
                 full_env[k] = str(v)
         data = input.encode("utf-8") if isinstance(input, str) else input
         self.log("$ " + _mask_args([shown, *args[1:]]))
-        kwargs: dict = {}
-        if os.name == "posix":
-            kwargs["start_new_session"] = True
+        kwargs = util.session_kwargs()
         job = self._job
         try:
             proc = subprocess.Popen(args, stdin=subprocess.PIPE if data is not None else subprocess.DEVNULL,

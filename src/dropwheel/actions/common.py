@@ -307,12 +307,7 @@ def find_checksum_for(path: str | os.PathLike) -> tuple[list[str], str, Path] | 
 
 
 def _clipboard_digest() -> str:
-    if not tools.have("wl-paste"):
-        return ""
-    res = util.run_quiet(["wl-paste", "--no-newline", "--type", "text/plain"], timeout=3)
-    if res is None or res.returncode != 0:
-        return ""
-    text = (res.stdout or "").strip()
+    text = util.paste_text().strip()
     return text if 32 <= len(text) <= 200 else ""
 
 

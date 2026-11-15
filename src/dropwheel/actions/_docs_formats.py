@@ -37,7 +37,7 @@ import xml.etree.ElementTree as ET
 import zipfile
 import zlib
 from collections import Counter
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Iterable, Sequence
 

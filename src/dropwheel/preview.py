@@ -120,6 +120,8 @@ def _kill_tree(proc: subprocess.Popen) -> None:
     try:
         if os.name == "posix" and hasattr(os, "killpg"):
             os.killpg(proc.pid, getattr(signal, "SIGKILL", signal.SIGTERM))
+        elif tools.WINDOWS:
+            util.kill_tree(proc)
         else:
             proc.kill()
     except (ProcessLookupError, PermissionError, OSError):
@@ -138,9 +140,7 @@ def _run(argv: list[Any], *, timeout: float, input: bytes | None = None,
     if exe is None:
         raise MissingTool(name)
     args = [exe] + [os.fspath(a) if isinstance(a, os.PathLike) else str(a) for a in argv[1:]]
-    kwargs: dict[str, Any] = {}
-    if os.name == "posix":
-        kwargs["start_new_session"] = True
+    kwargs: dict[str, Any] = util.session_kwargs()
     try:
         proc = subprocess.Popen(args, stdin=subprocess.PIPE if input is not None else subprocess.DEVNULL,
                                 stdout=subprocess.PIPE, stderr=subprocess.PIPE, close_fds=True, **kwargs)

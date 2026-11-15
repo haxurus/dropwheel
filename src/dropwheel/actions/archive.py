@@ -292,13 +292,15 @@ def _popen(argv: Sequence[str], **kw: Any) -> subprocess.Popen:
     exe = tools.path(argv[0])
     if exe is None:
         raise MissingTool(argv[0])
-    if os.name == "posix":
-        kw["start_new_session"] = True
+    kw.update(util.session_kwargs())
     return subprocess.Popen([exe, *argv[1:]], close_fds=True, **kw)
 
 
 def _kill(proc: subprocess.Popen) -> None:
     if proc.poll() is not None:
+        return
+    if tools.WINDOWS:
+        util.kill_tree(proc)
         return
     try:
         if os.name == "posix" and hasattr(os, "killpg"):

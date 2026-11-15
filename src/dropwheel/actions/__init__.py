@@ -14,6 +14,7 @@ from __future__ import annotations
 
 import importlib
 import logging
+import os
 import sys
 import threading
 import traceback
@@ -26,6 +27,9 @@ __all__ = ["MODULES", "LOAD_ERRORS", "load_all", "loaded_modules"]
 #: Import order (common first: it defines the shared File page).
 MODULES: tuple[str, ...] = ("common", "image", "pdf", "docs", "media", "archive", "fonts", "folder", "web",
                             "system", "custom")
+if os.name == "nt":
+    # AppImage, Linux disk images and distro packages mean nothing on Windows
+    MODULES = tuple(m for m in MODULES if m != "system")
 
 #: module name -> error text for modules that failed to import.
 LOAD_ERRORS: dict[str, str] = {}

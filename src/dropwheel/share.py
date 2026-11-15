@@ -331,9 +331,7 @@ def start_share(paths: Iterable[str | os.PathLike], minutes: float | None = None
     _write_state(share_id, spec)
     env = os.environ.copy()
     env["PYTHONPATH"] = os.pathsep.join(p for p in (_package_root(), env.get("PYTHONPATH", "")) if p)
-    kwargs: dict[str, Any] = {}
-    if os.name == "posix":
-        kwargs["start_new_session"] = True
+    kwargs: dict[str, Any] = util.session_kwargs()
     try:
         proc = subprocess.Popen([sys.executable, "-P", "-m", "dropwheel", "share-serve", share_id],
                                 stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL,
@@ -383,6 +381,14 @@ def stop_share(share_id: str, wait: float = 3.0) -> bool:
         return False
     pid = int(state.get("pid") or 0)
     was_running = bool(pid) and _pid_alive(pid) and _is_our_server(pid, share_id)
+    if was_running and os.name == "nt":
+        # os.kill() there is TerminateProcess on whatever now owns the pid: never send it.  The server
+        # stops by itself within 2 s once its state file is gone (watch_state in serve_share).
+        _remove_files(share_id)
+        deadline = time.monotonic() + wait
+        while time.monotonic() < deadline and _pid_alive(pid):
+            time.sleep(0.05)
+        return was_running
     if was_running:
         with contextlib.suppress(OSError):
             os.kill(pid, signal.SIGTERM)

@@ -574,8 +574,9 @@ def layout(key: str, items: Iterable, page: str = "main") -> None:
 
 
 def get(action_id: str) -> Action | None:
-    """The registered action ``action_id`` or ``None``."""
-    return _ACTIONS.get(action_id)
+    """The registered action ``action_id`` or ``None`` (also for actions of :data:`PLATFORM_HIDDEN`, so that
+    ``dropwheel run`` and the daemon cannot start them either)."""
+    return None if action_id in PLATFORM_HIDDEN else _ACTIONS.get(action_id)
 
 
 def get_group(group_id: str) -> GroupSpec | None:
@@ -585,7 +586,7 @@ def get_group(group_id: str) -> GroupSpec | None:
 
 def all_actions() -> list[Action]:
     """Every registered action in registration order."""
-    return sorted(_ACTIONS.values(), key=lambda a: a.seq)
+    return sorted((a for a in _ACTIONS.values() if a.id not in PLATFORM_HIDDEN), key=lambda a: a.seq)
 
 
 def all_groups() -> list[GroupSpec]:
@@ -645,13 +646,23 @@ def _collect_refs(items: Iterable, out: set[str], seen: set[str] | None = None) 
     return out
 
 
+#: Windows: actions built on Linux desktop pieces with no counterpart there (Hyprland, Caelestia
+#: wallpapers, CUPS ``lp``, fontconfig, KDE Connect, Wayland annotation tools).  The ``system``
+#: module (AppImage, disk images, Linux packages) is not even loaded (see :mod:`dropwheel.actions`).
+_WINDOWS_HIDDEN: tuple[str, ...] = (
+    "image.wallpaper", "image.resize.social.monitor", "image.edit.annotate", "image.print", "pdf.print",
+    "font.install", "font.uninstall", "file.share.kdeconnect",
+)
+PLATFORM_HIDDEN: tuple[str, ...] = _WINDOWS_HIDDEN if tools.WINDOWS else ()
+
+
 class _MenuCtx:
     def __init__(self, files: list[FileInfo], config: dict | None, lang: str) -> None:
         self.files = files
         self.config = config or {}
         self.lang = lang
         hidden = self.config.get("hidden_actions") or []
-        self.hidden_patterns = [str(h) for h in hidden if isinstance(h, str) and h]
+        self.hidden_patterns = [*PLATFORM_HIDDEN, *(str(h) for h in hidden if isinstance(h, str) and h)]
         wheel = self.config.get("wheel") or {}
         self.show_unavailable = bool(wheel.get("show_unavailable", True)) if isinstance(wheel, dict) else True
         self._applicable: dict[str, bool] = {}

@@ -33,7 +33,6 @@ import math
 import os
 import re
 import secrets
-import shlex
 import shutil
 import sys
 import threading
@@ -740,7 +739,7 @@ def _well_formed(fragment: str) -> bool:
 
 def _text_to_xhtml(text: str, anchor: str = "") -> str:
     paras = [p.strip() for p in re.split(r"\n\s*\n", text or "") if p.strip()]
-    body = "".join(f"<p>{html.escape(re.sub(r'\s+', ' ', p), quote=False)}</p>" for p in paras)
+    body = "".join("<p>" + html.escape(re.sub(r"\s+", " ", p), quote=False) + "</p>" for p in paras)
     return f'<div id="{anchor}">{body}</div>' if anchor else body
 
 
@@ -4026,7 +4025,7 @@ def annotate(ctx: Context) -> Result:
     custom = str(cfgmod.get(ctx.config, "apps.pdf_editor", "") or "").strip()
     if custom:
         try:
-            argv = shlex.split(custom)
+            argv = util.split_command(custom)
         except ValueError:
             argv = []
         if argv and util.detach([*argv, f.path]):

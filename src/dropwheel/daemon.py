@@ -71,6 +71,8 @@ _SLOW = frozenset({"preview", "doctor"})
 _SIGNALS = ("SIGTERM", "SIGINT", "SIGHUP")
 _REQUIRED =(("py:PIL", "python-pillow"), ("qs", "quickshell"), ("hyprctl", "hyprland"), ("wl-copy", "wl-clipboard"),
              ("wl-paste", "wl-clipboard"))
+if tools.WINDOWS:
+    _REQUIRED = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"))
 
 
 # ============================================================================ action loading

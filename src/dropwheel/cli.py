@@ -58,6 +58,9 @@ REQUIRED_TOOLS: tuple[tuple[str, str], ...] = (
     ("wl-copy", "wl-clipboard"),
     ("wl-paste", "wl-clipboard"),
 )
+if tools.WINDOWS:
+    # no compositor or Quickshell there: the CLI is the front end; send2trash is the only safe trash
+    REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"))
 
 #: Programs that are a personal choice (terminals, file managers, viewers, package helpers…):
 #: reported by ``doctor`` but never part of the "install everything" command.
@@ -1492,7 +1495,7 @@ def _edit_file(ctx: Ctx, path: Path) -> None:
     editor = os.environ.get("VISUAL") or os.environ.get("EDITOR") or ""
     if editor and _isatty(sys.stdin) and ctx.term.tty:
         try:
-            argv = shlex.split(editor)
+            argv = util.split_command(editor)
         except ValueError:
             argv = [editor]
         try:

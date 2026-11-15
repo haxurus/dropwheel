@@ -880,7 +880,6 @@ class FakeLO:
             (outdir / f"source.{target}").write_bytes(b"%PDF-1.7 fake")
             return subprocess.CompletedProcess(argv, 0, "convert x -> y using filter : z", "")
         if action == "restart":
-            profile = Path(argv[1].split("=", 1)[1].replace("file:///", "/").replace("file://", ""))
             return subprocess.CompletedProcess(argv, 81, "", "")
         if action == "noload":
             return subprocess.CompletedProcess(argv, 0, "Error: source file could not be loaded", "")

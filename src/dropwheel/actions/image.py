@@ -1698,9 +1698,7 @@ def annotate(ctx: Context) -> Result:
             continue
     editor = str(_cfg(ctx, "apps.image_editor", "") or "").strip()
     if editor:
-        import shlex
-
-        argv = shlex.split(editor)
+        argv = util.split_command(editor)
         out = ctx.output_path(f, ext="png", suffix="sfx.annotated")
         _deliver(ctx, work, out)
         if argv and util.detach([*argv, str(out)]):

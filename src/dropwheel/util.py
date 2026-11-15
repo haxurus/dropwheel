@@ -42,16 +42,56 @@ __all__ = [
     "free_space", "dir_size", "detach", "run_quiet", "open_path", "reveal_path", "copy_text",
     "copy_files", "files_clipboard_type", "copy_image", "read_clipboard_files", "parse_uri_list", "trash",
     "find_terminal", "launch_terminal", "desktop_apps_for", "find_desktop_file", "launch_desktop_app",
+    "split_command", "session_kwargs", "kill_tree", "paste_text",
 ]
 
 # ------------------------------------------------------------------------------------------ XDG
+
+
+#: Windows homes of the XDG dirs.  The cache sits in Temp: it is a volatile root (see
+#: :func:`volatile_roots`), so it must not contain the config, data or state folders.
+_NT_HOMES = {"XDG_CONFIG_HOME": ("APPDATA", ""), "XDG_DATA_HOME": ("LOCALAPPDATA", ""),
+             "XDG_STATE_HOME": ("LOCALAPPDATA", ""), "XDG_CACHE_HOME": ("LOCALAPPDATA", "Temp")}
 
 
 def _env_dir(var: str, default: str) -> Path:
     value = os.environ.get(var, "")
     if value and os.path.isabs(value):
         return Path(value)
+    if tools.WINDOWS and var in _NT_HOMES:
+        base_var, sub = _NT_HOMES[var]
+        base = os.environ.get(base_var, "")
+        if base and os.path.isabs(base):
+            return Path(base, sub) if sub else Path(base)
     return Path(os.path.expanduser(default))
+
+
+def split_command(command: str) -> list[str]:
+    """Split a configured command line into argv.
+
+    POSIX rules on Linux.  On Windows ``shlex`` would eat the backslashes of ``C:\\Program Files\\…``, so
+    the line is split on spaces outside double quotes and the quotes are dropped.
+    """
+    if not tools.WINDOWS:
+        return shlex.split(command)
+    # CommandLineToArgvW rules minus the backslash escapes: ``"`` toggles quoting anywhere in a word
+    # (``--opt="a b"`` → ``--opt=a b``), backslashes stay literal, so paths survive.
+    out: list[str] = []
+    word: list[str] = []
+    quoted = started = False
+    for ch in command:
+        if ch == '"':
+            quoted, started = not quoted, True
+        elif ch in " \t" and not quoted:
+            if started:
+                out.append("".join(word))
+            word, started = [], False
+        else:
+            word.append(ch)
+            started = True
+    if started:
+        out.append("".join(word))
+    return out
 
 
 def xdg_config_home() -> Path:
@@ -451,8 +491,9 @@ def volatile_roots() -> list[str]:
     env = os.environ.get("DROPWHEEL_VOLATILE_DIRS")
     if env is not None:
         return [os.path.realpath(os.path.expanduser(p)) for p in env.split(os.pathsep) if p.strip()]
-    roots = ["/tmp", "/var/tmp", "/dev/shm", tempfile.gettempdir(), str(xdg_cache_home()),
-             os.path.expanduser("~/.cache")]
+    roots = [tempfile.gettempdir(), str(xdg_cache_home())]
+    if not tools.WINDOWS:  # on Windows these would become C:\\tmp and the like
+        roots += ["/tmp", "/var/tmp", "/dev/shm", os.path.expanduser("~/.cache")]
     runtime = xdg_runtime_dir()
     if runtime is not None:
         roots.append(str(runtime))
@@ -602,6 +643,35 @@ def _reap(proc: subprocess.Popen) -> None:
         pass
 
 
+def session_kwargs(*, detached: bool = False) -> dict:
+    """``Popen`` options that keep a child out of our signal group (and, on Windows, without a console)."""
+    if os.name == "posix":
+        return {"start_new_session": True}
+    if tools.WINDOWS:
+        flags = subprocess.CREATE_NEW_PROCESS_GROUP
+        flags |= subprocess.DETACHED_PROCESS if detached else subprocess.CREATE_NO_WINDOW
+        return {"creationflags": flags}
+    return {}
+
+
+def kill_tree(proc: subprocess.Popen) -> None:
+    """Windows: kill ``proc`` and its children (``taskkill /T``), the counterpart of ``killpg``."""
+    if proc.poll() is not None:
+        return
+    exe = tools.path("taskkill")
+    if exe:
+        try:
+            subprocess.run([exe, "/T", "/F", "/PID", str(proc.pid)], stdout=subprocess.DEVNULL,
+                           stderr=subprocess.DEVNULL, timeout=10, **session_kwargs())
+        except (OSError, subprocess.TimeoutExpired):
+            pass
+    if proc.poll() is None:
+        try:
+            proc.kill()
+        except OSError:
+            pass
+
+
 def detach(argv: Sequence[str], *, cwd: str | os.PathLike | None = None, env: dict | None = None) -> bool:
     """Start ``argv`` in its own session with stdio on ``/dev/null`` and return immediately.
 
@@ -623,9 +693,7 @@ def detach(argv: Sequence[str], *, cwd: str | os.PathLike | None = None, env: di
                 full_env.pop(k, None)
             else:
                 full_env[k] = str(v)
-    kwargs: dict = {}
-    if os.name == "posix":
-        kwargs["start_new_session"] = True
+    kwargs = session_kwargs(detached=True)
     try:
         proc = subprocess.Popen(argv, stdin=subprocess.DEVNULL, stdout=subprocess.DEVNULL,
                                 stderr=subprocess.DEVNULL, cwd=os.fspath(cwd) if cwd else None,
@@ -659,7 +727,8 @@ def run_quiet(argv: Sequence[str], *, timeout: float = 10.0, input: bytes | str 
     try:
         return subprocess.run(argv, input=data, capture_output=True, timeout=timeout, text=text,
                               encoding="utf-8" if text else None, errors="replace" if text else None,
-                              stdin=None if data is not None else subprocess.DEVNULL, env=full_env)
+                              stdin=None if data is not None else subprocess.DEVNULL, env=full_env,
+                              **(session_kwargs() if tools.WINDOWS else {}))
     except (OSError, subprocess.TimeoutExpired, ValueError) as exc:
         log.debug("run_quiet %s failed: %s", argv[0], exc)
         return None
@@ -672,9 +741,16 @@ def open_path(path: str | os.PathLike, app: str = "") -> bool:
     """Open ``path`` with the default application (``xdg-open``, then ``gio open``) or ``app`` (argv string)."""
     target = os.fspath(path)
     if app:
-        argv = shlex.split(app)
+        argv = split_command(app)
         if argv and detach([*argv, target]):
             return True
+    if tools.WINDOWS:
+        try:
+            os.startfile(target)  # type: ignore[attr-defined]
+            return True
+        except OSError as exc:
+            log.warning("open %s failed: %s", target, exc)
+            return False
     if tools.have("xdg-open") and detach(["xdg-open", target]):
         return True
     if tools.have("gio") and detach(["gio", "open", target]):
@@ -694,6 +770,19 @@ def reveal_path(paths: str | os.PathLike | Iterable[str | os.PathLike], file_man
     items = [os.path.abspath(p) for p in items if p]
     if not items:
         return False
+    if tools.WINDOWS and not file_manager:
+        explorer = tools.path("explorer")
+        if explorer is None:
+            return False
+        # shortcut: Explorer selects one item from the command line; SHOpenFolderAndSelectItems for several.
+        # Explorer splits its arguments on commas: the path must be quoted, and Popen would not quote
+        # it (no spaces), so the line is built here (Windows paths cannot contain '"').
+        try:
+            subprocess.Popen(f'"{explorer}" /select,"{items[0]}"', close_fds=True, **session_kwargs(detached=True))
+        except OSError as exc:
+            log.warning("reveal %s failed: %s", items[0], exc)
+            return False
+        return True
     if not file_manager and tools.have("gdbus"):
         uris = ", ".join("'" + path_to_uri(p).replace("'", "%27") + "'" for p in items)
         res = run_quiet(["gdbus", "call", "--session", "--dest", "org.freedesktop.FileManager1",
@@ -703,7 +792,7 @@ def reveal_path(paths: str | os.PathLike | Iterable[str | os.PathLike], file_man
             return True
     parent = os.path.dirname(items[0]) or items[0]
     if file_manager:
-        argv = shlex.split(file_manager)
+        argv = split_command(file_manager)
         if argv:
             name = os.path.basename(argv[0]).lower()
             if name in ("nautilus", "dolphin") and len(items) == 1:
@@ -717,7 +806,32 @@ def reveal_path(paths: str | os.PathLike | Iterable[str | os.PathLike], file_man
 # ---------------------------------------------------------------------------------- clipboard
 
 
+#: Windows PowerShell 5.1 (``powershell.exe``, on every Windows 10/11): its ``Set-Clipboard`` and
+#: ``Get-Clipboard -Format FileDropList`` handle text and files.  Paths come in through stdin as
+#: UTF-8 lines, never through the command line, so no quoting is involved.
+#: UTF-8 without BOM both ways (``[Text.Encoding]::UTF8`` would start the output with a BOM).
+_PS_PRELUDE = ("$e=New-Object Text.UTF8Encoding $false;"
+               "[Console]::InputEncoding=$e;[Console]::OutputEncoding=$e;")
+
+
+def _powershell(script: str, data: str = "") -> subprocess.CompletedProcess | None:
+    # text mode on Windows writes "\n" as "\r\n": normalise first so CRLF input does not become "\r\r\n"
+    res = run_quiet(["powershell", "-NoProfile", "-NonInteractive", "-Command", _PS_PRELUDE + script],
+                    input=data.replace("\r\n", "\n"), timeout=15)
+    if res is not None and isinstance(res.stdout, str):
+        res.stdout = res.stdout.lstrip("\ufeff")
+    return res
+
+
+def _nt_ok(res: subprocess.CompletedProcess | None) -> bool:
+    return res is not None and res.returncode == 0
+
+
 def _wl_copy(data: bytes, mime: str) -> bool:
+    if tools.WINDOWS:
+        if not mime.startswith("text/"):
+            return False  # images go through copy_image, files through copy_files
+        return _nt_ok(_powershell("Set-Clipboard -Value ([Console]::In.ReadToEnd())", data.decode("utf-8")))
     exe = tools.path("wl-copy")
     if exe is None:
         return False
@@ -767,6 +881,12 @@ def copy_files(paths: Iterable[str | os.PathLike], file_manager: str = "") -> bo
     GTK file managers (Thunar, Nautilus, Nemo…) read ``x-special/gnome-copied-files``
     (``copy\\n<uri>\\n<uri>``), KDE's read ``text/uri-list``; see :func:`files_clipboard_type`.
     """
+    if tools.WINDOWS:
+        items = [os.path.abspath(os.fspath(p)) for p in paths]
+        if not items:
+            return False
+        return _nt_ok(_powershell("Set-Clipboard -LiteralPath ([Console]::In.ReadToEnd() -split \"\\r?\\n\" | ? { $_ })",
+                                  "\n".join(items)))
     uris = [path_to_uri(p) for p in paths]
     if not uris:
         return False
@@ -785,6 +905,14 @@ def copy_image(path: str | os.PathLike, mime: str = "") -> bool:
         ext = p.suffix.lower().lstrip(".")
         mime = {"jpg": "image/jpeg", "jpeg": "image/jpeg", "webp": "image/webp", "gif": "image/gif",
                 "svg": "image/svg+xml", "avif": "image/avif", "bmp": "image/bmp"}.get(ext, "image/png")
+    if tools.WINDOWS:
+        if not p.is_file():
+            return False
+        # System.Drawing reads PNG/JPEG/GIF/BMP; other formats fail and return False
+        script = ("Add-Type -AssemblyName System.Windows.Forms,System.Drawing;"
+                  "$i=[Drawing.Image]::FromFile([Console]::In.ReadToEnd().Trim());"
+                  "[Windows.Forms.Clipboard]::SetImage($i);$i.Dispose()")
+        return _nt_ok(_powershell(script, str(p.resolve())))
     try:
         data = p.read_bytes()
     except OSError:
@@ -814,12 +942,26 @@ def parse_uri_list(text: str, *, keep_urls: bool = True) -> list[str]:
     return out
 
 
+def paste_text() -> str:
+    """The text on the clipboard (``""`` when there is none or it cannot be read)."""
+    if tools.WINDOWS:
+        res = _powershell("Get-Clipboard -Raw")
+    elif tools.have("wl-paste"):
+        res = run_quiet(["wl-paste", "--no-newline", "--type", "text/plain"], timeout=3)
+    else:
+        return ""
+    return (res.stdout or "") if _nt_ok(res) else ""
+
+
 def read_clipboard_files() -> list[str]:
     """Return the files currently on the clipboard.
 
     Tries ``text/uri-list``, then ``x-special/gnome-copied-files``, then plain text containing
     absolute paths / ``file://`` URIs of existing files.  http(s) URLs from a uri-list are kept.
     """
+    if tools.WINDOWS:
+        res = _powershell("Get-Clipboard -Format FileDropList | % { $_.FullName }")
+        return [line for line in res.stdout.splitlines() if line.strip()] if _nt_ok(res) else []
     if not tools.have("wl-paste"):
         return []
     res = run_quiet(["wl-paste", "--list-types"], timeout=3)
@@ -956,6 +1098,19 @@ def _trash_manual(path: str) -> None:
             raise
 
 
+def _nt_has_recycle_bin(path: str) -> bool:
+    """Windows: ``True`` only for fixed local drives (``GetDriveTypeW`` = ``DRIVE_FIXED``)."""
+    drive = os.path.splitdrive(os.path.abspath(path))[0]
+    if not drive or drive.startswith(("\\\\", "//")):
+        return False  # UNC path: a network share
+    try:
+        import ctypes
+
+        return ctypes.windll.kernel32.GetDriveTypeW(drive + "\\") == 3  # type: ignore[attr-defined]
+    except Exception:
+        return False
+
+
 def trash(path: str | os.PathLike) -> bool:
     """Move ``path`` to the trash (``gio trash`` → ``trash-put`` → send2trash → freedesktop trash).
 
@@ -966,6 +1121,24 @@ def trash(path: str | os.PathLike) -> bool:
     if not os.path.lexists(target):
         return True
     errors: list[str] = []
+    if tools.WINDOWS:
+        # Only the Recycle Bin: the freedesktop fallback below would hide files in a folder Explorer never shows.
+        if not _nt_has_recycle_bin(target):
+            # network shares and removable drives have none: the shell would delete for good
+            raise UserError("err.trash_failed", details="this drive has no Recycle Bin",
+                            name=os.path.basename(target))
+        try:
+            from send2trash import send2trash  # type: ignore
+        except ImportError:
+            raise UserError("err.trash_failed", details="send2trash is not installed",
+                            install=tools.install_hint(["py:send2trash"]), name=os.path.basename(target)) from None
+        try:
+            send2trash(target)
+        except Exception as exc:
+            raise UserError("err.trash_failed", details=str(exc), name=os.path.basename(target)) from None
+        if os.path.lexists(target):
+            raise UserError("err.trash_failed", name=os.path.basename(target))
+        return True
     if tools.have("gio"):
         res = run_quiet(["gio", "trash", "--", target], timeout=60)
         if res is not None and res.returncode == 0 and not os.path.lexists(target):
@@ -1015,7 +1188,7 @@ def find_terminal(preferred: str | dict | None = "") -> list[str] | None:
     whole config dict, then ``$TERMINAL``, ``xdg-terminal-exec`` and the known terminals)."""
     for cand in (_preferred_terminal(preferred), os.environ.get("TERMINAL", "")):
         if cand:
-            argv = shlex.split(cand)
+            argv = split_command(cand)
             if argv and tools.have(argv[0]):
                 return argv
     for name in ("xdg-terminal-exec", *_TERMINALS):
@@ -1065,6 +1238,8 @@ def launch_terminal(cwd: str | os.PathLike, command: Sequence[str] | str | None 
         directory = os.path.dirname(directory)
     if not os.path.isdir(directory):
         directory = os.path.expanduser("~")
+    if tools.WINDOWS:
+        return _nt_launch_terminal(directory, command, hold=hold)
     term = find_terminal(preferred)
     if term is None:
         raise UserError("err.no_terminal", install=tools.install_hint(["foot"]))
@@ -1086,6 +1261,24 @@ def launch_terminal(cwd: str | os.PathLike, command: Sequence[str] | str | None 
     if not detach(argv, cwd=run_cwd, env=env):
         raise UserError("err.no_terminal", details=" ".join(argv))
     return argv
+
+
+def _nt_launch_terminal(directory: str, command: Sequence[str] | str | None, *, hold: bool) -> list[str]:
+    """Windows: a new ``cmd.exe`` console in ``directory``.
+
+    Running a command is not supported there: cmd.exe would read ``&``/``|`` in file names as
+    operators, and no Windows caller needs it (the ``system`` actions that do are not loaded).
+    """
+    if command is not None:
+        raise UserError("err.no_terminal", details="commands in a terminal are not supported on Windows")
+    exe = tools.path("cmd")
+    if exe is None:
+        raise UserError("err.no_terminal")
+    try:
+        subprocess.Popen([exe], cwd=directory, creationflags=subprocess.CREATE_NEW_CONSOLE, close_fds=True)
+    except OSError as exc:
+        raise UserError("err.no_terminal", details=str(exc)) from None
+    return [exe]
 
 
 # ------------------------------------------------------------------------------- desktop apps

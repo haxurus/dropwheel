@@ -23,8 +23,11 @@ from typing import Iterable
 
 __all__ = [
     "Tool", "TOOLS", "path", "have", "missing", "install_hint", "report", "refresh",
-    "display_name", "packages_for", "aur_helper",
+    "display_name", "packages_for", "aur_helper", "WINDOWS",
 ]
+
+#: Running on Windows: binary names, search dirs and install hints differ (see the ``_NT_*`` tables).
+WINDOWS = os.name == "nt"
 
 #: Directories searched after ``$PATH`` (Arch puts some perl tools outside the default PATH).
 EXTRA_DIRS = (
@@ -39,6 +42,26 @@ EXTRA_DIRS = (
     os.path.expanduser("~/.local/share/flatpak/exports/bin"),
     "/opt/bin",
 )
+
+
+def _nt_extra_dirs() -> tuple[str, ...]:
+    """Install folders of the Windows builds of the tools that do not add themselves to ``PATH``."""
+    import glob
+
+    program_files = ("*", "*/bin", "*/program", "gs/*/bin")
+    local = ("Programs/*", "Programs/*/bin", "Microsoft/WinGet/Links")  # not "*": that would take in Temp
+    out: list[str] = []
+    for var, patterns in (("ProgramFiles", program_files), ("ProgramFiles(x86)", program_files),
+                          ("LOCALAPPDATA", local)):
+        root = os.environ.get(var, "")
+        if root and os.path.isabs(root):
+            for pat in patterns:
+                out += sorted(glob.glob(os.path.join(root, pat)), reverse=True)  # newest versioned folder first
+    return tuple(out)
+
+
+if WINDOWS:
+    EXTRA_DIRS = _nt_extra_dirs()
 
 _CACHE_TTL = 600.0
 _stamp = time.monotonic()
@@ -138,7 +161,7 @@ _TOOL_LIST: list[Tool] = [
     _b("grim", "grim", "image"),
     _b("swww", "swww", "image", description="wallpaper daemon"),
     # ---------------------------------------------------------------- pdf
-    _b("gs", "ghostscript", "pdf", description="Ghostscript"),
+    _b("gs", "ghostscript", "pdf", binaries=("gs", "gswin64c", "gswin32c"), description="Ghostscript"),
     _b("qpdf", "qpdf", "pdf"),
     _b("pdftoppm", "poppler", "pdf"),
     _b("pdftocairo", "poppler", "pdf"),
@@ -333,6 +356,24 @@ _ALIASES = {
 }
 
 
+#: Windows: programs the Linux names stand for (clipboard via PowerShell, opening via Explorer).
+#: ``util`` checks :data:`WINDOWS` before running any of these names, so they never run with Linux arguments.
+_NT_PROVIDED = {"wl-copy": "powershell", "wl-paste": "powershell", "xdg-open": "explorer"}
+
+#: Windows: names that would find an unrelated System32 program (``convert.exe`` converts FAT to NTFS).
+_NT_SHADOWED = {"convert"}
+
+#: Windows: winget package ids (checked in the winget-pkgs index) for the tools that have one.
+_NT_WINGET = {
+    "ffmpeg": "Gyan.FFmpeg", "ffprobe": "Gyan.FFmpeg", "magick": "ImageMagick.ImageMagick",
+    "exiftool": "OliverBetz.ExifTool", "soffice": "TheDocumentFoundation.LibreOffice",
+    "pandoc": "JohnMacFarlane.Pandoc", "qpdf": "QPDF.QPDF", "tesseract": "UB-Mannheim.TesseractOCR",
+    "7z": "7zip.7zip", "yt-dlp": "yt-dlp.yt-dlp",
+    **dict.fromkeys(("pdftoppm", "pdftocairo", "pdftotext", "pdfimages", "pdfinfo", "pdfunite", "pdfseparate",
+                     "pdfattach", "pdfdetach"), "oschwartz10612.Poppler"),
+}
+
+
 def _canonical(name: str) -> str:
     name = str(name).strip()
     return _ALIASES.get(name, name)
@@ -357,14 +398,49 @@ def refresh() -> None:
     importlib.invalidate_caches()
 
 
+#: Windows: only real executables.  ``.cmd``/``.bat`` shims (npm's svgo, ``code.cmd``) run through
+#: cmd.exe, which reads ``&`` or ``%`` in a file name as syntax.
+_NT_EXE_EXTS = (".exe", ".com")
+
+#: Windows programs taken from ``%SystemRoot%`` only, never from ``PATH`` or the current folder.
+_NT_SYSTEM = {"powershell": r"System32\WindowsPowerShell\v1.0\powershell.exe", "cmd": r"System32\cmd.exe",
+              "taskkill": r"System32\taskkill.exe", "explorer": "explorer.exe", "tar": r"System32\tar.exe"}
+
+
 def _is_exe(p: str) -> bool:
     try:
+        if WINDOWS and not p.lower().endswith(_NT_EXE_EXTS):
+            return False
         return os.path.isfile(p) and os.access(p, os.X_OK)
     except (OSError, ValueError):
         return False
 
 
+def _nt_which(binary: str) -> str | None:
+    """Windows lookup: absolute ``PATH`` entries and :data:`EXTRA_DIRS` only.
+
+    ``shutil.which`` would try the current folder first, so a ``magick.exe`` lying next to the
+    files being converted would run.
+    """
+    if binary in _NT_SYSTEM:
+        root = os.environ.get("SystemRoot", r"C:\Windows")
+        candidate = os.path.join(root, _NT_SYSTEM[binary])
+        return candidate if _is_exe(candidate) else None
+    names = [binary] if binary.lower().endswith(_NT_EXE_EXTS) else [binary + ext for ext in _NT_EXE_EXTS]
+    for d in [*os.environ.get("PATH", "").split(os.pathsep), *EXTRA_DIRS]:
+        d = d.strip().strip('"')
+        if not d or not os.path.isabs(d):
+            continue
+        for name in names:
+            candidate = os.path.join(d, name)
+            if _is_exe(candidate):
+                return candidate
+    return None
+
+
 def _which(binary: str) -> str | None:
+    if WINDOWS:
+        return _nt_which(binary)
     found = shutil.which(binary)
     if found:
         return found
@@ -390,6 +466,11 @@ def _lookup(name: str) -> str | None:
         if spec is None:
             return None
         return spec.origin or f"py:{module}"
+    if WINDOWS:
+        if name in _NT_SHADOWED:
+            return None
+        if name in _NT_PROVIDED:
+            return _which(_NT_PROVIDED[name])
     tool = TOOLS.get(name)
     if tool is None:
         if os.path.isabs(name):
@@ -510,6 +591,8 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         return ""
     if isinstance(names, str):
         names = [names]
+    if WINDOWS:
+        return _nt_install_hint(names)
     groups = packages_for(names)
     cmds: list[str] = []
     if groups["repo"]:
@@ -522,6 +605,36 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         cmds.append("python -m pip install --user --break-system-packages " + " ".join(groups["pypi"]))
     cmds.extend(groups["custom"])
     return " && ".join(cmds)
+
+
+#: Windows: pip distributions whose name is not the Arch package minus ``python-``.
+_NT_PIP = {"PIL": "pillow", "PIL._avif": "pillow", "pillow_jxl": "pillow-jxl-plugin", "docx": "python-docx",
+           "yaml": "PyYAML", "cv2": "opencv-python", "gi": "PyGObject", "onnxruntime": "onnxruntime",
+           "odf": "odfpy", "ruamel.yaml": "ruamel.yaml"}
+
+#: Windows: ``winget search`` terms clearer than the binary name.
+_NT_SEARCH = {"gs": "Ghostscript"}
+
+
+def _nt_install_hint(names: Iterable[str]) -> str:
+    """Windows: ``winget install`` for known ids, ``pip install`` for modules, ``winget search`` otherwise."""
+    winget: list[str] = []
+    pip: list[str] = []
+    other: list[str] = []
+    for n in names:
+        tool = _tool_for(n)
+        if tool.name in _NT_WINGET:
+            winget.append(_NT_WINGET[tool.name])
+        elif tool.name.startswith("py:"):
+            module = tool.module or tool.name[3:]
+            pip.append(_NT_PIP.get(module) or tool.packages[0].removeprefix("python-"))
+        else:
+            other.append(_NT_SEARCH.get(tool.name) or display_name(tool.name))
+    cmds = [f"winget install --id {i} -e" for i in dict.fromkeys(winget)]
+    if pip:
+        cmds.append("python -m pip install " + " ".join(dict.fromkeys(pip)))
+    cmds += [f"winget search {o}" for o in dict.fromkeys(other)]
+    return "; ".join(cmds)  # Windows PowerShell 5.1 has no "&&"
 
 
 def report() -> dict:
