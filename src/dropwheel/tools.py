@@ -72,16 +72,21 @@ elif MACOS:
                   "/usr/bin", "/bin", "/usr/sbin")
 
 
+def _os_ids() -> set[str]:
+    """ID and ID_LIKE of /etc/os-release (``DROPWHEEL_OS_RELEASE`` for the tests, as in install.sh)."""
+    try:
+        with open(os.environ.get("DROPWHEEL_OS_RELEASE") or "/etc/os-release", encoding="utf-8") as fh:
+            fields = dict(line.rstrip("\n").split("=", 1) for line in fh if "=" in line)
+    except OSError:
+        return set()
+    return set((fields.get("ID", "") + " " + fields.get("ID_LIKE", "")).replace('"', "").lower().split())
+
+
 @lru_cache(maxsize=1)
 def distro() -> str:
     """``"debian"`` for Debian, Ubuntu and their derivatives (apt), ``"fedora"`` for Fedora, RHEL and
     their derivatives (dnf), ``"suse"`` for openSUSE and SLE (zypper), otherwise ``"arch"``."""
-    try:  # DROPWHEEL_OS_RELEASE: for the tests, as in install.sh
-        with open(os.environ.get("DROPWHEEL_OS_RELEASE") or "/etc/os-release", encoding="utf-8") as fh:
-            fields = dict(line.rstrip("\n").split("=", 1) for line in fh if "=" in line)
-    except OSError:
-        return "arch"
-    ids = set((fields.get("ID", "") + " " + fields.get("ID_LIKE", "")).replace('"', "").lower().split())
+    ids = _os_ids()
     if {"debian", "ubuntu"} & ids:
         return "debian"
     if {"fedora", "rhel", "centos"} & ids:
@@ -638,8 +643,14 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         return _nt_install_hint(names)
     if MACOS:
         return _mac_install_hint(names)
-    if distro() in _NATIVE:
-        return _deb_install_hint(names, *_NATIVE[distro()])
+    system = distro()
+    if system in _NATIVE:
+        install, table = _NATIVE[system]
+        if system == "fedora" and have("dnf5"):
+            install += " --skip-unavailable"  # dnf5 (Fedora 41+); dnf 4 (RHEL) has no such install option
+        if system == "suse" and not any(r in i for i in _os_ids() for r in _SUSE_ROLLING):
+            table = _ZYPPER_LEAP
+        return _deb_install_hint(names, install, table)
     groups = packages_for(names)
     cmds: list[str] = []
     if groups["repo"]:
@@ -688,6 +699,7 @@ _NO_RPM = dict.fromkeys((
 #: Fedora (and RHEL derivatives): dnf packages whose name is not the Arch one; ``""`` = not packaged.
 #: Checked against the Fedora 44 repository (binaries in /usr/bin); "py:" keys are Python modules
 #: that dnf provides.  ffmpeg-free is Fedora's own build: RPM Fusion's "ffmpeg" replaces it.
+#: A key that is a tool name (not one of its packages) overrides that tool's packages.
 _DNF = {
     **_NO_RPM,
     "clang": "clang-tools-extra", "cups": "cups-client", "ffmpeg": "ffmpeg-free", "glibc": "glibc-common",
@@ -702,13 +714,19 @@ _DNF = {
     "tesseract-data-eng": "tesseract-langpack-eng", "tesseract-data-ita": "tesseract-langpack-ita",
     "thunar": "Thunar", "unarchiver": "unar", "woff2": "woff2-tools",
     "deno": "", "dex": "", "ghostty": "", "hyprland": "", "resvg": "", "swww": "", "tectonic": "", "typst": "",
-    "wezterm": "",
-    "py:PIL": "python3-pillow", "py:PySide6": "python3-pyside6",
+    "wezterm": "", "quickshell": "",  # not in Fedora 43; the Qt host desktops do not need it
+    "py:PIL": "python3-pillow", "py:PySide6": "python3-pyside6", "py:pymupdf": "python3-PyMuPDF",
+    "py:pypdf": "python3-pypdf", "py:pikepdf": "python3-pikepdf", "py:pillow_jxl": "python3-pillow-jxl-plugin",
+    "py:fontTools": "python3-fonttools", "py:brotli": "python3-brotli", "py:yaml": "python3-pyyaml",
+    "py:tomli_w": "python3-tomli-w", "py:openpyxl": "python3-openpyxl", "py:mutagen": "python3-mutagen",
+    "py:qrcode": "python3-qrcode", "py:pygments": "python3-pygments",
+    "py:charset_normalizer": "python3-charset-normalizer", "py:rarfile": "python3-rarfile",
+    "py:send2trash": "python3-send2trash", "py:defusedxml": "python3-defusedxml",
 }
 
-#: openSUSE Tumbleweed and Leap: zypper packages (or capabilities) whose name is not the Arch one;
-#: ``""`` = not packaged.  Checked against Tumbleweed and Leap 16.0 (some are Tumbleweed only:
-#: install.sh skips what zypper does not know).  QML modules are a package of their own there.
+#: openSUSE Tumbleweed: zypper packages (or capabilities) whose name is not the Arch one; ``""`` = not
+#: packaged.  Checked against the Tumbleweed repository.  QML modules are a package of their own there;
+#: the Python modules are those packaged in Tumbleweed and Leap 16.0 alike.
 _ZYPPER = {
     **_NO_RPM,
     "cups": "cups-client", "glib2": "glib2-tools", "gnupg": "gpg2", "go-yq": "yq", "gtk3": "gtk3-tools",
@@ -721,9 +739,26 @@ _ZYPPER = {
     "python-pygments": "python3-Pygments", "python-weasyprint": "python3-weasyprint", "rpm-tools": "rpm",
     "ruff": "python3-ruff", "scour": "python3-scour", "shellcheck": "ShellCheck", "squashfs-tools": "squashfs",
     "tesseract": "tesseract-ocr", "tesseract-data-eng": "tesseract-ocr-traineddata-eng",
-    "tesseract-data-ita": "tesseract-ocr-traineddata-ita", "unarchiver": "unar",
+    "tesseract-data-ita": "tesseract-ocr-traineddata-ita", "unarchiver": "unar", "tectonic": "",
+    "gif2webp": "",  # a tool: libwebp-tools has no gif2webp there
     "py:PIL": "python3-Pillow", "py:PySide6": "python3-pyside6 qt6-declarative-imports",
+    "py:pymupdf": "python3-PyMuPDF", "py:pypdf": "python3-pypdf", "py:pikepdf": "python3-pikepdf",
+    "py:pillow_heif": "python3-pillow-heif", "py:fontTools": "python3-FontTools", "py:brotli": "python3-Brotli",
+    "py:yaml": "python3-PyYAML", "py:tomli_w": "python3-tomli-w", "py:mutagen": "python3-mutagen",
+    "py:qrcode": "python3-qrcode", "py:pygments": "python3-Pygments",
+    "py:charset_normalizer": "python3-charset-normalizer", "py:py7zr": "python3-py7zr",
+    "py:rarfile": "python3-rarfile", "py:send2trash": "python3-Send2Trash", "py:defusedxml": "python3-defusedxml",
 }
+
+#: openSUSE Leap (and SLE): Tumbleweed's table minus what Leap 16.0 does not package.
+_ZYPPER_LEAP = {
+    **_ZYPPER, "tectonic": "tectonic",
+    **dict.fromkeys(("darktable", "deno", "dex", "ghostty", "hyprland", "img2pdf", "libvips", "ocrmypdf",
+                     "quickshell", "resvg", "trash-cli"), ""),
+}
+
+#: os-release ids of the rolling openSUSE systems, which use the Tumbleweed repository.
+_SUSE_ROLLING = ("tumbleweed", "microos", "aeon", "kalpa", "slowroll")
 
 #: Linux systems other than Arch: (install command, Arch → native package names).
 _NATIVE = {"debian": ("sudo apt install", _DEB), "fedora": ("sudo dnf install", _DNF),
@@ -746,11 +781,10 @@ def _deb_install_hint(names: Iterable[str], install: str = "sudo apt install", t
         tool = _tool_for(n)
         if tool.install:
             custom.append(tool.install)
+        elif tool.name in table and tool.name not in tool.packages:  # py:PIL, gif2webp
+            apt += table[tool.name].split()
         elif tool.name.startswith("py:"):
-            if tool.name in table:
-                apt += table[tool.name].split()
-            else:
-                pip.append(_pip_name(tool))
+            pip.append(_pip_name(tool))
         else:
             apt += [p for pkg in tool.packages for p in table.get(pkg, pkg).split()]
     cmds = []

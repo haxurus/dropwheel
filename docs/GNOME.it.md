@@ -48,13 +48,15 @@ L'installer mostra cosa ha trovato (sistema, desktop, cartella) e chiede prima d
   condivisione): un elenco numerato, <kbd>Invio</kbd> li prende tutti;
 - su Debian e Ubuntu, un ambiente Python privato in `~/.local/share/dropwheel/venv` con PySide6 (80 MB da
   scaricare) e i moduli Python dei gruppi scelti, così il Python di sistema non viene mai toccato; su Fedora e
-  openSUSE PySide6 è un pacchetto di sistema, e l'ambiente viene creato solo per i moduli Python dei gruppi
-  scelti che installa pip;
+  openSUSE PySide6 e la maggior parte dei moduli Python sono pacchetti di sistema, e l'ambiente contiene ciò
+  che installa pip (e PySide6, quando manca quello di sistema);
 - `dropwheel setup gnome`: l'estensione, la scorciatoia, l'avvio all'accesso e il font delle icone.
 
-Su Fedora l'installer propone `ffmpeg-free`, la versione di Fedora, oppure l'`ffmpeg` completo quando il
-repository RPM Fusion è attivo; su openSUSE l'`ffmpeg` del repository principale non ha alcuni codec, che ha
-Packman.
+Su Fedora l'installer propone `ffmpeg-free`, la versione di Fedora; con il repository RPM Fusion attivo,
+`sudo dnf swap ffmpeg-free ffmpeg --allowerasing` lo sostituisce con l'`ffmpeg` completo. Su openSUSE
+l'`ffmpeg` del repository principale non ha alcuni codec, che ha Packman. Su Fedora Atomic (Silverblue,
+Kinoite, Bazzite) e openSUSE Aeon o MicroOS l'installer non installa pacchetti di sistema: mostra il comando
+`rpm-ostree` o `transactional-update`, che richiede un riavvio, e prende PySide6 da pip.
 
 Poi **esci e rientra una volta**: GNOME carica una nuova estensione solo all'accesso. Da una copia del
 repository, `./install.sh` fa lo stesso. `./install.sh --help` elenca le opzioni; `--no-packages` mostra solo

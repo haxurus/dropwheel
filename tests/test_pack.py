@@ -883,14 +883,20 @@ _RPM_SYSTEMS = {
 }
 
 
-def _rpm_system(box: Sandbox, system: str) -> dict:
-    """Stub rpm (only python3 installed), dnf or zypper (everything known but mat2) and sudo, all logged."""
-    os_release, manager, _ = _RPM_SYSTEMS[system]
-    (box.home / "os-release").write_text(os_release, encoding="utf-8")
-    log = _posix(box.home / "commands.log")
-    box.add_tool("rpm", f'#!/bin/sh\necho "rpm $*" >> \'{log}\'\n[ "$3" = python3 ]\n')
+def _rpm_system(box: Sandbox, system: str, os_release: str = "", unknown: str = "mat2") -> dict:
+    """Stub rpm (python3 and what was installed), dnf or zypper (every package known but ``unknown``)
+    and sudo, all logged.  The tests need PySide6 and Pillow: the private environment would pip them."""
+    pytest.importorskip("PySide6.QtQuick")
+    pytest.importorskip("PIL")
+    default_release, manager, _ = _RPM_SYSTEMS[system]
+    (box.home / "os-release").write_text(os_release or default_release, encoding="utf-8")
+    log, installed = _posix(box.home / "commands.log"), _posix(box.home / "installed")
+    box.add_tool("rpm", f'#!/bin/sh\necho "rpm $*" >> \'{log}\'\n'
+                 f'[ "$3" = python3 ] || grep -qxF -- "$3" \'{installed}\' 2>/dev/null\n')
     box.add_tool(manager, f'#!/bin/sh\necho "{manager} $*" >> \'{log}\'\n'
-                 'case " $* " in *" mat2 "*) exit 104 ;; esac\nexit 0\n')
+                 'case "$1 $2" in "install -y"|"--non-interactive install")\n'
+                 f'    shift 2; for p in "$@"; do echo "$p" >> \'{installed}\'; done; exit 0 ;;\nesac\n'
+                 f'for p in "$@"; do case " {unknown} " in *" $p "*) exit 104 ;; esac; done\nexit 0\n')
     box.add_tool("sudo", f'#!/bin/sh\necho "sudo $*" >> \'{log}\'\n[ "$1" = -- ] && shift\nexec "$@"\n')
     return {"DROPWHEEL_OS_RELEASE": _posix(box.home / "os-release"), "XDG_CURRENT_DESKTOP": "GNOME"}
 
@@ -898,6 +904,23 @@ def _rpm_system(box: Sandbox, system: str) -> dict:
 def _commands(box: Sandbox) -> list[str]:
     log = box.home / "commands.log"
     return log.read_text(encoding="utf-8").splitlines() if log.exists() else []
+
+
+def _install_in_a_terminal(box: Sandbox, env: dict, answers: bytes) -> str:
+    """install.sh with a pseudo-terminal as stdin, ``answers`` typed ahead."""
+    master, slave = os.openpty()
+    with subprocess.Popen(
+        [BASH, _posix(ROOT / "install.sh"), "--no-start", "--no-file-managers", "--no-mime-guard", "--no-hyprland",
+         "--python", _posix(box.python)],
+        cwd=box.home, env={**box.env, **env}, stdin=slave, stdout=subprocess.PIPE,
+        stderr=subprocess.STDOUT, encoding="utf-8", errors="replace",
+    ) as proc:
+        os.close(slave)
+        os.write(master, answers + b"\n" * 20)
+        out, _ = proc.communicate(timeout=180)
+    os.close(master)
+    assert proc.returncode == 0, out
+    return out
 
 
 @pytest.mark.parametrize("system", sorted(_RPM_SYSTEMS))
@@ -910,28 +933,55 @@ def test_install_on_fedora_and_opensuse_prints_the_native_commands(sandbox: Sand
     assert _RPM_SYSTEMS[system][2] in result.stdout
     assert not [line for line in _commands(sandbox) if line.startswith("sudo")]
     assert "GNOME" in result.stdout and "apt install" not in result.stdout and "pacman" not in result.stdout
+    assert (sandbox.data / "dropwheel" / "venv" / "bin" / "python").exists()  # for later pip installs
 
 
 @pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
 @pytest.mark.parametrize("system", sorted(_RPM_SYSTEMS))
 def test_interactive_install_on_fedora_and_opensuse_uses_the_native_manager(sandbox: Sandbox, system: str) -> None:
     """From a terminal: yes to the required packages and to the Metadata group (2), defaults elsewhere."""
-    env = _rpm_system(sandbox, system)
-    master, slave = os.openpty()
-    with subprocess.Popen(
-        [BASH, _posix(ROOT / "install.sh"), "--no-start", "--no-file-managers", "--no-mime-guard", "--no-hyprland",
-         "--python", _posix(sandbox.python)],
-        cwd=sandbox.home, env={**sandbox.env, **env}, stdin=slave, stdout=subprocess.PIPE,
-        stderr=subprocess.STDOUT, encoding="utf-8", errors="replace",
-    ) as proc:
-        os.close(slave)
-        os.write(master, b"\n\n2\n" + b"\n" * 20)  # start, install the required ones, group 2, defaults
-        out, _ = proc.communicate(timeout=180)
-    os.close(master)
-    assert proc.returncode == 0, out
+    out = _install_in_a_terminal(sandbox, _rpm_system(sandbox, system), b"\n\n2\n")
     install = "dnf install -y" if system == "fedora" else "zypper --non-interactive install"
     required = [line for line in _commands(sandbox) if line.startswith(f"sudo -- {install} ")]
     assert required and "python3-pyside6" in required[0] and " python3 " not in required[0] + " ", out
+    assert "Required dependencies installed" in out  # checked again with rpm, not trusted from the exit status
     exif = "perl-Image-ExifTool" if system == "fedora" else "exiftool"
     assert f"sudo -- {install} {exif}" in _commands(sandbox), out  # mat2 is unknown there: skipped
-    assert not (sandbox.data / "dropwheel" / "venv").exists()  # no pip module was chosen
+    assert (sandbox.data / "dropwheel" / "venv" / "bin" / "python").exists()
+
+
+@pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
+def test_install_names_the_required_packages_the_repositories_lack(sandbox: Sandbox) -> None:
+    """A RHEL derivative without EPEL: wl-clipboard is not installable, the rest is installed."""
+    env = _rpm_system(sandbox, "fedora", 'ID="rocky"\nID_LIKE="rhel centos fedora"\n', unknown="mat2 wl-clipboard")
+    out = _install_in_a_terminal(sandbox, env, b"\n\nn\n")
+    assert "Not in the enabled repositories (RHEL and its derivatives need EPEL): wl-clipboard" in out
+    required = [line for line in _commands(sandbox) if line.startswith("sudo -- dnf install -y ")]
+    assert required and "python3-pyside6" in required[0] and "wl-clipboard" not in required[0], out
+    assert "Installation failed: wl-clipboard" in out
+
+
+@pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
+def test_install_on_an_image_based_system_only_prints_the_commands(sandbox: Sandbox) -> None:
+    """openSUSE Aeon (transactional-update): even from a terminal nothing is installed, the command is shown."""
+    env = _rpm_system(sandbox, "suse", 'ID="opensuse-aeon"\nID_LIKE="opensuse opensuse-tumbleweed suse"\n')
+    out = _install_in_a_terminal(sandbox, env, b"")
+    assert "sudo transactional-update pkg install python3-Pillow python3-pyside6" in out
+    assert not [line for line in _commands(sandbox) if line.startswith("sudo") or " install" in line], out
+
+
+@pytest.mark.skipif(not hasattr(os, "openpty"), reason="needs a pseudo-terminal")
+def test_pip_installs_module_by_module_and_names_the_failures(sandbox: Sandbox) -> None:
+    """A module pip cannot build (no wheel for a new Python) does not cancel the others."""
+    env = _rpm_system(sandbox, "fedora")
+    venv_python = sandbox.data / "dropwheel" / "venv" / "bin" / "python"
+    venv_python.parent.mkdir(parents=True)
+    venv_python.write_text(
+        f'#!/bin/sh\nif [ "$1 $2" = "-m pip" ]; then echo "pip $*" >> \'{_posix(sandbox.home / "commands.log")}\'\n'
+        '  case " $* " in *" pillow-heif "*) exit 1 ;; esac; exit 0; fi\n'
+        f'exec \'{_posix(sandbox.python)}\' "$@"\n', encoding="utf-8")
+    venv_python.chmod(0o755)
+    out = _install_in_a_terminal(sandbox, env, b"\n\n1 5\n")  # Images (pillow-heif), Documents (python-docx)
+    pips = [line for line in _commands(sandbox) if line.startswith("pip ")]
+    assert any(line.endswith(" pillow-heif") for line in pips) and any(line.endswith(" python-docx") for line in pips)
+    assert "pip install pillow-heif" in out and "pip install python-docx" not in out, out

@@ -288,21 +288,30 @@ def test_distro_reads_os_release(tmp_path, monkeypatch, os_release, expected):
         tools.distro.cache_clear()
 
 
-def test_fedora_install_hints(monkeypatch):
+@pytest.mark.parametrize("dnf5", [True, False])
+def test_fedora_install_hints(monkeypatch, dnf5):
     monkeypatch.setattr(tools, "distro", lambda: "fedora")
-    hint = tools.install_hint(["exiftool", "pdftoppm", "ffmpeg", "py:PySide6", "py:pymupdf"])
-    assert hint.startswith("sudo dnf install perl-Image-ExifTool poppler-utils ffmpeg-free python3-pyside6 && ")
-    assert "pip install" in hint and "pymupdf" in hint
-    assert tools.install_hint(["caelestia"]) == tools.install_hint(["hyprctl"]) == ""
+    monkeypatch.setattr(tools, "have", lambda name: dnf5 and name == "dnf5")
+    hint = tools.install_hint(["exiftool", "pdftoppm", "ffmpeg", "py:PySide6", "py:pymupdf", "py:docx"])
+    install = "sudo dnf install --skip-unavailable" if dnf5 else "sudo dnf install"  # dnf 4 has no such option
+    assert hint.startswith(f"{install} perl-Image-ExifTool poppler-utils ffmpeg-free python3-pyside6 python3-PyMuPDF && ")
+    assert "pip install" in hint and hint.endswith(" python-docx")  # not packaged: pip
+    assert tools.install_hint(["caelestia"]) == tools.install_hint(["hyprctl"]) == tools.install_hint(["qs"]) == ""
 
 
-def test_suse_install_hints(monkeypatch):
+@pytest.mark.parametrize(("os_id", "rolling"), [("opensuse-tumbleweed", True), ("opensuse-aeon", True),
+                                                ("opensuse-leap", False)])
+def test_suse_install_hints(tmp_path, monkeypatch, os_id, rolling):
+    (tmp_path / "os-release").write_text(f'ID="{os_id}"\nID_LIKE="suse opensuse"\n', encoding="utf-8")
+    monkeypatch.setenv("DROPWHEEL_OS_RELEASE", str(tmp_path / "os-release"))
     monkeypatch.setattr(tools, "distro", lambda: "suse")
-    hint = tools.install_hint(["exiftool", "pdftoppm", "py:PIL", "py:PySide6", "py:pymupdf"])
+    hint = tools.install_hint(["exiftool", "pdftoppm", "py:PIL", "py:PySide6", "py:pymupdf", "py:openpyxl"])
     assert hint.startswith("sudo zypper install exiftool poppler-tools python3-Pillow "
-                           "python3-pyside6 qt6-declarative-imports && ")
-    assert "pip install" in hint and "pymupdf" in hint
-    assert tools.install_hint(["mat2"]) == ""  # not packaged for openSUSE
+                           "python3-pyside6 qt6-declarative-imports python3-PyMuPDF && ")
+    assert "pip install" in hint and hint.endswith(" openpyxl")  # Tumbleweed only: pip
+    assert tools.install_hint(["mat2"]) == tools.install_hint(["gif2webp"]) == ""  # not packaged for openSUSE
+    assert (tools.install_hint(["vips"]) == "sudo zypper install vips-tools") is rolling  # not in Leap 16.0
+    assert (tools.install_hint(["tectonic"]) == "") is rolling  # in Leap 16.0 only
 
 
 def test_setup_gnome_dry_run_changes_nothing(tmp_path, monkeypatch):
