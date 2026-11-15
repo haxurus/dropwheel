@@ -26,13 +26,16 @@ and the project uses [Semantic Versioning](https://semver.org/).
     `dropwheel open`, starting at login and the icon font.
   - Install hints with `apt` on Debian and Ubuntu, and pip for Python modules.
 - **Fedora and openSUSE with GNOME** (Fedora 43 or later, openSUSE Tumbleweed and Leap 16), not yet tested on
-  a real machine. `install.sh` recognises them (and RHEL derivatives), installs the packages with dnf or
-  zypper, PySide6 included, and keeps a private Python environment only for what pip installs; install hints
-  and `dropwheel doctor` give the dnf and zypper package names.
-- **Interactive installers.** `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) open with the
-  project name and links, recognise the system and the desktop, and ask before every step: required
-  packages (installed with pacman, apt or winget once you say yes), optional feature groups from a numbered
-  list, the desktop integration, `PATH`. `curl … | bash` and `irm … | iex` work without cloning first.
+  a real machine. `install.sh` installs the packages with dnf or zypper, PySide6 and most Python modules
+  included, and keeps a private Python environment for what pip installs, one module at a time; on Fedora
+  Atomic and openSUSE Aeon or MicroOS it prints the `rpm-ostree` or `transactional-update` command and takes
+  PySide6 from pip. Install hints and `dropwheel doctor` give the dnf and zypper package names (Tumbleweed
+  and Leap apart). RHEL derivatives are recognised too, untested; they need EPEL.
+- **Interactive installers.** `install.sh` (Arch, Debian, Ubuntu, Fedora, openSUSE, macOS) and `install.ps1`
+  (Windows) open with the project name and links, recognise the system and the desktop, and ask before every
+  step: required packages (installed with pacman, apt, dnf, zypper, Homebrew or winget once you say yes),
+  optional feature groups from a numbered list, the desktop integration, `PATH`. `curl … | bash` and
+  `irm … | iex` work without cloning first.
 - **Windows preview of the engine and the command line**, not yet tested on real Windows. See
   [Dropwheel on Windows](docs/WINDOWS.md). Every Windows code path is separate from the Linux one, which does
   not change.

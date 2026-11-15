@@ -26,14 +26,16 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
     esegue `dropwheel open`, l'avvio all'accesso e il font delle icone.
   - Indicazioni di installazione con `apt` su Debian e Ubuntu, e pip per i moduli Python.
 - **Fedora e openSUSE con GNOME** (Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16), non ancora provati su
-  un vero computer. `install.sh` li riconosce (e i derivati di RHEL), installa i pacchetti con dnf o zypper,
-  PySide6 compreso, e tiene un ambiente Python privato solo per ciò che installa pip; le indicazioni di
-  installazione e `dropwheel doctor` danno i nomi dei pacchetti di dnf e zypper.
-- **Installer interattivi.** `install.sh` (Arch, Debian, Ubuntu) e `install.ps1` (Windows) si aprono con il nome
-  del progetto e i link, riconoscono il sistema e il desktop, e chiedono prima di ogni passo: i pacchetti
-  obbligatori (installati con pacman, apt o winget dopo il tuo sì), i gruppi di funzioni facoltative da un
-  elenco numerato, l'integrazione con il desktop, il `PATH`. `curl … | bash` e `irm … | iex` funzionano senza
-  clonare prima.
+  un vero computer. `install.sh` installa i pacchetti con dnf o zypper, compresi PySide6 e la maggior parte
+  dei moduli Python, e tiene un ambiente Python privato per ciò che installa pip, un modulo alla volta; su
+  Fedora Atomic e openSUSE Aeon o MicroOS mostra il comando `rpm-ostree` o `transactional-update` e prende
+  PySide6 da pip. Le indicazioni di installazione e `dropwheel doctor` danno i nomi dei pacchetti di dnf e
+  zypper (distinguendo Tumbleweed e Leap). Riconosce anche i derivati di RHEL, non provati; serve EPEL.
+- **Installer interattivi.** `install.sh` (Arch, Debian, Ubuntu, Fedora, openSUSE, macOS) e `install.ps1`
+  (Windows) si aprono con il nome del progetto e i link, riconoscono il sistema e il desktop, e chiedono prima
+  di ogni passo: i pacchetti obbligatori (installati con pacman, apt, dnf, zypper, Homebrew o winget dopo il
+  tuo sì), i gruppi di funzioni facoltative da un elenco numerato, l'integrazione con il desktop, il `PATH`.
+  `curl … | bash` e `irm … | iex` funzionano senza clonare prima.
 - **Anteprima per Windows del motore e della riga di comando**, non ancora provata su un vero Windows. Vedi
   [Dropwheel su Windows](docs/WINDOWS.it.md). Ogni parte per Windows è separata da quella per Linux, che non
   cambia.

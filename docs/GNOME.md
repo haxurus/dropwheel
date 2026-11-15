@@ -48,12 +48,15 @@ The installer shows what it found (system, desktop, folder) and asks before ever
   fonts, sharing): a numbered list, <kbd>Enter</kbd> takes them all;
 - on Debian and Ubuntu, a private Python environment in `~/.local/share/dropwheel/venv` with PySide6
   (an 80 MB download) and the Python modules of the chosen groups, so the system Python is never touched;
-  on Fedora and openSUSE PySide6 is a system package, and the environment is created only for the Python
-  modules of the chosen groups that pip installs;
+  on Fedora and openSUSE PySide6 and most Python modules are system packages, and the environment holds
+  what pip installs (and PySide6, when the system one is missing);
 - `dropwheel setup gnome`: the extension, the shortcut, starting at login and the icon font.
 
-On Fedora the installer offers `ffmpeg-free`, Fedora's own build, or the full `ffmpeg` when the RPM Fusion
-repository is enabled; on openSUSE the `ffmpeg` of the main repository lacks some codecs, which Packman has.
+On Fedora the installer offers `ffmpeg-free`, Fedora's own build; with the RPM Fusion repository enabled,
+`sudo dnf swap ffmpeg-free ffmpeg --allowerasing` replaces it with the full `ffmpeg`. On openSUSE the `ffmpeg`
+of the main repository lacks some codecs, which Packman has. On Fedora Atomic (Silverblue, Kinoite, Bazzite)
+and openSUSE Aeon or MicroOS the installer does not install system packages: it prints the `rpm-ostree` or
+`transactional-update` command, which needs a restart, and takes PySide6 from pip.
 
 Then **log out and back in once**: GNOME loads a new extension only at login. From a clone, `./install.sh`
 does the same. `./install.sh --help` lists the options; `--no-packages` only prints the commands.

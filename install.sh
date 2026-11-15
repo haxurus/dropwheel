@@ -351,7 +351,7 @@ pkg_installed() {
 # shortcut: dnf and zypper are asked once per package, slower than apt; fine for ~30 names
 pkg_available() {
     case $DISTRO in
-        fedora) dnf -q info "$1" >/dev/null 2>&1 ;;
+        fedora) (( IMMUTABLE )) || dnf -q info "$1" >/dev/null 2>&1 ;;
         suse) zypper -q -n search --provides --match-exact "$1" >/dev/null 2>&1 ;;
         *) apt-cache show --no-all-versions -- "$1" >/dev/null 2>&1 ;;
     esac
@@ -459,6 +459,13 @@ if (( MACOS )); then
     DISTRO=macos
     DISTRO_NAME="macOS $(sw_vers -productVersion 2>/dev/null || true)"
     DESKTOP=macos
+fi
+# Fedora Atomic (Silverblue, Kinoite, Bazzite…) and openSUSE Aeon, Kalpa, MicroOS: packages go into a
+# new system image (rpm-ostree, transactional-update) and need a restart, so they are only suggested
+IMMUTABLE=0
+if [[ $DISTRO == fedora || $DISTRO == suse ]]; then
+    case " $(lower "${os_id:-}") " in *aeon*|*kalpa*|*microos*) IMMUTABLE=1 ;; esac
+    if [[ -e /run/ostree-booted ]]; then IMMUTABLE=1; fi
 fi
 
 if [[ -z $DESKTOP ]]; then
@@ -671,30 +678,32 @@ DEB_GROUPS=(
     "Condivisione e sistema|Sharing and system|zenity gnupg trash-cli udisks2|send2trash"
 )
 
-# Fedora: "labels|dnf packages|pip modules" (RPM Fusion's ffmpeg when that repository is enabled)
+# Fedora: "labels|dnf packages|pip modules"; Python modules from dnf where Fedora packages them (a new
+# Python may have no pip wheels yet). ffmpeg-free: RPM Fusion's ffmpeg conflicts with it ("dnf swap")
 FEDORA_GROUPS=(
-    "Immagini|Images|ImageMagick librsvg2-tools oxipng pngquant jpegoptim libjpeg-turbo-utils gifsicle|pillow-heif pillow-jxl-plugin"
+    "Immagini|Images|ImageMagick librsvg2-tools oxipng pngquant jpegoptim libjpeg-turbo-utils gifsicle python3-pillow-jxl-plugin|pillow-heif"
     "Metadati|Metadata|perl-Image-ExifTool mat2|"
-    "PDF|PDF|qpdf ghostscript poppler-utils|pymupdf pypdf pikepdf"
-    "OCR e codici QR|OCR and QR codes|tesseract tesseract-langpack-ita tesseract-langpack-eng zbar ocrmypdf|qrcode"
-    "Documenti|Documents|libreoffice pandoc-cli|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
-    "Audio e video|Audio and video|ffmpeg/ffmpeg-free|mutagen"
-    "Archivi|Archives|7zip unrar|py7zr rarfile"
-    "Font|Fonts|fonttools woff2-tools|fonttools brotli"
-    "Condivisione e sistema|Sharing and system|zenity gnupg2 trash-cli udisks2|send2trash"
+    "PDF|PDF|qpdf ghostscript poppler-utils python3-PyMuPDF python3-pypdf python3-pikepdf|"
+    "OCR e codici QR|OCR and QR codes|tesseract tesseract-langpack-ita tesseract-langpack-eng zbar ocrmypdf python3-qrcode|"
+    "Documenti|Documents|libreoffice pandoc-cli python3-openpyxl python3-charset-normalizer python3-pyyaml python3-tomli-w python3-pygments python3-defusedxml|python-docx"
+    "Audio e video|Audio and video|ffmpeg-free/ffmpeg python3-mutagen|"
+    "Archivi|Archives|7zip unrar python3-rarfile|py7zr"
+    "Font|Fonts|fonttools python3-fonttools woff2-tools python3-brotli|"
+    "Condivisione e sistema|Sharing and system|zenity gnupg2 trash-cli udisks2 python3-send2trash|"
 )
 
-# openSUSE Tumbleweed and Leap: "labels|zypper packages|pip modules" (some are Tumbleweed only)
+# openSUSE Tumbleweed and Leap: "labels|zypper packages|pip modules" (some are Tumbleweed only; the
+# Python modules from zypper are those both package)
 SUSE_GROUPS=(
-    "Immagini|Images|ImageMagick rsvg-convert oxipng pngquant jpegoptim libjpeg-turbo gifsicle|pillow-heif pillow-jxl-plugin"
+    "Immagini|Images|ImageMagick rsvg-convert oxipng pngquant jpegoptim libjpeg-turbo gifsicle python3-pillow-heif|pillow-jxl-plugin"
     "Metadati|Metadata|exiftool|"
-    "PDF|PDF|qpdf ghostscript poppler-tools|pymupdf pypdf pikepdf"
-    "OCR e codici QR|OCR and QR codes|tesseract-ocr tesseract-ocr-traineddata-ita tesseract-ocr-traineddata-eng zbar python3-ocrmypdf|qrcode"
-    "Documenti|Documents|libreoffice pandoc-cli typst|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
-    "Audio e video|Audio and video|ffmpeg|mutagen"
-    "Archivi|Archives|7zip unrar|py7zr rarfile"
-    "Font|Fonts|python3-FontTools woff2|fonttools brotli"
-    "Condivisione e sistema|Sharing and system|zenity gpg2 trash-cli udisks2|send2trash"
+    "PDF|PDF|qpdf ghostscript poppler-tools python3-PyMuPDF python3-pypdf python3-pikepdf|"
+    "OCR e codici QR|OCR and QR codes|tesseract-ocr tesseract-ocr-traineddata-ita tesseract-ocr-traineddata-eng zbar python3-ocrmypdf python3-qrcode|"
+    "Documenti|Documents|libreoffice pandoc-cli typst python3-charset-normalizer python3-PyYAML python3-tomli-w python3-Pygments python3-defusedxml|openpyxl python-docx"
+    "Audio e video|Audio and video|ffmpeg python3-mutagen|"
+    "Archivi|Archives|7zip unrar python3-py7zr python3-rarfile|"
+    "Font|Fonts|python3-FontTools woff2 python3-Brotli|"
+    "Condivisione e sistema|Sharing and system|zenity gpg2 trash-cli udisks2 python3-Send2Trash|"
 )
 
 # macOS: "labels|Homebrew formulae (cask:NAME = an app)|pip modules" (names checked on formulae.brew.sh)
@@ -717,8 +726,9 @@ case $DISTRO in
     suse) PKG_TOOL=zypper ;;
     *) PKG_TOOL=pacman ;;
 esac
+if (( IMMUTABLE )); then PKG_TOOL=rpm; fi  # only asked what is installed: the commands are printed
 can_install() {
-    (( DO_PACKAGES )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 \
+    (( DO_PACKAGES && ! IMMUTABLE )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 \
         && { [[ $DISTRO == macos ]] || command -v sudo >/dev/null 2>&1; }
 }
 
@@ -731,8 +741,12 @@ install_cmd_text() {
             (( ${#BREW_C[@]} )) && printf 'brew install --cask %s' "${BREW_C[*]}"
             return 0 ;;
         debian) printf 'sudo apt install %s' "$*" ;;
-        fedora) printf 'sudo dnf install %s' "$*" ;;
-        suse) printf 'sudo zypper install %s' "$*" ;;
+        fedora)
+            if (( IMMUTABLE )); then printf 'rpm-ostree install %s && systemctl reboot' "$*"
+            else printf 'sudo dnf install %s' "$*"; fi ;;
+        suse)
+            if (( IMMUTABLE )); then printf 'sudo transactional-update pkg install %s && systemctl reboot' "$*"
+            else printf 'sudo zypper install %s' "$*"; fi ;;
         *) printf 'sudo pacman -S --needed %s' "$*" ;;
     esac
 }
@@ -806,15 +820,32 @@ if command -v "$PKG_TOOL" >/dev/null 2>&1; then
         ok "$(t 'Dipendenze obbligatorie presenti' 'All required dependencies are installed')"
     else
         warn "$(t 'Dipendenze obbligatorie mancanti' 'Missing required dependencies'): ${missing_required[*]}"
-        if can_install && ask "$(t 'Le installo ora? (sudo chiederà la tua password)' 'Install them now? (sudo will ask for your password)')" y n; then
-            if install_pkgs "${missing_required[@]}"; then
-                ok "$(t 'Dipendenze obbligatorie installate' 'Required dependencies installed')"
-                missing_required=()
-            else
-                warn "$(t 'Installazione non riuscita' 'Installation failed')"
+        installable=("${missing_required[@]}")
+        if [[ $DISTRO == fedora || $DISTRO == suse ]] && (( ! IMMUTABLE )); then
+            installable=()
+            unknown=()
+            for p in "${missing_required[@]}"; do
+                if pkg_available "$p"; then installable+=("$p"); else unknown+=("$p"); fi
+            done
+            if (( ${#unknown[@]} )); then
+                warn "$(t 'Non nei repository attivi (su RHEL e derivate serve EPEL)' 'Not in the enabled repositories (RHEL and its derivatives need EPEL)'): ${unknown[*]}"
             fi
-        else
-            cmd "$(install_cmd_text "${missing_required[@]}")"
+        fi
+        if (( ${#installable[@]} )) && can_install && ask "$(t 'Le installo ora? (sudo chiederà la tua password)' 'Install them now? (sudo will ask for your password)')" y n; then
+            # the exit status is not enough (zypper ends with 102-107 after some successful installs)
+            install_pkgs "${installable[@]}" || true
+            still_missing=()
+            for p in "${missing_required[@]}"; do
+                pkg_installed "$p" || still_missing+=("$p")
+            done
+            missing_required=(${still_missing[@]+"${still_missing[@]}"})
+            if (( ${#missing_required[@]} == 0 )); then
+                ok "$(t 'Dipendenze obbligatorie installate' 'Required dependencies installed')"
+            else
+                warn "$(t 'Installazione non riuscita' 'Installation failed'): ${missing_required[*]}"
+            fi
+        elif (( ${#installable[@]} )); then
+            cmd "$(install_cmd_text "${installable[@]}")"
         fi
     fi
 
@@ -906,51 +937,60 @@ else
     warn "$(t "$PKG_TOOL non trovato: controllo delle dipendenze saltato." "$PKG_TOOL not found: dependency check skipped.")"
 fi
 
-# --- Debian, Ubuntu and macOS: Dropwheel's own Python environment (PySide6 and the chosen modules);
-#     Fedora and openSUSE: only when pip has modules to install (PySide6 comes from the system)
+# --- Dropwheel's own Python environment (--system-site-packages), so that pip never touches the system
+#     Python and later pip hints land there too. Debian, Ubuntu and macOS: PySide6 from pip and the chosen
+#     modules. Fedora and openSUSE: the modules pip installs, plus PySide6 and Pillow from pip only when the
+#     system ones cannot be imported (atomic desktops, RHEL without EPEL)
 VENV_DIR="$PREFIX/share/dropwheel/venv"
 PIP_BASE=PySide6-Essentials
-if [[ $DISTRO == macos ]]; then PIP_BASE="PySide6-Essentials pillow"; fi  # Debian has python3-pil from apt
-if [[ $DISTRO == fedora || $DISTRO == suse ]] && { (( ${#PIP_MODULES[@]} )) || [[ -x $VENV_DIR/bin/python ]]; }; then
-    step "$(t 'Ambiente Python' 'Python environment')"
-    if [[ -x $VENV_DIR/bin/python ]] || "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR"; then
-        if (( ${#PIP_MODULES[@]} )); then
-            info "$(t 'Installo con pip:' 'Installing with pip:') ${PIP_MODULES[*]}"
-            if "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade -- "${PIP_MODULES[@]}"; then
-                ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
-            else
-                warn "$(t 'pip non è riuscito a installare tutto: riprova più tardi con' 'pip could not install everything: try again later with')"
-                cmd "$VENV_DIR/bin/python -m pip install ${PIP_MODULES[*]}"
-            fi
+case $DISTRO in
+    macos) PIP_BASE="PySide6-Essentials pillow" ;;  # Debian has python3-pil from apt
+    fedora|suse)
+        PIP_BASE=""
+        if (( QT_DESKTOP )) && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
+            PIP_BASE=PySide6-Essentials
         fi
-        PYTHON_BIN="$VENV_DIR/bin/python"
-    else
+        "$PYTHON_BIN" -c 'import PIL' >/dev/null 2>&1 || PIP_BASE="$PIP_BASE pillow" ;;
+esac
+if [[ $DISTRO != arch ]] && (( ! DO_PACKAGES )); then
+    info "$(t 'Ambiente Python saltato (--no-packages). Per crearlo:' 'Python environment skipped (--no-packages). To create it:')"
+    cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR${PIP_BASE:+ && $VENV_DIR/bin/python -m pip install $PIP_BASE}"
+elif [[ $DISTRO != arch ]]; then
+    step "$(t 'Ambiente Python' 'Python environment')"
+    if [[ ! -x $VENV_DIR/bin/python ]] && ! "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR"; then
+        [[ $DISTRO == fedora || $DISTRO == suse ]] \
+            || die "$(t 'Impossibile creare l'"'"'ambiente Python: serve python3-venv' 'Cannot create the Python environment: python3-venv is needed')"
         warn "$(t "Impossibile creare l'ambiente Python ($PYTHON_BIN -m venv): moduli pip saltati" \
                   "Cannot create the Python environment ($PYTHON_BIN -m venv): pip modules skipped")"
-    fi
-elif [[ $DISTRO == debian || $DISTRO == macos ]] && (( ! DO_PACKAGES )); then
-    info "$(t 'Ambiente Python saltato (--no-packages). Per crearlo:' 'Python environment skipped (--no-packages). To create it:')"
-    cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR && $VENV_DIR/bin/python -m pip install $PIP_BASE"
-elif [[ $DISTRO == debian || $DISTRO == macos ]]; then
-    step "$(t 'Ambiente Python' 'Python environment')"
-    if [[ ! -x $VENV_DIR/bin/python ]]; then
-        "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR" \
-            || die "$(t 'Impossibile creare l'"'"'ambiente Python: serve python3-venv' 'Cannot create the Python environment: python3-venv is needed')"
-    fi
-    read -r -a pip_base <<< "$PIP_BASE"
-    pip_list=("${pip_base[@]}" ${PIP_MODULES[@]+"${PIP_MODULES[@]}"})
-    info "$(t 'Installo con pip (PySide6 sono circa 80 MB):' 'Installing with pip (PySide6 is about 80 MB):') ${pip_list[*]}"
-    venv_pip() { "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade "$@"; }
-    # --ignore-installed: a system PySide6 (python3-pyside6) would otherwise lend its shiboken6,
-    # whose library is not where the pip build looks for it
-    if venv_pip --ignore-installed -- "${pip_base[@]}" \
-            && { (( ${#PIP_MODULES[@]} == 0 )) || venv_pip -- "${PIP_MODULES[@]}"; }; then
-        ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
     else
-        warn "$(t 'pip non è riuscito a installare tutto: riprova più tardi con' 'pip could not install everything: try again later with')"
-        cmd "$VENV_DIR/bin/python -m pip install ${pip_list[*]}"
+        read -r -a pip_base <<< "$PIP_BASE"
+        pip_list=(${pip_base[@]+"${pip_base[@]}"} ${PIP_MODULES[@]+"${PIP_MODULES[@]}"})
+        pip_failed=()
+        if (( ${#pip_list[@]} )); then
+            if [[ $PIP_BASE == *PySide6* ]]; then
+                info "$(t 'Installo con pip (PySide6 sono circa 80 MB):' 'Installing with pip (PySide6 is about 80 MB):') ${pip_list[*]}"
+            else
+                info "$(t 'Installo con pip:' 'Installing with pip:') ${pip_list[*]}"
+            fi
+            venv_pip() { "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade "$@"; }
+            # --ignore-installed: a system PySide6 (python3-pyside6) would otherwise lend its shiboken6,
+            # whose library is not where the pip build looks for it
+            if (( ${#pip_base[@]} )) && ! venv_pip --ignore-installed -- "${pip_base[@]}"; then
+                pip_failed=("${pip_base[@]}")
+            fi
+            # one module at a time: one without a wheel for this Python (a new release) must not cancel the rest
+            for m in ${PIP_MODULES[@]+"${PIP_MODULES[@]}"}; do
+                venv_pip -- "$m" || pip_failed+=("$m")
+            done
+        fi
+        if (( ${#pip_failed[@]} )); then
+            warn "$(t 'pip non è riuscito a installare tutto: riprova più tardi con' 'pip could not install everything: try again later with')"
+            cmd "$VENV_DIR/bin/python -m pip install ${pip_failed[*]}"
+        else
+            ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
+        fi
+        PYTHON_BIN="$VENV_DIR/bin/python"
     fi
-    PYTHON_BIN="$VENV_DIR/bin/python"
 fi
 
 if ! "$PYTHON_BIN" -c 'import PIL' >/dev/null 2>&1; then
