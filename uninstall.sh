@@ -217,6 +217,12 @@ if (( remove_files )) && [[ -d $XDG_DATA_HOME_DIR/gnome-shell/extensions/dropwhe
     step "GNOME"
     run_with_timeout "$DW_BIN" setup gnome --remove || warn "dropwheel setup gnome --remove"
 fi
+# KDE Plasma: the KWin script (with its shortcut) and autostart ("dropwheel setup kde")
+if (( remove_files )) && [[ -d $XDG_DATA_HOME_DIR/kwin/scripts/dropwheel ]] \
+        && [[ -x $DW_BIN ]] && grep -qs 'DROPWHEEL-USER-WRAPPER' "$DW_BIN"; then
+    step "KDE Plasma"
+    run_with_timeout "$DW_BIN" setup kde --remove || warn "dropwheel setup kde --remove"
+fi
 
 # --------------------------------------------------------------------------------------------
 # Hyprland configuration

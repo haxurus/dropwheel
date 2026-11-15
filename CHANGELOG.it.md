@@ -9,6 +9,14 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
 
 ### Aggiunto
 
+- **KDE Plasma 6 su Debian, Ubuntu e Arch**, Wayland e X11, non ancora provato in una vera sessione Plasma. Vedi
+  [Dropwheel su KDE Plasma](docs/KDE.it.md). La stessa ruota e lo stesso host di GNOME.
+  - Uno script di KWin dice a Dropwheel dove si trova il puntatore (su Wayland) tramite D-Bus e registra la
+    scorciatoia (`trigger.shortcut`, poi Impostazioni di sistema → Scorciatoie → KWin).
+  - Shift e i tasti del mouse arrivano da XWayland o X11; un trascinamento da un programma Wayland conta dal suo inizio.
+  - `dropwheel setup kde [--remove]`: lo script di KWin, l'avvio all'accesso e il font delle icone; `dropwheel doctor`
+    controlla lo script e l'impostazione di KWin per il supporto delle applicazioni X11. `install.sh` riconosce
+    Plasma (`--desktop kde`) e `uninstall.sh` rimuove lo script.
 - **GNOME su Debian, Ubuntu e Arch**, non ancora provato in una vera sessione GNOME. Vedi
   [Dropwheel su GNOME](docs/GNOME.it.md). La stessa ruota, ospitata dall'host PySide6 dell'anteprima per Windows.
   - Un'estensione di GNOME Shell (GNOME 45 o successivo) dice a Dropwheel dove si trova il puntatore e se Shift

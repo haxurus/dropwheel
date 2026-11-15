@@ -247,6 +247,8 @@ def test_the_extension_matches_the_backend():
     ({"XDG_CURRENT_DESKTOP": "GNOME", "HYPRLAND_INSTANCE_SIGNATURE": "x"}, False),
     ({"XDG_CURRENT_DESKTOP": "Hyprland"}, False),
     ({"XDG_CURRENT_DESKTOP": "KDE", "DROPWHEEL_FRONTEND": "qt"}, True),
+    ({"XDG_CURRENT_DESKTOP": "KDE"}, True),
+    ({"XDG_CURRENT_DESKTOP": "KDE", "HYPRLAND_INSTANCE_SIGNATURE": "x"}, False),
     ({"XDG_CURRENT_DESKTOP": "GNOME", "DROPWHEEL_FRONTEND": "quickshell"}, False),
 ])
 def test_qt_frontend_follows_the_session(monkeypatch, env, expected):
@@ -274,6 +276,103 @@ def test_setup_gnome_dry_run_changes_nothing(tmp_path, monkeypatch):
     said = []
     assert gnome_setup.install("Ctrl+Alt+D", dry=True, say=lambda key, **fmt: said.append(key)) == 0
     assert "cli.setup.gnome_would_shortcut" in said
+    assert not (tmp_path / "data").exists() and not (tmp_path / "config").exists()
+
+
+# ================================================================================== KDE Plasma
+
+from dropwheel.qtshell import kde, kde_setup  # noqa: E402
+
+
+@pytest.mark.parametrize(("text", "seq"), [
+    ("Ctrl+Alt+D", "Ctrl+Alt+D"),
+    ("win+shift+f12", "Meta+Shift+F12"),
+    ("ctrl+ctrl+pagedown", "Ctrl+PgDown"),
+    ("Super+Space", "Meta+Space"),
+    ("F9", "F9"),
+    ("D", ""), ("Ctrl+", ""), ("Hyper+D", ""), ("", ""),
+])
+def test_kde_shortcut(text, seq):
+    assert kde_setup.shortcut(text) == seq
+
+
+def test_kde_backend(monkeypatch):
+    monkeypatch.setattr(kde.gnome, "ACTIVE", False)
+    assert kde.mods() == 0 and kde.cursor() is None
+    assert not kde.key_down(kde.VK_SHIFT) and not kde.primary_button_down()
+    monkeypatch.setattr(kde.gnome, "ACTIVE", True)
+    monkeypatch.setattr(kde, "_x", lambda: {})
+    monkeypatch.setattr(kde, "_query", lambda x, now: kde.SHIFT_MASK | (1 << 4))  # Shift and Num Lock
+    monkeypatch.setitem(kde._state, "at", 0.0)
+    monkeypatch.setitem(kde._state, "drag_at", -kde.DRAG_S)
+    monkeypatch.delenv("WAYLAND_DISPLAY", raising=False)
+    assert kde.key_down(kde.VK_SHIFT) and not kde.primary_button_down() and not kde.any_button_down()
+    assert kde.cursor() is None  # X11: Qt's own cursor is right
+    # Wayland: a drag started a moment ago (XFixes) counts as button 1 for DRAG_S seconds
+    monkeypatch.setenv("WAYLAND_DISPLAY", "wayland-0")
+    now = time.monotonic()
+    kde._state["drag_at"] = now - 1.0
+    assert kde.mods(now) & kde.BUTTON1_MASK
+    assert not kde.mods(now + kde.DRAG_S) & kde.BUTTON1_MASK
+    monkeypatch.setitem(kde._state, "pushed", (5, 6))
+    assert kde.cursor() == (5, 6)
+
+
+def test_kde_pointer_is_scaled_to_qt():
+    if not _have_pyside():
+        pytest.skip("PySide6 is not installed")
+    from PySide6.QtGui import QGuiApplication
+
+    app = QGuiApplication.instance() or QGuiApplication([sys.argv[0]])
+    g = app.primaryScreen().virtualGeometry()
+    before = kde._state["pushed"]
+    try:
+        # KWin's logical pixels at twice the size of the X11 screen: halved
+        kde.set_pointer(100, 50, g.width() * 2, g.height() * 2)
+        assert kde._state["pushed"] == (g.x() + 50, g.y() + 25)
+        kde.set_pointer(1, 1, 0, 0)  # ignored
+        assert kde._state["pushed"] == (g.x() + 50, g.y() + 25)
+    finally:
+        kde._state["pushed"] = before
+
+
+def test_the_kwin_script_matches_the_backend():
+    pkg = ROOT / "integrations" / "kde" / kde.SCRIPT_ID
+    meta = json.loads((pkg / "metadata.json").read_text(encoding="utf-8"))
+    assert meta["KPlugin"]["Id"] == kde.SCRIPT_ID  # also the folder name and the kwinrc key
+    assert meta["X-Plasma-API"] == "javascript" and meta["KPackageStructure"] == "KWin/Script"
+    js = (pkg / "contents" / meta["X-Plasma-MainScript"]).read_text(encoding="utf-8")
+    for name in (kde.SERVICE, kde.PATH, kde.INTERFACE, '"SetPointer"', '"Open"', "workspace.cursorPos",
+                 'readConfig("Shortcut"'):
+        assert name in js
+    import shutil
+    node = shutil.which("node")
+    if node is None:
+        pytest.skip("node not installed")
+    # parse only: KWin's globals (workspace, callDBus, QTimer…) do not exist outside KWin
+    res = subprocess.run([node, "-e", "new Function(require('fs').readFileSync(process.argv[1], 'utf8'))",
+                          str(pkg / "contents" / "code" / "main.js")], capture_output=True, text=True, timeout=60)
+    assert res.returncode == 0, res.stderr
+
+
+def test_kde_session_picks_the_kde_backend():
+    code = "from dropwheel.qtshell import native, kde; print(native.plat is kde)"
+    env = dict(os.environ, XDG_CURRENT_DESKTOP="KDE", QT_QPA_PLATFORM="offscreen", PYTHONPATH=str(ROOT / "src"))
+    if not _have_pyside():
+        pytest.skip("PySide6 is not installed")
+    res = subprocess.run([sys.executable, "-P", "-c", code], env=env, capture_output=True, text=True, timeout=60)
+    assert res.stdout.strip() == ("False" if win32.WINDOWS else "True"), res.stderr
+
+
+def test_setup_kde_dry_run_changes_nothing(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("DROPWHEEL_DATA", str(ROOT))
+    said = []
+    assert kde_setup.install("Ctrl+Alt+D", dry=True, say=lambda key, **fmt: said.append((key, fmt))) == 0
+    assert ("cli.setup.kde_would_shortcut", {"accel": "Ctrl+Alt+D"}) in said
+    assert any(str(kde_setup.script_dir()) == fmt.get("path") for _, fmt in said)
+    assert kde_setup.remove(dry=True, say=lambda key, **fmt: said.append((key, fmt))) == 0
     assert not (tmp_path / "data").exists() and not (tmp_path / "config").exists()
 
 

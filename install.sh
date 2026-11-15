@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland or GNOME).
+# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland, GNOME or KDE Plasma).
 #
 #   ./install.sh                 asks everything, installs into ~/.local and starts Dropwheel
 #   curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -149,9 +149,9 @@ Installa Dropwheel per l'utente corrente (in ~/.local), senza permessi di root.
 Opzioni:
   --prefix DIR         cartella di installazione (predefinita: ~/.local)
   --python PERCORSO    interprete Python da usare (predefinito: /usr/bin/python3)
-  --desktop NOME       hyprland oppure gnome (predefinito: quello della sessione)
+  --desktop NOME       hyprland, gnome oppure kde (predefinito: quello della sessione)
   --no-packages        non installare pacchetti né moduli pip: mostra solo i comandi
-  --no-hyprland        non proporre "dropwheel setup hyprland" (né "setup gnome")
+  --no-hyprland        non proporre "dropwheel setup hyprland" (né "setup gnome", "setup kde")
   --no-start           non avviare Dropwheel al termine
   --no-file-managers   non installare le azioni per Nautilus, Dolphin e Nemo
   --no-mime-guard      non proteggere le applicazioni predefinite dei tipi di file
@@ -170,9 +170,9 @@ Installs Dropwheel for the current user (into ~/.local), without root.
 Options:
   --prefix DIR         installation prefix (default: ~/.local)
   --python PATH        Python interpreter to use (default: /usr/bin/python3)
-  --desktop NAME       hyprland or gnome (default: the one of this session)
+  --desktop NAME       hyprland, gnome or kde (default: the one of this session)
   --no-packages        do not install packages or pip modules: only show the commands
-  --no-hyprland        do not offer "dropwheel setup hyprland" (nor "setup gnome")
+  --no-hyprland        do not offer "dropwheel setup hyprland" (nor "setup gnome", "setup kde")
   --no-start           do not start Dropwheel at the end
   --no-file-managers   do not install the Nautilus, Dolphin and Nemo actions
   --no-mime-guard      do not protect the default applications of file types
@@ -346,7 +346,7 @@ while (( $# )); do
         --python=*) PYTHON_BIN=${1#*=}; shift ;;
         --no-hyprland) DO_HYPRLAND=0; shift ;;
         --no-packages) DO_PACKAGES=0; shift ;;
-        --desktop) [[ $# -ge 2 ]] || die "$(t '--desktop richiede hyprland o gnome' '--desktop needs hyprland or gnome')"; DESKTOP=$2; shift 2 ;;
+        --desktop) [[ $# -ge 2 ]] || die "$(t '--desktop richiede hyprland, gnome o kde' '--desktop needs hyprland, gnome or kde')"; DESKTOP=$2; shift 2 ;;
         --desktop=*) DESKTOP=${1#*=}; shift ;;
         --no-start) DO_START=0; shift ;;
         --no-file-managers) DO_FILE_MANAGERS=0; shift ;;
@@ -411,10 +411,14 @@ if [[ -z $DESKTOP ]]; then
         DESKTOP=hyprland
     elif [[ ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]; then
         DESKTOP=gnome
+    elif [[ ${XDG_CURRENT_DESKTOP:-} == *KDE* ]]; then
+        DESKTOP=kde
     elif command -v hyprctl >/dev/null 2>&1 || [[ -d ${XDG_CONFIG_HOME:-$HOME/.config}/hypr ]]; then
         DESKTOP=hyprland
     elif command -v gnome-shell >/dev/null 2>&1; then
         DESKTOP=gnome
+    elif command -v plasmashell >/dev/null 2>&1; then
+        DESKTOP=kde
     elif [[ $DISTRO == debian ]]; then
         DESKTOP=gnome
     else
@@ -422,13 +426,21 @@ if [[ -z $DESKTOP ]]; then
     fi
 fi
 DESKTOP=${DESKTOP,,}
-[[ $DESKTOP == hyprland || $DESKTOP == gnome ]] || die "$(t '--desktop: hyprland oppure gnome' '--desktop: hyprland or gnome')"
+[[ $DESKTOP == hyprland || $DESKTOP == gnome || $DESKTOP == kde ]] \
+    || die "$(t '--desktop: hyprland, gnome oppure kde' '--desktop: hyprland, gnome or kde')"
+# GNOME and KDE Plasma: the wheel runs in the PySide6 host instead of Quickshell
+QT_DESKTOP=0
+[[ $DESKTOP == hyprland ]] || QT_DESKTOP=1
 if [[ $DISTRO == debian && $DESKTOP == hyprland ]]; then
-    warn "$(t 'Su Debian e Ubuntu Dropwheel supporta GNOME: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu.' \
-              'On Debian and Ubuntu Dropwheel supports GNOME: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.')"
+    warn "$(t 'Su Debian e Ubuntu Dropwheel supporta GNOME e KDE Plasma: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu.' \
+              'On Debian and Ubuntu Dropwheel supports GNOME and KDE Plasma: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.')"
 fi
 
-if [[ $DESKTOP == gnome ]]; then desktop_label="GNOME"; else desktop_label="Hyprland"; fi
+case $DESKTOP in
+    gnome) desktop_label="GNOME" ;;
+    kde) desktop_label="KDE Plasma" ;;
+    *) desktop_label="Hyprland" ;;
+esac
 if [[ -z ${DROPWHEEL_INSTALL_CLONED:-} ]]; then
     printf '\n'
     field "$(t 'Sistema' 'System')" "$DISTRO_NAME" "$C_DIM"
@@ -498,9 +510,9 @@ fi
 # Arch with Hyprland (the same list as the PKGBUILD's depends)
 REQUIRED_PKGS=(python python-pillow quickshell hyprland wl-clipboard libnotify
                ttf-material-symbols-variable glib2 xdg-utils)
-# Arch with GNOME: PySide6 hosts the wheel instead of Quickshell
+# Arch with GNOME or KDE Plasma: PySide6 hosts the wheel instead of Quickshell
 ARCH_GNOME_PKGS=(python python-pillow pyside6 wl-clipboard libnotify ttf-material-symbols-variable glib2 xdg-utils)
-# Debian and Ubuntu with GNOME: PySide6 comes from pip into Dropwheel's own environment; the
+# Debian and Ubuntu (GNOME, KDE Plasma): PySide6 comes from pip into Dropwheel's own environment; the
 # libraries below are what its X11 plugin needs (most are already there on a desktop)
 DEB_REQUIRED=(python3 python3-venv python3-pil wl-clipboard libnotify-bin libglib2.0-bin xdg-utils fontconfig
               libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
@@ -583,7 +595,7 @@ PIP_MODULES=()
 step "$(t 'Dipendenze' 'Dependencies')"
 if [[ $DISTRO == debian ]]; then
     required_list=("${DEB_REQUIRED[@]}")
-elif [[ $DESKTOP == gnome ]]; then
+elif (( QT_DESKTOP )); then
     required_list=("${ARCH_GNOME_PKGS[@]}")
 else
     required_list=("${REQUIRED_PKGS[@]}")
@@ -728,7 +740,7 @@ if [[ $DESKTOP == hyprland ]] && ! command -v qs >/dev/null 2>&1; then
     warn "$(t 'Quickshell (comando qs) non trovato: la ruota non potrà partire finché non lo installi.' \
               'Quickshell (qs command) not found: the wheel cannot start until you install it.')"
 fi
-if [[ $DESKTOP == gnome ]] && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
+if (( QT_DESKTOP )) && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
     warn "$(t 'PySide6 non è importabile: la ruota non potrà partire finché non lo installi.' \
               'PySide6 cannot be imported: the wheel cannot start until you install it.')"
 fi
@@ -744,7 +756,7 @@ fi
 
 UPGRADE=0
 [[ -x $DW_BIN ]] && UPGRADE=1
-if (( UPGRADE && DO_START )) && { in_hyprland_session || [[ $DESKTOP == gnome ]]; }; then
+if (( UPGRADE && DO_START )) && { in_hyprland_session || (( QT_DESKTOP )); }; then
     step "$(t 'Arresto la versione in esecuzione' 'Stopping the running version')"
     if command -v timeout >/dev/null 2>&1; then
         timeout 15 "$DW_BIN" stop >/dev/null 2>&1 || true
@@ -966,6 +978,22 @@ if (( DO_HYPRLAND )) && [[ $DESKTOP == gnome ]]; then
         cmd "dropwheel setup gnome"
     fi
 fi
+kde_configured=0
+if (( DO_HYPRLAND )) && [[ $DESKTOP == kde ]]; then
+    step "KDE Plasma"
+    info "$(t '"dropwheel setup kde" installa un piccolo script di KWin (dice a Dropwheel dove sta il puntatore e registra la scorciatoia Ctrl+Alt+D), l'"'"'avvio all'"'"'accesso e il font delle icone.' \
+              '"dropwheel setup kde" installs a small KWin script (it tells Dropwheel where the pointer is and registers the Ctrl+Alt+D shortcut), starting at login and the icon font.')"
+    if ask "$(t 'Configuro KDE Plasma adesso?' 'Set up KDE Plasma now?')" y n; then
+        if "$DW_BIN" setup kde; then
+            kde_configured=1
+        else
+            warn "$(t 'Configurazione non completa: dropwheel doctor dice cosa manca.' 'Setup not complete: dropwheel doctor tells what is missing.')"
+        fi
+    else
+        info "$(t 'Quando vuoi:' 'Whenever you like:')"
+        cmd "dropwheel setup kde"
+    fi
+fi
 if (( DO_HYPRLAND )) && [[ $DESKTOP == hyprland ]]; then
     step "Hyprland"
     if hypr_has_dropwheel; then
@@ -1005,10 +1033,11 @@ fi
 started=0
 if (( DO_START )); then
     step "$(t 'Avvio' 'Starting')"
-    if [[ $DESKTOP == gnome ]]; then
-        if [[ ${XDG_CURRENT_DESKTOP:-} != *GNOME* ]]; then
-            info "$(t 'Non sei in una sessione GNOME: Dropwheel partirà da solo al prossimo accesso.' \
-                      'Not in a GNOME session: Dropwheel will start by itself at the next login.')"
+    if (( QT_DESKTOP )); then
+        if [[ $DESKTOP == gnome && ${XDG_CURRENT_DESKTOP:-} != *GNOME* ]] \
+                || [[ $DESKTOP == kde && ${XDG_CURRENT_DESKTOP:-} != *KDE* ]]; then
+            info "$(t "Non sei in una sessione $desktop_label: Dropwheel partirà da solo al prossimo accesso." \
+                      "Not in a $desktop_label session: Dropwheel will start by itself at the next login.")"
         elif "$DW_BIN" start; then
             ok "$(t 'Dropwheel è in esecuzione' 'Dropwheel is running')"
             started=1
@@ -1055,6 +1084,22 @@ if [[ $DESKTOP == gnome ]]; then
         info "While dragging files from Nautilus press ${C_BOLD}Shift${C_RESET}: the wheel appears under the pointer."
         info "Without dragging: copy some files and press ${C_BOLD}Ctrl+Alt+D${C_RESET}, or right click → Scripts → Dropwheel."
         (( gnome_configured )) || info "The extension and the shortcut need: dropwheel setup gnome"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Check optional tools: dropwheel doctor"
+        info "Uninstall: $DATA_DIR/uninstall.sh"
+    fi
+elif [[ $DESKTOP == kde ]]; then
+    if (( IT )); then
+        info "Mentre trascini dei file da Dolphin premi ${C_BOLD}Shift${C_RESET}: compare la ruota sotto il puntatore."
+        info "Senza trascinare: copia dei file e premi ${C_BOLD}Ctrl+Alt+D${C_RESET}, oppure tasto destro → Apri in Dropwheel."
+        (( kde_configured )) || info "Per lo script di KWin e la scorciatoia serve prima: dropwheel setup kde"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Controllo degli strumenti opzionali: dropwheel doctor"
+        info "Disinstallazione: $DATA_DIR/uninstall.sh"
+    else
+        info "While dragging files from Dolphin press ${C_BOLD}Shift${C_RESET}: the wheel appears under the pointer."
+        info "Without dragging: copy some files and press ${C_BOLD}Ctrl+Alt+D${C_RESET}, or right click → Open in Dropwheel."
+        (( kde_configured )) || info "The KWin script and the shortcut need: dropwheel setup kde"
         [[ -z $start_hint ]] || info "$start_hint"
         info "Check optional tools: dropwheel doctor"
         info "Uninstall: $DATA_DIR/uninstall.sh"

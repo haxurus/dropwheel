@@ -1,0 +1,16 @@
+{
+  "KPlugin": {
+    "Id": "dropwheel",
+    "Name": "Dropwheel",
+    "Description": "Tells Dropwheel where the pointer is, so that tapping Shift during a drag opens its wheel under it, and adds its keyboard shortcut. Nothing else is read or sent anywhere.",
+    "Icon": "dropwheel",
+    "Authors": [{"Name": "Haxurus"}],
+    "Version": "1",
+    "License": "MIT",
+    "Website": "https://github.com/haxurus/dropwheel",
+    "EnabledByDefault": false
+  },
+  "X-Plasma-API": "javascript",
+  "X-Plasma-MainScript": "code/main.js",
+  "KPackageStructure": "KWin/Script"
+}

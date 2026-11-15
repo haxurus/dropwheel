@@ -19,6 +19,7 @@ extending it.
 | [Troubleshooting](TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](PRIVACY.md) | What uses the network and how untrusted files are handled |
 | [Dropwheel on GNOME](GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
+| [Dropwheel on KDE Plasma](KDE.md) | Debian, Ubuntu and Arch with Plasma 6: installing, the KWin script, differences from Hyprland |
 | [Dropwheel on Windows](WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 
 ## For contributors

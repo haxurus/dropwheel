@@ -41,9 +41,10 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel funziona su Arch Linux con Hyprland o GNOME, su Debian e Ubuntu con GNOME, e in anteprima su
-> Windows 10 e 11.** Le versioni per GNOME e Windows sono nuove e non sono ancora state eseguite su un vero
-> computer con GNOME o Windows: vedi [Piattaforme supportate](#piattaforme-supportate).
+> **Dropwheel funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian e Ubuntu con GNOME o KDE
+> Plasma, e in anteprima su Windows 10 e 11.** Le versioni per GNOME, KDE Plasma e Windows sono nuove e
+> non sono ancora state eseguite su un vero computer con GNOME, Plasma o Windows: vedi
+> [Piattaforme supportate](#piattaforme-supportate).
 >
 > Questa è una versione iniziale. Il codice ha un'ampia suite di test automatici, ma il flusso completo di
 > trascinamento non è ancora stato provato su una vera sessione Hyprland, e molte parti che chiamano
@@ -86,8 +87,9 @@ Ghostscript, LibreOffice e Tesseract. Niente account, niente servizi cloud e nie
 | Arch Linux, Hyprland 0.57+, senza Caelestia | **Supportata**, con una tavolozza scura integrata |
 | Arch Linux, GNOME 45+ | **Nuovo**: la stessa ruota, tramite una piccola estensione di GNOME Shell. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
 | Debian 13, Ubuntu 24.04 o successivo, GNOME | **Nuovo**: come sopra, installato con apt. Vedi [Dropwheel su GNOME](docs/GNOME.it.md) |
+| Arch Linux, Debian 13, Ubuntu o Kubuntu 25.04 o successivo, KDE Plasma 6 | **Nuovo**: la stessa ruota, tramite un piccolo script di KWin, su Wayland e X11. Vedi [Dropwheel su KDE Plasma](docs/KDE.it.md) |
 | Distribuzioni basate su Arch | Dovrebbero funzionare con gli stessi pacchetti, non provate |
-| KDE Plasma, altri compositor, altre distribuzioni | Non ancora |
+| Altri compositor, altre distribuzioni | Non ancora |
 | Windows 10 e 11 | **Anteprima**: la stessa ruota, le schede dei lavori e gli editor, Shift durante un trascinamento da Esplora file, angolo attivo, scorciatoia, menu contestuale. Non ancora provata su un vero Windows. Vedi [Dropwheel su Windows](docs/WINDOWS.it.md) |
 | macOS | Non ancora |
 
@@ -105,8 +107,8 @@ motore attraverso un piccolo protocollo JSON:
 | Motore delle azioni (Python) | Linux, più i rami Windows in anteprima per percorsi, cestino, appunti, processi e indicazioni di installazione | Le notifiche su Windows; lo stesso lavoro per macOS |
 | Protocollo | Righe JSON su stdio | Niente: qualsiasi interfaccia può parlarlo |
 | Riga di comando | Non richiede un compositor | Quasi niente: un primo passo naturale su una nuova piattaforma |
-| Attivazione | Scorciatoie globali di Hyprland e `hyprctl`; su GNOME, un'estensione della Shell; su Windows, lo stato di Shift e del mouse e una scorciatoia registrata | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
-| Ruota e finestre | Quickshell, Wayland layer-shell; su GNOME e Windows, lo stesso QML ospitato da PySide6 | KDE e macOS potrebbero partire dall'host PySide6 |
+| Attivazione | Scorciatoie globali di Hyprland e `hyprctl`; su GNOME, un'estensione della Shell; su KDE Plasma, uno script di KWin; su Windows, lo stato di Shift e del mouse e una scorciatoia registrata | Un nuovo modo di rilevare Shift durante un trascinamento su ogni piattaforma |
+| Ruota e finestre | Quickshell, Wayland layer-shell; su GNOME, KDE Plasma e Windows, lo stesso QML ospitato da PySide6 | macOS potrebbe partire dall'host PySide6 |
 | Pacchetti | `PKGBUILD`; `install.sh` interattivo (Arch, Debian, Ubuntu) e `install.ps1` (Windows) | Pacchetti nativi per ogni sistema |
 
 Se vorresti Dropwheel sul tuo sistema, una
@@ -127,12 +129,12 @@ Su **Windows 10 o 11** (anteprima), in PowerShell:
 irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
 ```
 
-L'installer riconosce il sistema e il desktop (Hyprland, GNOME o Windows), chiede quali funzioni vuoi,
+L'installer riconosce il sistema e il desktop (Hyprland, GNOME, KDE Plasma o Windows), chiede quali funzioni vuoi,
 installa ciò che manca (con la tua password, una volta) e avvia Dropwheel. Poi trascina dei file e tocca
 <kbd>Shift</kbd>. Su GNOME, prima esci e rientra una volta.
 
-I dettagli sono nella [guida all'installazione](docs/INSTALL.it.md), in [Dropwheel su GNOME](docs/GNOME.it.md)
-e in [Dropwheel su Windows](docs/WINDOWS.it.md). Su Arch, `makepkg -si` crea invece un pacchetto di sistema.
+I dettagli sono nella [guida all'installazione](docs/INSTALL.it.md), in [Dropwheel su GNOME](docs/GNOME.it.md),
+in [Dropwheel su KDE Plasma](docs/KDE.it.md) e in [Dropwheel su Windows](docs/WINDOWS.it.md). Su Arch, `makepkg -si` crea invece un pacchetto di sistema.
 
 ## Documentazione
 
@@ -149,6 +151,7 @@ La documentazione completa è nella cartella [docs](docs/README.it.md).
 | [Risoluzione dei problemi](docs/TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](docs/PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
 | [GNOME](docs/GNOME.it.md) | Debian, Ubuntu e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
+| [KDE Plasma](docs/KDE.it.md) | Debian, Ubuntu e Arch con Plasma 6: installazione, lo script di KWin, differenze da Hyprland |
 | [Windows](docs/WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 | [Architettura e sviluppo](docs/DEVELOPMENT.it.md) | Come stanno insieme i pezzi, avvio dal sorgente, test |
 | [Registro delle modifiche](CHANGELOG.it.md) | Cosa è cambiato in ogni versione |

@@ -102,7 +102,7 @@ after changing it. The [usage guide](USAGE.md) describes the wheel itself.
 ## What comes next
 
 1. Testing on real Debian and Ubuntu machines, with and without display scaling.
-2. KDE Plasma and other desktops, starting from the same host.
+2. Other desktops, starting from the same host (KDE Plasma: [Dropwheel on KDE Plasma](KDE.md)).
 3. Colours that follow the GNOME light or dark style and accent colour.
 
 Progress is tracked in the [changelog](../CHANGELOG.md).

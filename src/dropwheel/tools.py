@@ -78,7 +78,8 @@ def distro() -> str:
 
 def qt_frontend() -> bool:
     """The wheel runs in the PySide6 host (``dropwheel.qtshell``) rather than Quickshell: on
-    Windows, and in a GNOME session without Hyprland.  ``DROPWHEEL_FRONTEND=qt|quickshell`` forces it."""
+    Windows, and in a GNOME or KDE Plasma session without Hyprland.  ``DROPWHEEL_FRONTEND=qt|quickshell``
+    forces it."""
     if WINDOWS:
         return True
     forced = os.environ.get("DROPWHEEL_FRONTEND", "").strip().lower()
@@ -86,7 +87,7 @@ def qt_frontend() -> bool:
         return forced == "qt"
     if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
         return False
-    return "gnome" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":")
+    return bool({"gnome", "kde"} & set(os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":")))
 
 _CACHE_TTL = 600.0
 _stamp = time.monotonic()
@@ -361,8 +362,8 @@ _TOOL_LIST: list[Tool] = [
     _py("onnxruntime", "python-onnxruntime-cpu"),
     _py("ruamel.yaml", "python-ruamel-yaml"),
 ]
-# the Qt front end (dropwheel.qtshell) on Windows and GNOME; on Hyprland Quickshell hosts the shell
-_TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows and GNOME"))
+# the Qt front end (dropwheel.qtshell) on Windows, GNOME and KDE; on Hyprland Quickshell hosts the shell
+_TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows, GNOME and KDE"))
 
 #: name -> Tool
 TOOLS: dict[str, Tool] = {t.name: t for t in _TOOL_LIST}

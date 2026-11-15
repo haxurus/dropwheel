@@ -1,5 +1,5 @@
-"""The Qt host for Windows and GNOME: loads the Linux shell (``shell/shell.qml``) with PySide6, the Quickshell
-stand-in modules in ``qml/`` first on the import path.
+"""The Qt host for Windows, GNOME and KDE Plasma: loads the Linux shell (``shell/shell.qml``) with
+PySide6, the Quickshell stand-in modules in ``qml/`` first on the import path.
 
 * one instance per user (a lock file next to the state file);
 * the daemon is started by the shell as on Linux (``DROPWHEEL_BACKEND``, with ``pythonw``);
@@ -220,7 +220,7 @@ def main(argv: list[str] | None = None) -> int:
 
     qInstallMessageHandler(_qt_message)
     if not win32.WINDOWS and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
-        # GNOME: under XWayland the host may place its windows and keep them above the others
+        # GNOME, KDE: under XWayland the host may place its windows and keep them above the others
         os.environ["QT_QPA_PLATFORM"] = "xcb"
     app = QApplication(sys.argv[:1])
     from . import gnome
@@ -237,6 +237,8 @@ def main(argv: list[str] | None = None) -> int:
 
     desktop = native.Desktop()
     native.register(desktop)
+    if native.plat is native.kde and gnome.ACTIVE:
+        native.kde.serve(lambda: desktop.fire("open"))  # the KWin script's pointer and shortcut
     config = cfgmod.load()
     shortcut = str(config.get("trigger", {}).get("shortcut", "") or "")
     if shortcut and win32.WINDOWS and not desktop.set_hotkey(shortcut):

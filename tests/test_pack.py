@@ -817,11 +817,11 @@ def test_lua_module_survives_a_failing_bind() -> None:
 def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
-    assert "runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME" in readme
-    assert "have not yet run on a real GNOME or\n> Windows machine" in readme
+    assert "runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian and Ubuntu with GNOME or KDE\n> Plasma" in readme
+    assert "have not\n> yet run on a real GNOME, Plasma or Windows machine" in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
-    assert "funziona su Arch Linux con Hyprland o GNOME, su Debian e Ubuntu con GNOME" in italian
+    assert "funziona su Arch Linux con Hyprland, GNOME o KDE Plasma, su Debian e Ubuntu con GNOME o KDE" in italian
     assert "non sono ancora state eseguite su un vero" in italian
     assert "estendere Dropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
@@ -838,6 +838,33 @@ def test_install_on_gnome_points_at_setup_gnome(sandbox: Sandbox) -> None:
     assert "dropwheel setup gnome" in done and "Ctrl+Alt+D" in done
     assert "Desktop" in result.stdout and "GNOME" in result.stdout
     assert "https://github.com/haxurus/dropwheel" in result.stdout and "Haxurus" in result.stdout
+
+
+def test_install_on_kde_points_at_setup_kde(sandbox: Sandbox) -> None:
+    """KDE Plasma: detected from the session; the summary talks about Dolphin and ``setup kde``."""
+    result = sandbox.install("--no-mime-guard", "--no-hyprland", env={"XDG_CURRENT_DESKTOP": "KDE"})
+    done = result.stdout.split("━━")[-1]
+    assert "dropwheel setup kde" in done and "Ctrl+Alt+D" in done and "Dolphin" in done
+    assert "KDE Plasma" in result.stdout
+
+
+def test_setup_kde_round_trip_through_the_scripts(sandbox: Sandbox) -> None:
+    """install.sh runs ``setup kde`` (KWin script enabled in kwinrc), uninstall.sh removes it."""
+    log = sandbox.home / "calls.log"
+    for tool in ("kwriteconfig6", "kreadconfig6", "gdbus"):
+        sandbox.add_tool(tool, f'#!/bin/sh\necho "{tool} $*" >> "{_posix(log)}"\n')
+    sandbox.add_tool("fc-list", "#!/bin/sh\necho 'Material Symbols Rounded'\n")  # no font download
+    sandbox.install("--no-mime-guard", "--desktop", "kde", env={"XDG_CURRENT_DESKTOP": "KDE"})
+    script = sandbox.data / "kwin" / "scripts" / "dropwheel"
+    assert (script / "contents" / "code" / "main.js").is_file()
+    assert (sandbox.config / "autostart" / "dropwheel.desktop").is_file()
+    calls = log.read_text(encoding="utf-8")
+    assert "kwriteconfig6 --file kwinrc --group Plugins --key dropwheelEnabled true" in calls
+    assert "--group Script-dropwheel --key Shortcut Ctrl+Alt+D" in calls
+    assert "org.kde.KWin.reconfigure" in calls
+    sandbox.uninstall("--yes")
+    assert not script.exists() and not (sandbox.config / "autostart" / "dropwheel.desktop").exists()
+    assert "--key dropwheelEnabled --delete" in log.read_text(encoding="utf-8")
 
 
 def test_install_never_installs_packages_without_a_terminal(sandbox: Sandbox) -> None:

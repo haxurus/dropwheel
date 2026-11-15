@@ -25,10 +25,10 @@ from PySide6.QtCore import (QAbstractNativeEventFilter, QByteArray, QCoreApplica
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtQml import QmlAnonymous, QmlAttached, QmlElement, qmlRegisterSingletonInstance
 
-from . import gnome, virtual, win32
+from . import gnome, kde, virtual, win32
 
-#: the desktop's answers: Win32 calls, or the GNOME Shell extension and X11 shapes
-plat: Any = win32 if win32.WINDOWS else gnome
+#: the desktop's answers: Win32 calls, the GNOME Shell extension or the KWin script, and X11 shapes
+plat: Any = win32 if win32.WINDOWS else kde if kde.SESSION else gnome
 
 log = logging.getLogger("dropwheel.qtshell")
 

@@ -179,7 +179,15 @@ def install(shortcut: str, *, dry: bool, say: Any) -> int:
             say("cli.setup.gnome_shortcut_failed", accel=accel)
             code = 1
 
-    # start at login
+    if not write_autostart(cmd, say):
+        code = 1
+    if not install_font(say):
+        code = 1
+    return code
+
+
+def write_autostart(cmd: list[str], say: Any) -> bool:
+    """``~/.config/autostart/dropwheel.desktop`` running ``dropwheel start`` at login."""
     from ..cli import _desktop_exec_arg
 
     exec_line = " ".join(_desktop_exec_arg(a) for a in [*cmd, "start"])
@@ -187,21 +195,24 @@ def install(shortcut: str, *, dry: bool, say: Any) -> int:
             f"Exec={exec_line}\nIcon=dropwheel\nX-GNOME-Autostart-enabled=true\nNoDisplay=true\n")
     try:
         _write(autostart_path(), text)
-        say("cli.setup.created", path=str(autostart_path()))
     except OSError as exc:
         say("cli.setup.write_failed", path=f"{autostart_path()} ({exc})")
-        code = 1
+        return False
+    say("cli.setup.created", path=str(autostart_path()))
+    return True
 
-    # the icon font
+
+def install_font(say: Any) -> bool:
+    """The icon font, downloaded once unless Material Symbols Rounded is installed."""
     if font_installed():
         say("cli.setup.win_font_present", family=explorer.FONT_FAMILY)
-    else:
-        try:
-            say("cli.setup.win_font_done", path=str(explorer.download_font()))
-        except (OSError, ValueError) as exc:
-            say("cli.setup.win_font_failed", details=str(exc), url=explorer.FONT_URL, path=str(explorer.font_path()))
-            code = 1
-    return code
+        return True
+    try:
+        say("cli.setup.win_font_done", path=str(explorer.download_font()))
+    except (OSError, ValueError) as exc:
+        say("cli.setup.win_font_failed", details=str(exc), url=explorer.FONT_URL, path=str(explorer.font_path()))
+        return False
+    return True
 
 
 def remove(*, dry: bool, say: Any) -> int:

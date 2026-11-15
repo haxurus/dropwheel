@@ -19,6 +19,7 @@ spiegano come installarlo, usarlo ed estenderlo.
 | [Risoluzione dei problemi](TROUBLESHOOTING.it.md) | La ruota non compare, log, icone mancanti, funzioni in grigio |
 | [Privacy e sicurezza](PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
 | [Dropwheel su GNOME](GNOME.it.md) | Debian, Ubuntu e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
+| [Dropwheel su KDE Plasma](KDE.it.md) | Debian, Ubuntu e Arch con Plasma 6: installazione, lo script di KWin, differenze da Hyprland |
 | [Dropwheel su Windows](WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
 
 ## Per chi contribuisce

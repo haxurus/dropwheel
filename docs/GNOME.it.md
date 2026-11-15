@@ -103,7 +103,7 @@ nuovo `dropwheel setup gnome`. La [guida all'uso](USAGE.it.md) descrive la ruota
 ## Prossimi passi
 
 1. Provare su veri computer con Debian e Ubuntu, con e senza ridimensionamento dello schermo.
-2. KDE Plasma e altri desktop, partendo dallo stesso host.
+2. Altri desktop, partendo dallo stesso host (KDE Plasma: [Dropwheel su KDE Plasma](KDE.it.md)).
 3. Colori che seguono lo stile chiaro o scuro e il colore d'accento di GNOME.
 
 I progressi sono nel [registro delle modifiche](../CHANGELOG.it.md).

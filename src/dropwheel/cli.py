@@ -62,7 +62,7 @@ if tools.WINDOWS:
     # no compositor or Quickshell there: PySide6 hosts the shell; send2trash is the only safe trash
     REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"), ("py:PySide6", "PySide6-Essentials"))
 elif tools.qt_frontend():
-    # GNOME: PySide6 hosts the shell (dropwheel setup gnome adds the Shell extension it reads)
+    # GNOME, KDE: PySide6 hosts the shell (dropwheel setup gnome|kde adds the extension or KWin script it reads)
     _deb = tools.distro() == "debian"
     REQUIRED_TOOLS = (("py:PIL", "python3-pil" if _deb else "python-pillow"),
                       ("py:PySide6", "PySide6-Essentials" if _deb else "pyside6"),
@@ -99,7 +99,7 @@ ALTERNATIVES: tuple[tuple[str, ...], ...] = (
 )
 
 _GROUP_ORDER = ("image", "pdf", "docs", "media", "archive", "fonts", "system", "python")
-_SETUP_TARGETS = ("hyprland", "gnome", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
+_SETUP_TARGETS = ("hyprland", "gnome", "kde", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
 if tools.WINDOWS:
     _SETUP_TARGETS = ("windows",)
 _URL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]+://")
@@ -1269,6 +1269,27 @@ def _doctor_gnome_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
                  "Material Symbols Rounded" if st["font"] else ctx.t("cli.doctor.win_font_missing") + hint))
 
 
+def _doctor_kde_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
+    """``doctor`` in a Plasma session: PySide6, the KWin script, Shift on Wayland and the icon font."""
+    from .qtshell import kde_setup
+
+    term = ctx.term
+    yes, no = term.ok(), term.fail()
+    pyside = tools.path("py:PySide6")
+    rows.append((yes if pyside else no, "PySide6", pyside or (ctx.t("cli.doctor.missing") + term.dim(
+        f"  {term.sym('arrow')} " + tools.install_hint(["py:PySide6"])))))
+    st = kde_setup.state()
+    hint = term.dim(f"  {term.sym('arrow')} dropwheel setup kde")
+    script = st["script"] and st["loaded"] is not False
+    rows.append((yes if script else term.warn(), ctx.t("cli.doctor.kde_script"),
+                 ctx.t("cli.doctor.kde_script_ok") if script else ctx.t("cli.doctor.kde_script_missing") + hint))
+    if os.environ.get("WAYLAND_DISPLAY"):
+        rows.append((yes if st["shift"] else term.warn(), ctx.t("cli.doctor.kde_shift"),
+                     ctx.t("cli.doctor.kde_shift_ok") if st["shift"] else ctx.t("cli.doctor.kde_shift_off")))
+    rows.append((yes if st["font"] else term.warn(), ctx.t("cli.doctor.win_font"),
+                 "Material Symbols Rounded" if st["font"] else ctx.t("cli.doctor.win_font_missing") + hint))
+
+
 def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel doctor``: session, required dependencies, optional tools and the commands
     that install what is missing.  Exit status 1 when a required dependency is missing."""
@@ -1317,6 +1338,8 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     rows: list[tuple[str, str, str]] = []
     if tools.WINDOWS:
         _doctor_windows_rows(ctx, rows)
+    elif tools.qt_frontend() and "kde" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":"):
+        _doctor_kde_rows(ctx, rows)
     elif tools.qt_frontend():
         _doctor_gnome_rows(ctx, rows)
     in_hypr = bool(os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
@@ -2021,12 +2044,35 @@ def _setup_gnome(ctx: Ctx, *, dry: bool, remove: bool) -> int:
     return code
 
 
+def _setup_kde(ctx: Ctx, *, dry: bool, remove: bool) -> int:
+    """``dropwheel setup kde [--remove]``: the KWin script (pointer and shortcut), autostart, the icon font."""
+    from .qtshell import kde_setup
+
+    term = ctx.term
+
+    def say(key: str, **fmt: Any) -> None:
+        prefix = term.dim(ctx.t("cli.setup.dry_prefix") + " ") if dry else ""
+        out(f"  {prefix}{ctx.t(key, **fmt)}")
+
+    out(term.bold("KDE Plasma"))
+    if remove:
+        return kde_setup.remove(dry=dry, say=say)
+    shortcut = str(ctx.config.get("trigger", {}).get("shortcut", "") or "")
+    code = kde_setup.install(shortcut, dry=dry, say=say)
+    if not dry:
+        out()
+        out("  " + ctx.t("cli.setup.kde_next"))
+    return code
+
+
 def cmd_setup(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel setup TARGET``: install the desktop integrations for the current user."""
     if tools.WINDOWS:
         return _setup_windows(ctx, dry=args.dry_run, remove=args.remove)
     if args.target == "gnome":
         return _setup_gnome(ctx, dry=args.dry_run, remove=args.remove)
+    if args.target == "kde":
+        return _setup_kde(ctx, dry=args.dry_run, remove=args.remove)
     if args.remove:
         raise UsageError(ctx.t("cli.setup.remove_only"))
     st = _Setup(ctx, dry=args.dry_run, apply=args.apply)

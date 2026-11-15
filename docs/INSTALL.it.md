@@ -3,7 +3,8 @@
 # Installare Dropwheel
 
 Questa pagina riguarda Arch Linux con Hyprland. Per GNOME su Debian, Ubuntu o Arch vedi
-[Dropwheel su GNOME](GNOME.it.md); per Windows vedi [Dropwheel su Windows](WINDOWS.it.md).
+[Dropwheel su GNOME](GNOME.it.md), per KDE Plasma [Dropwheel su KDE Plasma](KDE.it.md); per Windows vedi
+[Dropwheel su Windows](WINDOWS.it.md).
 
 ## Per iniziare
 
