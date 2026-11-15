@@ -47,8 +47,8 @@ test = ["pytest>=7"]
 
 [project.urls]
 Homepage = "https://github.com/haxurus/dropwheel"
-Documentation = "https://github.com/haxurus/dropwheel/blob/master/docs/README.md"
-Changelog = "https://github.com/haxurus/dropwheel/blob/master/CHANGELOG.md"
+Documentation = "https://github.com/haxurus/dropwheel/blob/main/docs/README.md"
+Changelog = "https://github.com/haxurus/dropwheel/blob/main/CHANGELOG.md"
 Issues = "https://github.com/haxurus/dropwheel/issues"
 
 [project.scripts]
