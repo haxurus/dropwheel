@@ -49,6 +49,8 @@ TERMINALS = ("foot", "kitty", "alacritty", "wezterm", "ghostty", "konsole", "gno
              "xdg-terminal-exec", "xterm")
 if tools.WINDOWS:
     TERMINALS = ("cmd",)  # util.launch_terminal opens a cmd.exe console there
+elif tools.MACOS:
+    TERMINALS = ("open",)  # util.launch_terminal runs "open -a Terminal" there
 
 _CHUNK = 4 * 1024 * 1024
 

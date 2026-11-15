@@ -20,6 +20,7 @@ spiegano come installarlo, usarlo ed estenderlo.
 | [Privacy e sicurezza](PRIVACY.it.md) | Cosa usa la rete e come vengono trattati i file non fidati |
 | [Dropwheel su GNOME](GNOME.it.md) | Debian, Ubuntu e Arch con GNOME: installazione, l'estensione, differenze da Hyprland |
 | [Dropwheel su Windows](WINDOWS.it.md) | L'anteprima per Windows: installazione, la ruota da Esplora file, differenze da Linux |
+| [Dropwheel su macOS](MACOS.it.md) | L'anteprima per macOS, mai eseguita su un Mac vero: installazione con Homebrew, l'azione rapida del Finder, differenze da Linux |
 
 ## Per chi contribuisce
 

@@ -20,6 +20,7 @@ extending it.
 | [Privacy and security](PRIVACY.md) | What uses the network and how untrusted files are handled |
 | [Dropwheel on GNOME](GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
 | [Dropwheel on Windows](WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
+| [Dropwheel on macOS](MACOS.md) | The macOS preview, never run on a real Mac: installing with Homebrew, the Finder Quick Action, differences from Linux |
 
 ## For contributors
 

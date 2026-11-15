@@ -201,8 +201,19 @@ def embedding_text(fs_type: int, t) -> str:
 
 
 def user_font_dir() -> Path:
-    """``$XDG_DATA_HOME/fonts`` (``~/.local/share/fonts``)."""
+    """``$XDG_DATA_HOME/fonts`` (``~/.local/share/fonts``); ``~/Library/Fonts`` on macOS."""
+    if tools.MACOS:
+        return Path.home() / "Library" / "Fonts"
     return util.xdg_data_home() / "fonts"
+
+
+#: macOS activates what lands in ~/Library/Fonts by itself: no fontconfig there.
+_FONT_TOOLS: list[str] = [] if tools.MACOS else ["fc-cache"]
+
+
+def _refresh_font_cache(ctx: Context, root: Path) -> None:
+    if not tools.MACOS:
+        ctx.run(["fc-cache", "-f", str(root)], timeout=600)
 
 
 def _under(path: str, root: Path) -> bool:
@@ -502,7 +513,7 @@ def _single_face(files: list[FileInfo]) -> bool:
 # ================================================================================ actions
 
 @action(id="font.install", label="act.font.install", icon="install_desktop", categories={"font"}, multi="any",
-        requires=["fc-cache"], when=_not_installed, description="desc.font.install", order=1)
+        requires=_FONT_TOOLS, when=_not_installed, description="desc.font.install", order=1)
 def font_install(ctx: Context):
     """Install the fonts for the current user (``~/.local/share/fonts/<Family>/``) and refresh fontconfig."""
     root = user_font_dir()
@@ -527,7 +538,8 @@ def font_install(ctx: Context):
             prog.add(1)
             continue
         family = item.families[0] if item.families else (orig.stem or "Font")
-        folder = root / (util.safe_filename(family).strip(" .") or "Fonts")
+        # shortcut: flat on macOS, not sure Core Text scans subfolders of ~/Library/Fonts; test on a Mac
+        folder = root if tools.MACOS else root / (util.safe_filename(family).strip(" .") or "Fonts")
         existing = folder / item.filename
         if existing.exists() and _same_content(existing, item.source):
             already.append(family)
@@ -556,13 +568,13 @@ def font_install(ctx: Context):
             return ctx.result(kind="none", message=ctx.t("msg.font.already", families=", ".join(already)))
         raise UserError("err.font.install_failed", details="\n".join(errors))
     ctx.progress(None, ctx.t("msg.font.cache"))
-    ctx.run(["fc-cache", "-f", str(root)], timeout=600)
+    _refresh_font_cache(ctx, root)
     return ctx.result(installed, message=i18n.tn("msg.font.installed", len(families), ctx.lang,
                                                    families=", ".join(families)))
 
 
 @action(id="font.uninstall", label="act.font.uninstall", icon="delete", categories={"font"}, multi="any",
-        requires=["fc-cache"], when=_installed, danger=True, undoable=False, description="desc.font.uninstall",
+        requires=_FONT_TOOLS, when=_installed, danger=True, undoable=False, description="desc.font.uninstall",
         order=2)
 def font_uninstall(ctx: Context):
     """Remove fonts installed in ``~/.local/share/fonts`` (they go to the trash) and refresh fontconfig."""
@@ -579,7 +591,7 @@ def font_uninstall(ctx: Context):
                 parent.rmdir()
         except OSError:
             pass
-    ctx.run(["fc-cache", "-f", str(root)], timeout=600)
+    _refresh_font_cache(ctx, root)
     return ctx.result(kind="none", message=i18n.tn("msg.font.uninstalled", removed, ctx.lang))
 
 

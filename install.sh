@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
-# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland or GNOME).
+# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland or GNOME), and
+# macOS 13+ (preview, with Homebrew).
+#
+# It runs under macOS's own bash 3.2 too: no ${var,,}, associative arrays or mapfile on the
+# paths macOS takes, and empty arrays are expanded as ${a[@]+"${a[@]}"} (set -u).
 #
 #   ./install.sh                 asks everything, installs into ~/.local and starts Dropwheel
 #   curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -15,8 +19,10 @@
 #
 # Packages are installed with pacman or apt only after you say yes, from a terminal (sudo asks
 # for your password once); without a terminal the commands are printed instead. Everything else
-# stays in your home directory. On Debian and Ubuntu the Python modules go into a private
-# environment (~/.local/share/dropwheel/venv), never into the system Python.
+# stays in your home directory. On Debian, Ubuntu and macOS the Python modules go into a private
+# environment (~/.local/share/dropwheel/venv), never into the system Python. On macOS the packages
+# come from Homebrew (no sudo); Homebrew itself is installed only if you say yes to its official
+# command, which is shown first.
 
 set -euo pipefail
 
@@ -36,6 +42,9 @@ if [[ $_locale == it* ]]; then IT=1; else IT=0; fi
 
 # t "italiano" "english" → the text in the session language
 t() { if (( IT )); then printf '%s' "$1"; else printf '%s' "$2"; fi; }
+
+# lower-case (bash 3.2, the macOS one, has no ${var,,})
+lower() { printf '%s' "$1" | tr '[:upper:]' '[:lower:]'; }
 
 if [[ -t 1 && -z ${NO_COLOR:-} && ${TERM:-dumb} != dumb ]]; then
     C_RESET=$'\e[0m' C_BOLD=$'\e[1m' C_RED=$'\e[1;31m' C_GREEN=$'\e[1;32m'
@@ -114,7 +123,7 @@ choose_groups() {
             "$(t 'Quali installo? [Invio = tutti, n = nessuno, oppure i numeri, es. 1 3]' \
                  'Which ones? [Enter = all, n = none, or the numbers, e.g. 1 3]')"
         read -r reply || reply=""
-        reply=${reply,,}
+        reply=$(lower "$reply")
         reply=${reply//,/ }
         case $reply in
             '') for i in "${!labels[@]}"; do CHOSEN+=("$i"); done; return ;;
@@ -148,7 +157,7 @@ Installa Dropwheel per l'utente corrente (in ~/.local), senza permessi di root.
 
 Opzioni:
   --prefix DIR         cartella di installazione (predefinita: ~/.local)
-  --python PERCORSO    interprete Python da usare (predefinito: /usr/bin/python3)
+  --python PERCORSO    interprete Python da usare (predefinito: /usr/bin/python3, su macOS quello di Homebrew)
   --desktop NOME       hyprland oppure gnome (predefinito: quello della sessione)
   --no-packages        non installare pacchetti né moduli pip: mostra solo i comandi
   --no-hyprland        non proporre "dropwheel setup hyprland" (né "setup gnome")
@@ -169,7 +178,7 @@ Installs Dropwheel for the current user (into ~/.local), without root.
 
 Options:
   --prefix DIR         installation prefix (default: ~/.local)
-  --python PATH        Python interpreter to use (default: /usr/bin/python3)
+  --python PATH        Python interpreter to use (default: /usr/bin/python3, on macOS Homebrew's)
   --desktop NAME       hyprland or gnome (default: the one of this session)
   --no-packages        do not install packages or pip modules: only show the commands
   --no-hyprland        do not offer "dropwheel setup hyprland" (nor "setup gnome")
@@ -199,7 +208,7 @@ ask() {
     while true; do
         printf '  %s?%s %s %s ' "$C_YELLOW" "$C_RESET" "$question" "$hint"
         read -r reply || reply=""
-        reply=${reply,,}
+        reply=$(lower "$reply")
         case $reply in
             '') [[ $default == y ]]; return ;;
             s|si|sì|y|yes) return 0 ;;
@@ -225,8 +234,9 @@ trap cleanup EXIT
 
 # Single-quote a string for POSIX sh.
 sq() {
-    local s=${1//\'/\'\\\'\'}
-    printf "'%s'" "$s"
+    # the replacement comes from variables: bash 3.2 and 5 treat quotes in a literal one differently
+    local q="'" r="'\\''"
+    printf "'%s'" "${1//$q/$r}"
 }
 
 # Quote one argument for the Exec key of a desktop entry (Desktop Entry Spec, "Exec key").
@@ -305,8 +315,32 @@ install_launcher() {
     MANIFEST_PATHS+=("$dst")
 }
 
+# macOS: what Homebrew has installed, one name per line (casks written cask:NAME), read once by
+# brew_list: each "brew list" takes a moment, and pkg_installed also runs in $(…) subshells
+BREW_LISTED=""
+brew_list() {
+    BREW_LISTED=$'\n'
+    [[ -n $BREW ]] || return 0
+    BREW_LISTED+=$("$BREW" list --formula -1 2>/dev/null || true)$'\n'
+    BREW_LISTED+=$("$BREW" list --cask -1 2>/dev/null | sed 's/^/cask:/' || true)$'\n'
+}
+
+# brew_split NAME… → BREW_F (formulae) and BREW_C (casks, without "cask:")
+brew_split() {
+    local x
+    BREW_F=() BREW_C=()
+    for x in "$@"; do
+        case $x in
+            cask:*) BREW_C+=("${x#cask:}") ;;
+            *) BREW_F+=("$x") ;;
+        esac
+    done
+}
+
 pkg_installed() {
-    if [[ ${DISTRO:-arch} == debian ]]; then
+    if [[ ${DISTRO:-arch} == macos ]]; then
+        [[ $BREW_LISTED == *$'\n'"$1"$'\n'* ]]
+    elif [[ ${DISTRO:-arch} == debian ]]; then
         [[ $(dpkg-query -W -f='${Status}' -- "$1" 2>/dev/null) == *"install ok installed"* ]]
     else
         pacman -Qq -- "$1" >/dev/null 2>&1
@@ -384,8 +418,12 @@ MANIFEST_PATHS=()
 
 [[ -n ${DROPWHEEL_INSTALL_CLONED:-} ]] || banner
 
-[[ $(uname -s) == Linux ]] || die "$(t 'install.sh è per Linux. Su Windows usa install.ps1 in PowerShell.' \
-                                         'install.sh is for Linux. On Windows use install.ps1 in PowerShell.')"
+case $(uname -s) in
+    Linux) MACOS=0 ;;
+    Darwin) MACOS=1 ;;
+    *) die "$(t 'install.sh è per Linux e macOS. Su Windows usa install.ps1 in PowerShell.' \
+                'install.sh is for Linux and macOS. On Windows use install.ps1 in PowerShell.')" ;;
+esac
 if (( EUID == 0 )); then
     die "$(t 'Non eseguire install.sh come root: installa per il tuo utente (chiederà la password solo per i pacchetti). Per un pacchetto di sistema su Arch usa "makepkg -si".' \
              'Do not run install.sh as root: it installs for your user (it asks for the password only for packages). For a system package on Arch use "makepkg -si".')"
@@ -400,11 +438,16 @@ if [[ -r $OS_RELEASE ]]; then
     os_id=$(. "$OS_RELEASE" && printf '%s %s' "${ID:-}" "${ID_LIKE:-}")
     # shellcheck disable=SC1090
     DISTRO_NAME=$(. "$OS_RELEASE" && printf '%s' "${PRETTY_NAME:-${NAME:-Linux}}")
-    case " ${os_id,,} " in
+    case " $(lower "$os_id") " in
         *" debian "*|*" ubuntu "*) DISTRO=debian ;;
     esac
 fi
 [[ $DISTRO == arch ]] && ! command -v pacman >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1 && DISTRO=debian
+if (( MACOS )); then
+    DISTRO=macos
+    DISTRO_NAME="macOS $(sw_vers -productVersion 2>/dev/null || true)"
+    DESKTOP=macos
+fi
 
 if [[ -z $DESKTOP ]]; then
     if in_hyprland_session; then
@@ -421,14 +464,17 @@ if [[ -z $DESKTOP ]]; then
         DESKTOP=hyprland
     fi
 fi
-DESKTOP=${DESKTOP,,}
-[[ $DESKTOP == hyprland || $DESKTOP == gnome ]] || die "$(t '--desktop: hyprland oppure gnome' '--desktop: hyprland or gnome')"
+DESKTOP=$(lower "$DESKTOP")
+[[ $DESKTOP == hyprland || $DESKTOP == gnome ]] || (( MACOS )) \
+    || die "$(t '--desktop: hyprland oppure gnome' '--desktop: hyprland or gnome')"
 if [[ $DISTRO == debian && $DESKTOP == hyprland ]]; then
     warn "$(t 'Su Debian e Ubuntu Dropwheel supporta GNOME: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu.' \
               'On Debian and Ubuntu Dropwheel supports GNOME: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.')"
 fi
 
 if [[ $DESKTOP == gnome ]]; then desktop_label="GNOME"; else desktop_label="Hyprland"; fi
+if (( MACOS )); then desktop_label="Finder ($(t 'anteprima' 'preview'))"; fi
+
 if [[ -z ${DROPWHEEL_INSTALL_CLONED:-} ]]; then
     printf '\n'
     field "$(t 'Sistema' 'System')" "$DISTRO_NAME" "$C_DIM"
@@ -439,6 +485,31 @@ if interactive && [[ -z ${DROPWHEEL_INSTALL_ASKED:-} ]]; then
     printf '\n'
     ask "$(t 'Iniziamo?' 'Shall we start?')" y y || exit 0
     export DROPWHEEL_INSTALL_ASKED=1
+fi
+
+# --- macOS: Homebrew (packages without sudo) and its Python
+BREW=""
+if (( MACOS )); then
+    BREW=$(command -v brew || true)
+    for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+        if [[ -z $BREW && -x $b ]]; then BREW=$b; fi
+    done
+    if [[ -z $BREW ]] && (( DO_PACKAGES )) && interactive; then
+        warn "$(t 'Homebrew non è installato: serve per Python e per gli strumenti delle azioni.' \
+                  'Homebrew is not installed: it provides Python and the tools of the actions.')"
+        info "$(t 'Il comando ufficiale (https://brew.sh) è:' 'Its official command (https://brew.sh) is:')"
+        # shellcheck disable=SC2016 # printed as it is, for the user to read
+        cmd '/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"'
+        if ask "$(t 'Lo eseguo ora? (chiederà la tua password)' 'Run it now? (it will ask for your password)')" n n; then
+            /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)" \
+                || warn "$(t 'Installazione di Homebrew non riuscita' 'Homebrew installation failed')"
+            for b in /opt/homebrew/bin/brew /usr/local/bin/brew; do
+                if [[ -z $BREW && -x $b ]]; then BREW=$b; fi
+            done
+        fi
+    fi
+    # this script, and what it starts, finds the Homebrew programs even before the shell profile does
+    if [[ -n $BREW ]]; then PATH="$(dirname -- "$BREW"):$PATH"; fi
 fi
 
 # --- the source tree: this folder, or a fresh clone when the script came from curl
@@ -458,7 +529,10 @@ if [[ ! -e $SCRIPT_DIR/src/dropwheel/__init__.py ]]; then
     step "$(t 'Scarico Dropwheel' 'Downloading Dropwheel')"
     if ! command -v git >/dev/null 2>&1; then
         if (( DO_PACKAGES )) && interactive && ask "$(t 'Serve git. Lo installo ora?' 'git is needed. Install it now?')" y n; then
-            if [[ $DISTRO == debian ]]; then as_root apt-get install -y git; else as_root pacman -S --needed --noconfirm git; fi
+            if [[ $DISTRO == macos ]]; then
+                [[ -n $BREW ]] || die "$(t 'Senza Homebrew: xcode-select --install installa git.' 'Without Homebrew: xcode-select --install installs git.')"
+                "$BREW" install git
+            elif [[ $DISTRO == debian ]]; then as_root apt-get install -y git; else as_root pacman -S --needed --noconfirm git; fi
         else
             die "$(t 'Installa git e riprova.' 'Install git and try again.')"
         fi
@@ -479,6 +553,22 @@ for required in src/dropwheel/__init__.py src/dropwheel/__main__.py shell/shell.
     [[ -e $SCRIPT_DIR/$required ]] || die "$(t 'File mancante nel sorgente' 'Missing file in the source tree'): $required"
 done
 
+python_ok() { [[ -x $1 ]] && "$1" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)' 2>/dev/null; }
+if [[ -z $PYTHON_BIN ]] && (( MACOS )); then
+    # /usr/bin/python3 is the Command Line Tools' 3.9: Homebrew's Python instead
+    BREW_PREFIX=""
+    if [[ -n $BREW ]]; then BREW_PREFIX=$("$BREW" --prefix 2>/dev/null || true); fi
+    if [[ -n $BREW_PREFIX ]] && ! python_ok "$BREW_PREFIX/bin/python3" && (( DO_PACKAGES )) \
+            && ask "$(t 'Serve Python 3.11 o più recente. Installo python@3.13 con Homebrew?' \
+                        'Python 3.11 or newer is needed. Install python@3.13 with Homebrew?')" y n; then
+        "$BREW" install python@3.13 || warn "brew install python@3.13"
+    fi
+    for cand in "$BREW_PREFIX/bin/python3" "$(command -v python3 || true)"; do
+        if [[ -z $PYTHON_BIN ]] && python_ok "$cand"; then PYTHON_BIN=$cand; fi
+    done
+    [[ -n $PYTHON_BIN ]] || die "$(t 'Serve Python 3.11 o più recente: brew install python@3.13' \
+                                     'Python 3.11 or newer is required: brew install python@3.13')"
+fi
 if [[ -z $PYTHON_BIN ]]; then
     if [[ -x /usr/bin/python3 ]]; then
         PYTHON_BIN=/usr/bin/python3
@@ -533,21 +623,53 @@ DEB_GROUPS=(
     "Condivisione e sistema|Sharing and system|zenity gnupg trash-cli udisks2|send2trash"
 )
 
-if [[ $DISTRO == debian ]]; then
+# macOS: "labels|Homebrew formulae (cask:NAME = an app)|pip modules" (names checked on formulae.brew.sh)
+MAC_GROUPS=(
+    "Immagini|Images|imagemagick librsvg oxipng pngquant jpegoptim jpeg-turbo gifsicle gifski|pillow-heif pillow-jxl-plugin"
+    "Metadati|Metadata|exiftool mat2|"
+    "PDF|PDF|qpdf ghostscript poppler|pymupdf pypdf pikepdf"
+    "OCR e codici QR|OCR and QR codes|tesseract tesseract-lang zbar qrencode ocrmypdf|qrcode"
+    "Documenti|Documents|cask:libreoffice pandoc typst|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
+    "Audio e video|Audio and video|ffmpeg yt-dlp|mutagen"
+    "Archivi|Archives|sevenzip unar|py7zr rarfile"
+    "Font|Fonts|woff2|fonttools brotli"
+    "Condivisione e sistema|Sharing and system|gnupg|"
+)
+
+if [[ $DISTRO == macos ]]; then
+    PKG_TOOL=brew
+elif [[ $DISTRO == debian ]]; then
     PKG_TOOL=apt-get
 else
     PKG_TOOL=pacman
 fi
-can_install() { (( DO_PACKAGES )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; }
+can_install() {
+    (( DO_PACKAGES )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 \
+        && { [[ $DISTRO == macos ]] || command -v sudo >/dev/null 2>&1; }
+}
 
 install_cmd_text() {
+    if [[ $DISTRO == macos ]]; then
+        brew_split "$@"
+        (( ${#BREW_F[@]} )) && printf 'brew install %s' "${BREW_F[*]}"
+        (( ${#BREW_F[@]} && ${#BREW_C[@]} )) && printf ' && '
+        (( ${#BREW_C[@]} )) && printf 'brew install --cask %s' "${BREW_C[*]}"
+        return 0
+    fi
     if [[ $DISTRO == debian ]]; then printf 'sudo apt install %s' "$*"; else printf 'sudo pacman -S --needed %s' "$*"; fi
 }
 
 APT_UPDATED=0
 install_pkgs() {
     (( $# )) || return 0
-    if [[ $DISTRO == debian ]]; then
+    if [[ $DISTRO == macos ]]; then
+        brew_split "$@"
+        local rc=0
+        if (( ${#BREW_F[@]} )); then "$BREW" install -- "${BREW_F[@]}" || rc=1; fi
+        if (( ${#BREW_C[@]} )); then "$BREW" install --cask -- "${BREW_C[@]}" || rc=1; fi
+        brew_list
+        return $rc
+    elif [[ $DISTRO == debian ]]; then
         if (( ! APT_UPDATED )); then
             as_root apt-get update || warn "apt-get update"
             APT_UPDATED=1
@@ -581,7 +703,10 @@ missing_aur=()
 PIP_MODULES=()
 
 step "$(t 'Dipendenze' 'Dependencies')"
-if [[ $DISTRO == debian ]]; then
+if [[ $DISTRO == macos ]]; then
+    required_list=()  # Python was checked above; PySide6 and Pillow go into the private environment
+    brew_list
+elif [[ $DISTRO == debian ]]; then
     required_list=("${DEB_REQUIRED[@]}")
 elif [[ $DESKTOP == gnome ]]; then
     required_list=("${ARCH_GNOME_PKGS[@]}")
@@ -590,7 +715,7 @@ else
 fi
 
 if command -v "$PKG_TOOL" >/dev/null 2>&1; then
-    for p in "${required_list[@]}"; do
+    for p in ${required_list[@]+"${required_list[@]}"}; do
         pkg_installed "$p" || missing_required+=("$p")
     done
     if (( ${#missing_required[@]} == 0 )); then
@@ -613,7 +738,9 @@ if command -v "$PKG_TOOL" >/dev/null 2>&1; then
     group_labels=()
     group_pkgs=()
     group_pip=()
-    if [[ $DISTRO == debian ]]; then
+    if [[ $DISTRO == macos ]]; then
+        groups=("${MAC_GROUPS[@]}")
+    elif [[ $DISTRO == debian ]]; then
         groups=("${DEB_GROUPS[@]}")
     else
         groups=("${OPTIONAL_GROUPS[@]}")
@@ -625,8 +752,8 @@ if command -v "$PKG_TOOL" >/dev/null 2>&1; then
             pick=$(pick_alternative "$p") && group_missing+=("$pick")
         done
         (( ${#group_missing[@]} )) || [[ -n ${pip_mods:-} ]] || continue
-        group_labels+=("$(printf '%-24s %s' "$(t "$label_it" "$label_en")" "$C_DIM${group_missing[*]}${pip_mods:+ (pip: $pip_mods)}$C_RESET")")
-        group_pkgs+=("${group_missing[*]}")
+        group_labels+=("$(printf '%-24s %s' "$(t "$label_it" "$label_en")" "$C_DIM${group_missing[*]:-}${pip_mods:+ (pip: $pip_mods)}$C_RESET")")
+        group_pkgs+=("${group_missing[*]:-}")
         group_pip+=("${pip_mods:-}")
     done
     if (( ${#group_labels[@]} )); then
@@ -695,23 +822,26 @@ else
     warn "$(t "$PKG_TOOL non trovato: controllo delle dipendenze saltato." "$PKG_TOOL not found: dependency check skipped.")"
 fi
 
-# --- Debian and Ubuntu: Dropwheel's own Python environment (PySide6 and the chosen modules)
+# --- Debian, Ubuntu and macOS: Dropwheel's own Python environment (PySide6 and the chosen modules)
 VENV_DIR="$PREFIX/share/dropwheel/venv"
-if [[ $DISTRO == debian ]] && (( ! DO_PACKAGES )); then
+PIP_BASE=PySide6-Essentials
+if [[ $DISTRO == macos ]]; then PIP_BASE="PySide6-Essentials pillow"; fi  # Debian has python3-pil from apt
+if [[ $DISTRO == debian || $DISTRO == macos ]] && (( ! DO_PACKAGES )); then
     info "$(t 'Ambiente Python saltato (--no-packages). Per crearlo:' 'Python environment skipped (--no-packages). To create it:')"
-    cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR && $VENV_DIR/bin/python -m pip install PySide6-Essentials"
-elif [[ $DISTRO == debian ]]; then
+    cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR && $VENV_DIR/bin/python -m pip install $PIP_BASE"
+elif [[ $DISTRO == debian || $DISTRO == macos ]]; then
     step "$(t 'Ambiente Python' 'Python environment')"
     if [[ ! -x $VENV_DIR/bin/python ]]; then
         "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR" \
             || die "$(t 'Impossibile creare l'"'"'ambiente Python: serve python3-venv' 'Cannot create the Python environment: python3-venv is needed')"
     fi
-    pip_list=(PySide6-Essentials "${PIP_MODULES[@]+"${PIP_MODULES[@]}"}")
+    read -r -a pip_base <<< "$PIP_BASE"
+    pip_list=("${pip_base[@]}" ${PIP_MODULES[@]+"${PIP_MODULES[@]}"})
     info "$(t 'Installo con pip (PySide6 sono circa 80 MB):' 'Installing with pip (PySide6 is about 80 MB):') ${pip_list[*]}"
     venv_pip() { "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade "$@"; }
     # --ignore-installed: a system PySide6 (python3-pyside6) would otherwise lend its shiboken6,
     # whose library is not where the pip build looks for it
-    if venv_pip --ignore-installed -- PySide6-Essentials \
+    if venv_pip --ignore-installed -- "${pip_base[@]}" \
             && { (( ${#PIP_MODULES[@]} == 0 )) || venv_pip -- "${PIP_MODULES[@]}"; }; then
         ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
     else
@@ -728,7 +858,7 @@ if [[ $DESKTOP == hyprland ]] && ! command -v qs >/dev/null 2>&1; then
     warn "$(t 'Quickshell (comando qs) non trovato: la ruota non potrà partire finché non lo installi.' \
               'Quickshell (qs command) not found: the wheel cannot start until you install it.')"
 fi
-if [[ $DESKTOP == gnome ]] && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
+if [[ $DESKTOP == gnome || $DESKTOP == macos ]] && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
     warn "$(t 'PySide6 non è importabile: la ruota non potrà partire finché non lo installi.' \
               'PySide6 cannot be imported: the wheel cannot start until you install it.')"
 fi
@@ -744,7 +874,7 @@ fi
 
 UPGRADE=0
 [[ -x $DW_BIN ]] && UPGRADE=1
-if (( UPGRADE && DO_START )) && { in_hyprland_session || [[ $DESKTOP == gnome ]]; }; then
+if (( UPGRADE && DO_START )) && { in_hyprland_session || [[ $DESKTOP == gnome || $DESKTOP == macos ]]; }; then
     step "$(t 'Arresto la versione in esecuzione' 'Stopping the running version')"
     if command -v timeout >/dev/null 2>&1; then
         timeout 15 "$DW_BIN" stop >/dev/null 2>&1 || true
@@ -760,9 +890,9 @@ fi
 # entry listing many MIME types can become the default "open" application for types that
 # have no explicit default. Remember the current defaults to restore them afterwards.
 
-declare -A PREVIOUS_DEFAULT=()
 GUARD_TYPES=()
-if (( DO_MIME_GUARD )) && command -v xdg-mime >/dev/null 2>&1; then
+if (( DO_MIME_GUARD && ! MACOS )) && command -v xdg-mime >/dev/null 2>&1; then
+    declare -A PREVIOUS_DEFAULT=()  # bash 4 (associative array, mapfile): never reached on macOS
     mapfile -t GUARD_TYPES < <(sed -n 's/^MimeType=//p' "$SCRIPT_DIR/integrations/desktop/dropwheel.desktop" \
                                | tr ';' '\n' | grep -v '\*' | grep -v '^$' || true)
     step "$(t 'Annoto le applicazioni predefinite dei tipi di file' 'Recording the default applications of file types')"
@@ -777,7 +907,7 @@ fi
 # --------------------------------------------------------------------------------------------
 
 step "$(t 'Installo i file in' 'Installing files into') $PREFIX"
-mkdir -p -- "$BIN_DIR" "$DATA_DIR" "$PY_DIR" "$APP_DIR" "$ICON_DIR"
+mkdir -p -- "$BIN_DIR" "$DATA_DIR" "$PY_DIR"
 
 sync_dir "$SCRIPT_DIR/src" dropwheel "$PY_DIR"
 "$PYTHON_BIN" -m compileall -q "$PY_DIR/dropwheel" >/dev/null 2>&1 || warn "$(t 'compilazione dei .pyc non riuscita (non grave)' 'byte-compiling failed (harmless)')"
@@ -810,26 +940,30 @@ write_file "$DW_BIN" "$wrapper" 0755
 MANIFEST_PATHS+=("$DW_BIN")
 ok "$(t 'comando' 'command') → $DW_BIN"
 
-install_launcher "$SCRIPT_DIR/integrations/desktop/dropwheel.desktop" "$APP_DIR/dropwheel.desktop" 0644 desktop
-ok "$(t 'voce del menu applicazioni' 'application menu entry') → $APP_DIR/dropwheel.desktop"
+# the application menu entry and icon (macOS: the Quick Action of "dropwheel setup macos" instead)
+if (( ! MACOS )); then
+    mkdir -p -- "$APP_DIR" "$ICON_DIR"
+    install_launcher "$SCRIPT_DIR/integrations/desktop/dropwheel.desktop" "$APP_DIR/dropwheel.desktop" 0644 desktop
+    ok "$(t 'voce del menu applicazioni' 'application menu entry') → $APP_DIR/dropwheel.desktop"
 
-install -Dm0644 "$SCRIPT_DIR/assets/dropwheel.svg" "$ICON_DIR/dropwheel.svg"
-MANIFEST_PATHS+=("$ICON_DIR/dropwheel.svg")
-touch "$ICON_ROOT" 2>/dev/null || true
-if [[ -f $ICON_ROOT/icon-theme.cache ]] && command -v gtk-update-icon-cache >/dev/null 2>&1; then
-    gtk-update-icon-cache -q -t -f "$ICON_ROOT" >/dev/null 2>&1 || true
-fi
-ok "$(t 'icona' 'icon') → $ICON_DIR/dropwheel.svg"
+    install -Dm0644 "$SCRIPT_DIR/assets/dropwheel.svg" "$ICON_DIR/dropwheel.svg"
+    MANIFEST_PATHS+=("$ICON_DIR/dropwheel.svg")
+    touch "$ICON_ROOT" 2>/dev/null || true
+    if [[ -f $ICON_ROOT/icon-theme.cache ]] && command -v gtk-update-icon-cache >/dev/null 2>&1; then
+        gtk-update-icon-cache -q -t -f "$ICON_ROOT" >/dev/null 2>&1 || true
+    fi
+    ok "$(t 'icona' 'icon') → $ICON_DIR/dropwheel.svg"
 
-if command -v update-desktop-database >/dev/null 2>&1; then
-    update-desktop-database -q "$APP_DIR" >/dev/null 2>&1 || true
+    if command -v update-desktop-database >/dev/null 2>&1; then
+        update-desktop-database -q "$APP_DIR" >/dev/null 2>&1 || true
+    fi
 fi
 
 # --------------------------------------------------------------------------------------------
 # File managers
 # --------------------------------------------------------------------------------------------
 
-if (( DO_FILE_MANAGERS )); then
+if (( DO_FILE_MANAGERS && ! MACOS )); then
     step "$(t 'Integrazione con i file manager' 'File manager integration')"
     fm_done=0
     if command -v nautilus >/dev/null 2>&1; then
@@ -966,6 +1100,22 @@ if (( DO_HYPRLAND )) && [[ $DESKTOP == gnome ]]; then
         cmd "dropwheel setup gnome"
     fi
 fi
+mac_configured=0
+if (( DO_HYPRLAND )) && [[ $DESKTOP == macos ]]; then
+    step "macOS"
+    info "$(t '"dropwheel setup macos" aggiunge l'"'"'azione rapida "Apri in Dropwheel" al Finder, l'"'"'avvio all'"'"'accesso (un LaunchAgent) e il font delle icone.' \
+              '"dropwheel setup macos" adds the "Open in Dropwheel" Quick Action to the Finder, starting at login (a LaunchAgent) and the icon font.')"
+    if ask "$(t 'Configuro macOS adesso?' 'Set up macOS now?')" y n; then
+        if "$DW_BIN" setup macos; then
+            mac_configured=1
+        else
+            warn "$(t 'Configurazione non completa: dropwheel doctor dice cosa manca.' 'Setup not complete: dropwheel doctor tells what is missing.')"
+        fi
+    else
+        info "$(t 'Quando vuoi:' 'Whenever you like:')"
+        cmd "dropwheel setup macos"
+    fi
+fi
 if (( DO_HYPRLAND )) && [[ $DESKTOP == hyprland ]]; then
     step "Hyprland"
     if hypr_has_dropwheel; then
@@ -1005,7 +1155,14 @@ fi
 started=0
 if (( DO_START )); then
     step "$(t 'Avvio' 'Starting')"
-    if [[ $DESKTOP == gnome ]]; then
+    if [[ $DESKTOP == macos ]]; then
+        if "$DW_BIN" start; then
+            ok "$(t 'Dropwheel è in esecuzione' 'Dropwheel is running')"
+            started=1
+        else
+            warn "$(t 'Avvio non riuscito: controlla con "dropwheel doctor".' 'Start failed: check with "dropwheel doctor".')"
+        fi
+    elif [[ $DESKTOP == gnome ]]; then
         if [[ ${XDG_CURRENT_DESKTOP:-} != *GNOME* ]]; then
             info "$(t 'Non sei in una sessione GNOME: Dropwheel partirà da solo al prossimo accesso.' \
                       'Not in a GNOME session: Dropwheel will start by itself at the next login.')"
@@ -1041,7 +1198,25 @@ elif (( UPGRADE )); then
 else
     start_hint=$(t 'Per avviarla: dropwheel start' 'To start it: dropwheel start')
 fi
-if [[ $DESKTOP == gnome ]]; then
+if [[ $DESKTOP == macos ]]; then
+    if (( IT )); then
+        info "${C_BOLD}Anteprima${C_RESET}: Dropwheel per macOS non è ancora stato provato su un Mac vero."
+        info "Mentre trascini dei file dal Finder premi ${C_BOLD}Shift${C_RESET}: compare la ruota sotto il puntatore."
+        info "Senza trascinare: tasto destro sui file → Azioni rapide → Apri in Dropwheel."
+        (( mac_configured )) || info "Per l'azione rapida e l'avvio all'accesso serve prima: dropwheel setup macos"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Controllo degli strumenti opzionali: dropwheel doctor"
+        info "Disinstallazione: $DATA_DIR/uninstall.sh"
+    else
+        info "${C_BOLD}Preview${C_RESET}: Dropwheel for macOS has not been tried on a real Mac yet."
+        info "While dragging files from the Finder press ${C_BOLD}Shift${C_RESET}: the wheel appears under the pointer."
+        info "Without dragging: right click the files → Quick Actions → Open in Dropwheel."
+        (( mac_configured )) || info "The Quick Action and starting at login need: dropwheel setup macos"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Check optional tools: dropwheel doctor"
+        info "Uninstall: $DATA_DIR/uninstall.sh"
+    fi
+elif [[ $DESKTOP == gnome ]]; then
     if (( IT )); then
         (( gnome_configured )) && info "${C_BOLD}Esci e rientra una volta${C_RESET}: GNOME carica l'estensione solo all'accesso."
         info "Mentre trascini dei file da Nautilus premi ${C_BOLD}Shift${C_RESET}: compare la ruota sotto il puntatore."

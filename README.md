@@ -42,8 +42,8 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 
 > [!IMPORTANT]
 > **Dropwheel runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME, and in preview
-> on Windows 10 and 11.** The GNOME and Windows versions are new and have not yet run on a real GNOME or
-> Windows machine: see [Platform support](#platform-support).
+> on Windows 10 and 11 and macOS 13 or later.** The GNOME, Windows and macOS versions are new and have not
+> yet run on a real GNOME, Windows or Mac machine: see [Platform support](#platform-support).
 >
 > This is an early release. The code has an extensive automated test suite, but the complete
 > drag-and-drop flow has not yet been exercised on a live Hyprland session, and many paths that call
@@ -89,7 +89,7 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 | Arch-based distributions | Expected to work with the same packages, not tested |
 | KDE Plasma, other compositors, other distributions | Not yet |
 | Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
-| macOS | Not yet |
+| macOS 13 or later, Apple silicon and Intel | **Preview**: the same wheel, Shift during a drag from the Finder, hot corner, a Finder Quick Action, start at login; no shortcut yet. Never run on a real Mac. See [Dropwheel on macOS](docs/MACOS.md) |
 
 ### Where this is going
 
@@ -102,11 +102,11 @@ through a small JSON protocol:
 
 | Layer | Today | What a port needs |
 |---|---|---|
-| Action engine (Python) | Linux, plus Windows branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows; the same work for macOS |
+| Action engine (Python) | Linux, plus Windows and macOS branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows and macOS |
 | Protocol | JSON lines over stdio | Nothing: any front end can speak it |
 | Command line | Needs no compositor | Mostly nothing: a natural first step on a new platform |
-| Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
-| Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME and Windows, the same QML hosted by PySide6 | KDE and macOS could start from the PySide6 host |
+| Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on Windows and macOS, the Shift and mouse state (plus a registered hotkey on Windows) | A new way to detect Shift during a drag on each platform |
+| Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME, Windows and macOS, the same QML hosted by PySide6 | KDE could start from the PySide6 host |
 | Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) | Native packages for each system |
 
 If you would like to see Dropwheel on your system, an
@@ -114,7 +114,7 @@ If you would like to see Dropwheel on your system, an
 
 ## Quick start
 
-On **Arch Linux, Debian or Ubuntu**, in a terminal:
+On **Arch Linux, Debian, Ubuntu or macOS** (macOS: preview, with Homebrew), in a terminal:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -126,12 +126,13 @@ On **Windows 10 or 11** (preview), in PowerShell:
 irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
 ```
 
-The installer recognises the system and the desktop (Hyprland, GNOME or Windows), asks which features you
+The installer recognises the system and the desktop (Hyprland, GNOME, Windows or macOS), asks which features you
 want, installs what is missing (with your password, once) and starts Dropwheel. Then drag some files and
 tap <kbd>Shift</kbd>. On GNOME, log out and back in once first.
 
 The details are in the [installation guide](docs/INSTALL.md), [Dropwheel on GNOME](docs/GNOME.md) and
-[Dropwheel on Windows](docs/WINDOWS.md). On Arch, `makepkg -si` builds a system package instead.
+[Dropwheel on Windows](docs/WINDOWS.md), [Dropwheel on macOS](docs/MACOS.md). On Arch, `makepkg -si` builds a system
+package instead.
 
 ## Documentation
 
@@ -149,6 +150,7 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
 | [GNOME](docs/GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
 | [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
+| [macOS](docs/MACOS.md) | The macOS preview, never run on a real Mac: Homebrew, the Finder Quick Action, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |
 | [Changelog](CHANGELOG.md) | What changed in each version |
 

@@ -53,11 +53,17 @@ __all__ = [
 _NT_HOMES = {"XDG_CONFIG_HOME": ("APPDATA", ""), "XDG_DATA_HOME": ("LOCALAPPDATA", ""),
              "XDG_STATE_HOME": ("LOCALAPPDATA", ""), "XDG_CACHE_HOME": ("LOCALAPPDATA", "Temp")}
 
+#: macOS homes of the XDG dirs: config, data and state in Application Support, the cache in Caches.
+_MAC_HOMES = {"XDG_CONFIG_HOME": "~/Library/Application Support", "XDG_DATA_HOME": "~/Library/Application Support",
+              "XDG_STATE_HOME": "~/Library/Application Support", "XDG_CACHE_HOME": "~/Library/Caches"}
+
 
 def _env_dir(var: str, default: str) -> Path:
     value = os.environ.get(var, "")
     if value and os.path.isabs(value):
         return Path(value)
+    if tools.MACOS and var in _MAC_HOMES:
+        return Path(os.path.expanduser(_MAC_HOMES[var]))
     if tools.WINDOWS and var in _NT_HOMES:
         base_var, sub = _NT_HOMES[var]
         base = os.environ.get(base_var, "")
@@ -751,6 +757,8 @@ def open_path(path: str | os.PathLike, app: str = "") -> bool:
         except OSError as exc:
             log.warning("open %s failed: %s", target, exc)
             return False
+    if tools.MACOS:
+        return detach(["open", target])
     if tools.have("xdg-open") and detach(["xdg-open", target]):
         return True
     if tools.have("gio") and detach(["gio", "open", target]):
@@ -783,6 +791,8 @@ def reveal_path(paths: str | os.PathLike | Iterable[str | os.PathLike], file_man
             log.warning("reveal %s failed: %s", items[0], exc)
             return False
         return True
+    if tools.MACOS and not file_manager:
+        return detach(["open", "-R", *items])  # Finder selects every item
     if not file_manager and tools.have("gdbus"):
         uris = ", ".join("'" + path_to_uri(p).replace("'", "%27") + "'" for p in items)
         res = run_quiet(["gdbus", "call", "--session", "--dest", "org.freedesktop.FileManager1",
@@ -827,7 +837,39 @@ def _nt_ok(res: subprocess.CompletedProcess | None) -> bool:
     return res is not None and res.returncode == 0
 
 
+#: macOS: pbcopy/pbpaste pick the text encoding from LANG, which a LaunchAgent does not set.
+_MAC_UTF8 = {"LANG": "en_US.UTF-8"}
+
+#: macOS: JavaScript for Automation on the system pasteboard and file manager (no Apple Events, so no
+#: permission prompt).  Paths arrive as ``run(argv)`` arguments, never inside the script.
+_JXA_COPY_FILES = ("function run(argv){ObjC.import('AppKit');var pb=$.NSPasteboard.generalPasteboard;"
+                   "pb.clearContents;var u=argv.map(function(p){return $.NSURL.fileURLWithPath(p)});"
+                   "return pb.writeObjects($(u))?'ok':'no'}")
+_JXA_COPY_IMAGE = ("function run(argv){ObjC.import('AppKit');var i=$.NSImage.alloc.initWithContentsOfFile(argv[0]);"
+                   "if(i.isNil())return 'no';var pb=$.NSPasteboard.generalPasteboard;pb.clearContents;"
+                   "return pb.writeObjects($([i]))?'ok':'no'}")
+_JXA_READ_FILES = ("function run(){ObjC.import('AppKit');var pb=$.NSPasteboard.generalPasteboard;"
+                   "var u=pb.readObjectsForClassesOptions($([$.NSURL]),$({NSPasteboardURLReadingFileURLsOnlyKey:true}));"
+                   "if(u.isNil())return '';var o=[];for(var i=0;i<u.count;i++)o.push(u.objectAtIndex(i).path.js);"
+                   "return o.join('\\n')}")
+_JXA_TRASH = ("function run(argv){ObjC.import('Foundation');return $.NSFileManager.defaultManager"
+              ".trashItemAtURLResultingItemURLError($.NSURL.fileURLWithPath(argv[0]),null,null)?'ok':'no'}")
+
+
+def _jxa(script: str, *args: str, timeout: float = 15) -> subprocess.CompletedProcess | None:
+    return run_quiet(["osascript", "-l", "JavaScript", "-e", script, *args], timeout=timeout)
+
+
+def _jxa_ok(res: subprocess.CompletedProcess | None) -> bool:
+    return res is not None and res.returncode == 0 and res.stdout.strip() == "ok"
+
+
 def _wl_copy(data: bytes, mime: str) -> bool:
+    if tools.MACOS:
+        if not mime.startswith("text/"):
+            return False  # images go through copy_image, files through copy_files
+        res = run_quiet(["pbcopy"], input=data, text=False, env=_MAC_UTF8)
+        return res is not None and res.returncode == 0
     if tools.WINDOWS:
         if not mime.startswith("text/"):
             return False  # images go through copy_image, files through copy_files
@@ -887,6 +929,9 @@ def copy_files(paths: Iterable[str | os.PathLike], file_manager: str = "") -> bo
             return False
         return _nt_ok(_powershell("Set-Clipboard -LiteralPath ([Console]::In.ReadToEnd() -split \"\\r?\\n\" | ? { $_ })",
                                   "\n".join(items)))
+    if tools.MACOS:
+        items = [os.path.abspath(os.fspath(p)) for p in paths]
+        return bool(items) and _jxa_ok(_jxa(_JXA_COPY_FILES, *items))
     uris = [path_to_uri(p) for p in paths]
     if not uris:
         return False
@@ -913,6 +958,8 @@ def copy_image(path: str | os.PathLike, mime: str = "") -> bool:
                   "$i=[Drawing.Image]::FromFile([Console]::In.ReadToEnd().Trim());"
                   "[Windows.Forms.Clipboard]::SetImage($i);$i.Dispose()")
         return _nt_ok(_powershell(script, str(p.resolve())))
+    if tools.MACOS:
+        return p.is_file() and _jxa_ok(_jxa(_JXA_COPY_IMAGE, str(p.resolve())))
     try:
         data = p.read_bytes()
     except OSError:
@@ -946,6 +993,8 @@ def paste_text() -> str:
     """The text on the clipboard (``""`` when there is none or it cannot be read)."""
     if tools.WINDOWS:
         res = _powershell("Get-Clipboard -Raw")
+    elif tools.MACOS:
+        res = run_quiet(["pbpaste"], timeout=3, env=_MAC_UTF8)
     elif tools.have("wl-paste"):
         res = run_quiet(["wl-paste", "--no-newline", "--type", "text/plain"], timeout=3)
     else:
@@ -961,6 +1010,10 @@ def read_clipboard_files() -> list[str]:
     """
     if tools.WINDOWS:
         res = _powershell("Get-Clipboard -Format FileDropList | % { $_.FullName }")
+        return [line for line in res.stdout.splitlines() if line.strip()] if _nt_ok(res) else []
+    if tools.MACOS:
+        # shortcut: one path per line, so a file name with a newline is split; NUL separators if it matters
+        res = _jxa(_JXA_READ_FILES, timeout=5)
         return [line for line in res.stdout.splitlines() if line.strip()] if _nt_ok(res) else []
     if not tools.have("wl-paste"):
         return []
@@ -1139,6 +1192,13 @@ def trash(path: str | os.PathLike) -> bool:
         if os.path.lexists(target):
             raise UserError("err.trash_failed", name=os.path.basename(target))
         return True
+    if tools.MACOS:
+        # NSFileManager's trash (the Finder's, per volume); it fails rather than delete where there is none
+        res = _jxa(_JXA_TRASH, target, timeout=60)
+        if not _jxa_ok(res) or os.path.lexists(target):
+            raise UserError("err.trash_failed", details=(res.stderr.strip() if res is not None else "osascript"),
+                            name=os.path.basename(target))
+        return True
     if tools.have("gio"):
         res = run_quiet(["gio", "trash", "--", target], timeout=60)
         if res is not None and res.returncode == 0 and not os.path.lexists(target):
@@ -1240,6 +1300,8 @@ def launch_terminal(cwd: str | os.PathLike, command: Sequence[str] | str | None 
         directory = os.path.expanduser("~")
     if tools.WINDOWS:
         return _nt_launch_terminal(directory, command, hold=hold)
+    if tools.MACOS:
+        return _mac_launch_terminal(directory, command, _preferred_terminal(preferred))
     term = find_terminal(preferred)
     if term is None:
         raise UserError("err.no_terminal", install=tools.install_hint(["foot"]))
@@ -1279,6 +1341,19 @@ def _nt_launch_terminal(directory: str, command: Sequence[str] | str | None, *, 
     except OSError as exc:
         raise UserError("err.no_terminal", details=str(exc)) from None
     return [exe]
+
+
+def _mac_launch_terminal(directory: str, command: Sequence[str] | str | None, app: str) -> list[str]:
+    """macOS: ``open -a Terminal DIR`` (or the app named in ``apps.terminal``, e.g. ``iTerm``).
+
+    Commands are not supported: Terminal runs one only through Apple Events (a permission prompt),
+    and no macOS caller needs it (the ``system`` actions that do are not loaded)."""
+    if command is not None:
+        raise UserError("err.no_terminal", details="commands in a terminal are not supported on macOS")
+    argv = ["open", "-a", app or "Terminal", directory]
+    if not detach(argv):
+        raise UserError("err.no_terminal", details=" ".join(argv))
+    return argv
 
 
 # ------------------------------------------------------------------------------- desktop apps

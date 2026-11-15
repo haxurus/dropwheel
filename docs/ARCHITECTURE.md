@@ -46,7 +46,7 @@ pyproject.toml                 setuptools packaging; entry point dropwheel = dro
 Makefile, PKGBUILD, dropwheel.install, install.sh, uninstall.sh
 README.md (English), README.it.md (Italian), CHANGELOG.md, CHANGELOG.it.md
 docs/README.md         documentation index; user guides INSTALL, USAGE, FEATURES, CLI, TROUBLESHOOTING,
-                       PRIVACY, DEVELOPMENT, WINDOWS (each with an .it.md translation)
+                       PRIVACY, DEVELOPMENT, WINDOWS, GNOME, MACOS (each with an .it.md translation)
 docs/SPEC.md, docs/ARCHITECTURE.md, docs/CONFIG.md, docs/CONFIG.it.md, docs/FUNCTIONS.md, docs/FUNCTIONS.it.md
 assets/dropwheel.svg           app icon
 src/dropwheel/
@@ -66,7 +66,7 @@ src/dropwheel/
   notify.py     desktop notifications
   locales/{it,en}/*.json
   actions/      common, image, pdf, docs, media, archive, fonts, folder, web, system, custom
-  qtshell/     Qt host for Windows and GNOME: PySide6 + qml/Quickshell stand-ins, IPC, Explorer/GNOME setup
+  qtshell/     Qt host for Windows, macOS and GNOME: PySide6 + qml/Quickshell stand-ins, IPC, Explorer/Finder/GNOME setup
 shell/                         Quickshell config, always started by path (qs -p shell/)
   shell.qml                    root: triggers, IpcHandler, wheel controller
   services/                    singletons: Theme, Backend, I18n, Hypr, Jobs
@@ -112,16 +112,21 @@ tests/                         pytest, one test_<module>.py per module
   `open(json)`, `openAtCursor()`, `close()`, `setHotzone(bool)`, `reload()`, `ping()`), or runs
   actions headless with its own `JobRunner`.
 
-### The Qt host for Windows and GNOME (`src/dropwheel/qtshell/`)
+### The Qt host for Windows, macOS and GNOME (`src/dropwheel/qtshell/`)
 
-On Windows and in a GNOME session without Hyprland (`tools.qt_frontend()`; `DROPWHEEL_FRONTEND=qt|quickshell`
+On Windows, on macOS and in a GNOME session without Hyprland (`tools.qt_frontend()`; `DROPWHEEL_FRONTEND=qt|quickshell`
 forces it) `dropwheel start` runs `python -P -m dropwheel.qtshell` (`pythonw` on Windows) instead of `qs`. It loads the
 unchanged `shell/shell.qml` with `qml/Quickshell/` on the import path: QML and Python stand-ins for the
 Quickshell, Io, Hyprland, Wayland and Widgets types the shell uses (`native.py` registers the Python
 ones under `DropwheelHost`).
 
 - `PanelWindow` is a frameless top-most `Window`; its input mask is emulated by toggling
-  `WS_EX_TRANSPARENT` (`win32.py`) or an empty X11 input shape (`gnome.py`) while the cursor is outside it.
+  `WS_EX_TRANSPARENT` (`win32.py`), `NSWindow.ignoresMouseEvents` (`macos.py`) or an empty X11 input shape
+  (`gnome.py`) while the cursor is outside it.
+- On macOS (`macos.py`, ctypes only) the host is an accessory app (no Dock icon); its windows sit at
+  `NSStatusWindowLevel`, join every Space and full-screen app, and never hide on deactivation. Shift and
+  the buttons come from `CGEventSourceFlagsState` / `CGEventSourceButtonState`, the cursor from
+  `CGEventGetLocation` (points, top-left origin, like Qt). There is no global hotkey.
 - On GNOME the host runs on XWayland (`QT_QPA_PLATFORM=xcb`) so it can place its windows, and asks the
   Shell extension (`integrations/gnome/`, D-Bus `io.github.haxurus.Dropwheel.GetPointer → (x, y, mods)`)
   for the pointer and the Shift and button state; `gnome_setup.py` installs it with the shortcut and autostart.
@@ -134,6 +139,9 @@ ones under `DropwheelHost`).
   launches for 400 ms.
 - The daemon exchanges paths with the shell as `/C:/…` (`daemon.nt_to_shell` / `nt_from_shell`).
 - `explorer.py` writes the HKCU context menu and the `.lnk` shortcuts for `dropwheel setup windows`.
+- `macos_setup.py` writes the Finder Quick Action (`~/Library/Services/Open in Dropwheel.workflow`) and the
+  LaunchAgent (`~/Library/LaunchAgents/io.github.haxurus.dropwheel.plist`, written but not bootstrapped)
+  for `dropwheel setup macos`.
 
 ### Triggers (SPEC §2.1)
 

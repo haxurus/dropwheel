@@ -236,7 +236,7 @@
   "shell.err.no_display": "Nessuna sessione grafica trovata (WAYLAND_DISPLAY non è impostata): esegui il comando dentro Hyprland",
   "shell.err.start_failed": "Quickshell non è riuscito ad avviare la shell di Dropwheel. Log: {log}",
 
-  "cli.arg.remove": "gnome, windows: rimuove ciò che il setup ha aggiunto (estensione o voci di Esplora file, scorciatoie, font delle icone)",
+  "cli.arg.remove": "gnome, windows, macos: rimuove ciò che il setup ha aggiunto (estensione o voci di Esplora file, scorciatoie, font delle icone)",
   "cli.setup.win_would_menu": "aggiungerebbe \"Apri in Dropwheel\" al menu contestuale di file e cartelle: {command}",
   "cli.setup.win_would_font": "scaricherebbe il font delle icone da {url}",
   "cli.setup.win_menu": "Aggiunto \"{label}\" al menu contestuale di file e cartelle (Windows 11: sotto \"Mostra altre opzioni\")",
@@ -268,5 +268,14 @@
   "cli.doctor.gnome_extension_missing": "non installata o non attiva: niente Shift durante il trascinamento",
   "cli.doctor.gnome_shortcut": "Scorciatoia",
   "cli.doctor.gnome_shortcut_ok": "impostata",
-  "cli.doctor.gnome_shortcut_missing": "non impostata"
+  "cli.doctor.gnome_shortcut_missing": "non impostata",
+  "cli.setup.mac_service": "Aggiunta l'azione rapida del Finder \"{label}\" (tasto destro → Azioni rapide)",
+  "cli.setup.mac_login": "Dropwheel partirà da solo a ogni accesso ({path})",
+  "cli.setup.mac_no_shortcut": "Su macOS la scorciatoia della ruota non c'è ancora: premi Shift mentre trascini, usa l'azione rapida oppure \"dropwheel open\"",
+  "cli.doctor.mac_service": "Azione rapida del Finder",
+  "cli.doctor.mac_service_ok": "installata",
+  "cli.doctor.mac_service_missing": "non configurata",
+  "cli.doctor.mac_login": "Avvio all'accesso",
+  "cli.doctor.mac_login_ok": "LaunchAgent installato",
+  "cli.doctor.mac_login_missing": "non configurato"
 }

@@ -20,6 +20,7 @@ dropwheel run image.compress.balanced foto.jpg   # esegue un'azione senza interf
 | `dropwheel setup hyprland\|nautilus\|dolphin\|nemo\|thunar\|desktop\|all` | Installa un'integrazione |
 | `dropwheel setup gnome [--remove]` | Su GNOME: l'estensione della Shell, la scorciatoia, l'avvio all'accesso, il font delle icone ([dettagli](GNOME.it.md)) |
 | `dropwheel setup windows [--remove]` | Su Windows: menu di Esplora file, *Invia a*, collegamenti nel menu Start e all'accesso, font delle icone ([dettagli](WINDOWS.it.md)) |
+| `dropwheel setup macos [--remove]` | Su macOS: l'azione rapida del Finder, l'avvio all'accesso (LaunchAgent), il font delle icone ([dettagli](MACOS.it.md)) |
 | `dropwheel shares [--stop ID\|--stop-all]` | Elenca o interrompe le condivisioni attive in rete locale |
 | `dropwheel config [--path\|--init\|--edit]` | Mostra, crea o modifica la configurazione |
 
@@ -33,7 +34,7 @@ un'interruzione. `dropwheel setup` non sovrascrive mai un file senza prima salva
 | `DROPWHEEL_DATA` | Cartella dei dati con la shell e le integrazioni, di norma `~/.local/share/dropwheel` o `/usr/share/dropwheel` |
 | `DROPWHEEL_BACKEND` | Il comando del servizio usato dalla shell, impostato da `dropwheel start` |
 
-Su Windows e GNOME `start`, `stop` e `status` controllano l'host di Dropwheel (`python -m dropwheel.qtshell`)
+Su Windows, macOS e GNOME `start`, `stop` e `status` controllano l'host di Dropwheel (`python -m dropwheel.qtshell`)
 invece di Quickshell, e gli altri comandi lo raggiungono con una connessione locale su `127.0.0.1`.
 
 ---

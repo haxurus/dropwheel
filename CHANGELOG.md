@@ -41,6 +41,19 @@ and the project uses [Semantic Versioning](https://semver.org/).
   - `trigger.shortcut` (default `Ctrl+Alt+D`), used on Windows.
   - `dropwheel start`, `stop`, `status` and `open` control the host over `127.0.0.1` with a per-start token.
   - `tests/test_qtshell.py`: 20 tests, including loading the real shell offscreen without QML warnings.
+- **macOS preview (macOS 13 or later, Apple silicon and Intel)**, never run on a real Mac. See
+  [Dropwheel on macOS](docs/MACOS.md). The same wheel, hosted by the PySide6 host.
+  - Configuration, history and the icon font in `~/Library/Application Support/dropwheel`, cache in
+    `~/Library/Caches/dropwheel`.
+  - `open` and `open -R`, `pbcopy` and `pbpaste`, files and images on the pasteboard and the trash through
+    `osascript` with the paths as arguments, Terminal for *Open a terminal here*, fonts in `~/Library/Fonts`.
+  - Shift during a drag from the Quartz event source state, read through `ctypes`; the wheel floats above
+    every Space and full-screen app without taking the focus. No global shortcut yet.
+  - `dropwheel setup macos [--remove] [--dry-run]`: a Finder Quick Action (*Open in Dropwheel*), a
+    LaunchAgent to start at login, and the icon font.
+  - Install hints with `brew install` and `brew install --cask`; `install.sh` runs with macOS's bash 3.2,
+    uses Homebrew, and offers to install Homebrew only by showing its official command and asking.
+  - `tests/test_macos.py`: tests that exercise the macOS code paths on Linux.
 - `tests/test_windows.py`: 16 tests that exercise the Windows code paths on Linux.
 - Documentation split into guides in [docs](docs/README.md): installing, using, features, command line,
   troubleshooting, privacy, development and Windows, in English and Italian.

@@ -23,11 +23,13 @@ from typing import Iterable
 
 __all__ = [
     "Tool", "TOOLS", "path", "have", "missing", "install_hint", "report", "refresh",
-    "display_name", "packages_for", "aur_helper", "WINDOWS", "distro", "qt_frontend",
+    "display_name", "packages_for", "aur_helper", "WINDOWS", "MACOS", "distro", "qt_frontend",
 ]
 
 #: Running on Windows: binary names, search dirs and install hints differ (see the ``_NT_*`` tables).
 WINDOWS = os.name == "nt"
+#: Running on macOS: Homebrew hints, ``pbcopy``/``open`` (see the ``_MAC_*`` tables).
+MACOS = sys.platform == "darwin"
 
 #: Directories searched after ``$PATH`` (Arch puts some perl tools outside the default PATH).
 EXTRA_DIRS = (
@@ -62,6 +64,12 @@ def _nt_extra_dirs() -> tuple[str, ...]:
 
 if WINDOWS:
     EXTRA_DIRS = _nt_extra_dirs()
+elif MACOS:
+    # a LaunchAgent or a Quick Action runs with PATH=/usr/bin:/bin:/usr/sbin:/sbin: add Homebrew
+    # (Apple Silicon, then Intel) and the app bundles that ship a command line
+    EXTRA_DIRS = ("/opt/homebrew/bin", "/opt/homebrew/sbin", "/usr/local/bin", "/usr/local/sbin",
+                  "/Applications/LibreOffice.app/Contents/MacOS", os.path.expanduser("~/.local/bin"),
+                  "/usr/bin", "/bin", "/usr/sbin")
 
 
 @lru_cache(maxsize=1)
@@ -78,8 +86,8 @@ def distro() -> str:
 
 def qt_frontend() -> bool:
     """The wheel runs in the PySide6 host (``dropwheel.qtshell``) rather than Quickshell: on
-    Windows, and in a GNOME session without Hyprland.  ``DROPWHEEL_FRONTEND=qt|quickshell`` forces it."""
-    if WINDOWS:
+    Windows, macOS, and in a GNOME session without Hyprland.  ``DROPWHEEL_FRONTEND=qt|quickshell`` forces it."""
+    if WINDOWS or MACOS:
         return True
     forced = os.environ.get("DROPWHEEL_FRONTEND", "").strip().lower()
     if forced in ("qt", "quickshell"):
@@ -361,8 +369,8 @@ _TOOL_LIST: list[Tool] = [
     _py("onnxruntime", "python-onnxruntime-cpu"),
     _py("ruamel.yaml", "python-ruamel-yaml"),
 ]
-# the Qt front end (dropwheel.qtshell) on Windows and GNOME; on Hyprland Quickshell hosts the shell
-_TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows and GNOME"))
+# the Qt front end (dropwheel.qtshell) on Windows, macOS and GNOME; on Hyprland Quickshell hosts the shell
+_TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows, macOS and GNOME"))
 
 #: name -> Tool
 TOOLS: dict[str, Tool] = {t.name: t for t in _TOOL_LIST}
@@ -498,6 +506,8 @@ def _lookup(name: str) -> str | None:
             return None
         if name in _NT_PROVIDED:
             return _which(_NT_PROVIDED[name])
+    if MACOS and name in _MAC_PROVIDED:
+        return _which(_MAC_PROVIDED[name])
     tool = TOOLS.get(name)
     if tool is None:
         if os.path.isabs(name):
@@ -620,6 +630,8 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         names = [names]
     if WINDOWS:
         return _nt_install_hint(names)
+    if MACOS:
+        return _mac_install_hint(names)
     if distro() == "debian":
         return _deb_install_hint(names)
     groups = packages_for(names)
@@ -714,6 +726,62 @@ def _nt_install_hint(names: Iterable[str]) -> str:
         cmds.append("python -m pip install " + " ".join(dict.fromkeys(pip)))
     cmds += [f"winget search {o}" for o in dict.fromkeys(other)]
     return "; ".join(cmds)  # Windows PowerShell 5.1 has no "&&"
+
+
+#: macOS: programs the Linux names stand for.  ``util`` checks :data:`MACOS` before running any of
+#: these names, so they never run with Linux arguments.
+_MAC_PROVIDED = {"wl-copy": "pbcopy", "wl-paste": "pbpaste", "xdg-open": "open"}
+
+#: macOS: Homebrew names (checked on formulae.brew.sh in 2026-11) for the tools that have one;
+#: ``--cask`` marks an app.  Tesseract's Italian data is the ``tesseract-lang`` formula.
+_MAC_BREW = {
+    "ffmpeg": "ffmpeg", "ffprobe": "ffmpeg", "magick": "imagemagick", "convert": "imagemagick",
+    "exiftool": "exiftool", "qpdf": "qpdf", "tesseract": "tesseract", "pandoc": "pandoc", "7z": "sevenzip",
+    "yt-dlp": "yt-dlp", "gs": "ghostscript", "qrencode": "qrencode", "soffice": "--cask libreoffice",
+    "zbarimg": "zbar", "rsvg-convert": "librsvg", "resvg": "resvg", "vips": "vips", "potrace": "potrace",
+    "oxipng": "oxipng", "pngquant": "pngquant", "optipng": "optipng", "jpegoptim": "jpegoptim",
+    "jpegtran": "jpeg-turbo", "gifski": "gifski", "gifsicle": "gifsicle", "exiv2": "exiv2", "mat2": "mat2",
+    "img2pdf": "img2pdf", "mutool": "mupdf-tools", "ocrmypdf": "ocrmypdf", "pdftk": "pdftk-java",
+    "unpaper": "unpaper", "typst": "typst", "tectonic": "tectonic", "jq": "jq", "yq": "yq", "unar": "unar",
+    "lsar": "unar", "whisper-cli": "whisper.cpp", "mkvmerge": "mkvtoolnix", "mkvextract": "mkvtoolnix",
+    "sox": "sox", "zstd": "zstd", "pigz": "pigz", "lz4": "lz4", "inkscape": "--cask inkscape",
+    "ebook-convert": "--cask calibre",
+    **dict.fromkeys(("cwebp", "dwebp", "gif2webp", "img2webp", "webpmux"), "webp"),
+    **dict.fromkeys(("avifenc", "avifdec"), "libavif"),
+    **dict.fromkeys(("heif-enc", "heif-dec"), "libheif"),
+    **dict.fromkeys(("cjxl", "djxl"), "jpeg-xl"),
+    **dict.fromkeys(("pdftoppm", "pdftocairo", "pdftotext", "pdfimages", "pdfinfo", "pdfunite", "pdfseparate",
+                     "pdfattach", "pdfdetach"), "poppler"),
+}
+
+
+def _mac_install_hint(names: Iterable[str]) -> str:
+    """macOS: ``brew install`` for known formulae, pip for Python modules (in Dropwheel's own
+    environment when it has one), ``brew search`` otherwise."""
+    brew: list[str] = []
+    casks: list[str] = []
+    pip: list[str] = []
+    other: list[str] = []
+    for n in names:
+        tool = _tool_for(n)
+        formula = _MAC_BREW.get(tool.name, "")
+        if formula.startswith("--cask "):
+            casks.append(formula.removeprefix("--cask "))
+        elif formula:
+            brew += [formula, "tesseract-lang"] if formula == "tesseract" else [formula]
+        elif tool.name.startswith("py:"):
+            pip.append(_pip_name(tool))
+        else:
+            other.append(tool.install or "brew search " + display_name(tool.name))
+    cmds = []
+    if brew:
+        cmds.append("brew install " + " ".join(dict.fromkeys(brew)))
+    if casks:
+        cmds.append("brew install --cask " + " ".join(dict.fromkeys(casks)))
+    if pip:
+        in_venv = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+        cmds.append(f"{sys.executable if in_venv else 'python3'} -m pip install " + " ".join(dict.fromkeys(pip)))
+    return " && ".join([*cmds, *dict.fromkeys(other)])
 
 
 def report() -> dict:

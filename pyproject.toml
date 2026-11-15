@@ -27,7 +27,7 @@ classifiers = [
     "Topic :: Multimedia :: Graphics :: Graphics Conversion",
     "Topic :: Utilities",
 ]
-dependencies = ["pillow", "send2trash; sys_platform == 'win32'", "PySide6-Essentials>=6.5; sys_platform == 'win32'"]
+dependencies = ["pillow", "send2trash; sys_platform == 'win32'", "PySide6-Essentials>=6.5; sys_platform == 'win32' or sys_platform == 'darwin'"]
 
 [project.optional-dependencies]
 image = ["pillow-heif", "pillow-jxl-plugin"]
