@@ -1,4 +1,4 @@
-"""External dependency discovery and Arch Linux install hints.
+"""External dependency discovery and install hints (Arch, Debian and Ubuntu, Windows).
 
 Every external program or optional Python module an action may need has a *tool name*
 (``"ffmpeg"``, ``"exiftool"``, ``"py:pymupdf"``).  Actions list them in ``requires=``; the menu
@@ -23,7 +23,7 @@ from typing import Iterable
 
 __all__ = [
     "Tool", "TOOLS", "path", "have", "missing", "install_hint", "report", "refresh",
-    "display_name", "packages_for", "aur_helper", "WINDOWS",
+    "display_name", "packages_for", "aur_helper", "WINDOWS", "distro", "qt_frontend",
 ]
 
 #: Running on Windows: binary names, search dirs and install hints differ (see the ``_NT_*`` tables).
@@ -62,6 +62,31 @@ def _nt_extra_dirs() -> tuple[str, ...]:
 
 if WINDOWS:
     EXTRA_DIRS = _nt_extra_dirs()
+
+
+@lru_cache(maxsize=1)
+def distro() -> str:
+    """``"debian"`` for Debian, Ubuntu and their derivatives (apt), otherwise ``"arch"``."""
+    try:
+        with open("/etc/os-release", encoding="utf-8") as fh:
+            fields = dict(line.rstrip("\n").split("=", 1) for line in fh if "=" in line)
+    except OSError:
+        return "arch"
+    ids = (fields.get("ID", "") + " " + fields.get("ID_LIKE", "")).replace('"', "").lower().split()
+    return "debian" if {"debian", "ubuntu"} & set(ids) else "arch"
+
+
+def qt_frontend() -> bool:
+    """The wheel runs in the PySide6 host (``dropwheel.qtshell``) rather than Quickshell: on
+    Windows, and in a GNOME session without Hyprland.  ``DROPWHEEL_FRONTEND=qt|quickshell`` forces it."""
+    if WINDOWS:
+        return True
+    forced = os.environ.get("DROPWHEEL_FRONTEND", "").strip().lower()
+    if forced in ("qt", "quickshell"):
+        return forced == "qt"
+    if os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"):
+        return False
+    return "gnome" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":")
 
 _CACHE_TTL = 600.0
 _stamp = time.monotonic()
@@ -336,9 +361,8 @@ _TOOL_LIST: list[Tool] = [
     _py("onnxruntime", "python-onnxruntime-cpu"),
     _py("ruamel.yaml", "python-ruamel-yaml"),
 ]
-if WINDOWS:
-    # the Windows front end (dropwheel.winshell); on Linux Quickshell hosts the shell
-    _TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows"))
+# the Qt front end (dropwheel.qtshell) on Windows and GNOME; on Hyprland Quickshell hosts the shell
+_TOOL_LIST.append(_py("PySide6", "pyside6", description="Qt for Python: the wheel on Windows and GNOME"))
 
 #: name -> Tool
 TOOLS: dict[str, Tool] = {t.name: t for t in _TOOL_LIST}
@@ -596,6 +620,8 @@ def install_hint(names: Iterable[str] | str | None) -> str:
         names = [names]
     if WINDOWS:
         return _nt_install_hint(names)
+    if distro() == "debian":
+        return _deb_install_hint(names)
     groups = packages_for(names)
     cmds: list[str] = []
     if groups["repo"]:
@@ -616,6 +642,56 @@ _NT_PIP = {"PySide6": "PySide6-Essentials",
            "yaml": "PyYAML", "cv2": "opencv-python", "gi": "PyGObject", "onnxruntime": "onnxruntime",
            "odf": "odfpy", "ruamel.yaml": "ruamel.yaml"}
 
+#: Debian and Ubuntu: apt packages whose name is not the Arch one; ``""`` = not packaged there.
+#: shortcut: written from the Debian 13 / Ubuntu 24.04 names, not checked against every release;
+#: install.sh skips what apt does not know.
+_DEB = {
+    "glib2": "libglib2.0-bin", "glibc": "libc-bin", "gtk3": "libgtk-3-bin", "libarchive": "libarchive-tools",
+    "libavif": "libavif-bin", "libheif": "libheif-examples", "libjpeg-turbo": "libjpeg-turbo-progs",
+    "libjxl": "libjxl-tools", "libnotify": "libnotify-bin", "libreoffice-fresh": "libreoffice",
+    "librsvg": "librsvg2-bin", "libvips": "libvips-tools", "libwebp-utils": "webp", "mkvtoolnix-cli": "mkvtoolnix",
+    "pandoc-cli": "pandoc", "pdftk": "pdftk-java", "perl-image-exiftool": "libimage-exiftool-perl",
+    "poppler": "poppler-utils", "python-fonttools": "fonttools", "python-pipx": "pipx",
+    "python-pygments": "python3-pygments", "python-weasyprint": "weasyprint", "rpm-tools": "rpm2cpio",
+    "tesseract": "tesseract-ocr", "tesseract-data-eng": "tesseract-ocr-eng", "tesseract-data-ita": "tesseract-ocr-ita",
+    "xz": "xz-utils", "zbar": "zbar-tools", "go-yq": "yq", "whisper-cpp": "", "pacman": "", "paru": "", "yay": "",
+    "caelestia-cli": "", "deno": "", "ghostty": "", "prettier": "", "svgo": "", "upscayl-bin": "",
+    "realesrgan-ncnn-vulkan-bin": "", "waifu2x-ncnn-vulkan": "", "vtracer": "", "localsend-bin": "",
+    "localsend-cli-bin": "", "python-markitdown": "", "python-openai-whisper": "", "python-pdf2docx": "",
+}
+
+
+def _pip_name(tool: Tool) -> str:
+    module = tool.module or tool.name[3:]
+    return _NT_PIP.get(module) or tool.packages[0].removeprefix("python-")
+
+
+def _deb_install_hint(names: Iterable[str]) -> str:
+    """Debian and Ubuntu: ``sudo apt install`` for programs, pip for Python modules (in
+    Dropwheel's own environment when it has one)."""
+    apt: list[str] = []
+    pip: list[str] = []
+    custom: list[str] = []
+    for n in names:
+        tool = _tool_for(n)
+        if tool.install:
+            custom.append(tool.install)
+        elif tool.name.startswith("py:"):
+            pip.append(_pip_name(tool))
+        else:
+            apt += [p for p in (_DEB.get(pkg, pkg) for pkg in tool.packages) if p]
+    cmds = []
+    if apt:
+        cmds.append("sudo apt install " + " ".join(dict.fromkeys(apt)))
+    if pip:
+        in_venv = sys.prefix != getattr(sys, "base_prefix", sys.prefix)
+        python = sys.executable if in_venv else "python3"
+        extra = "" if in_venv else " --user --break-system-packages"
+        cmds.append(f"{python} -m pip install{extra} " + " ".join(dict.fromkeys(pip)))
+    cmds += list(dict.fromkeys(custom))
+    return " && ".join(cmds)
+
+
 #: Windows: ``winget search`` terms clearer than the binary name.
 _NT_SEARCH = {"gs": "Ghostscript"}
 
@@ -630,8 +706,7 @@ def _nt_install_hint(names: Iterable[str]) -> str:
         if tool.name in _NT_WINGET:
             winget.append(_NT_WINGET[tool.name])
         elif tool.name.startswith("py:"):
-            module = tool.module or tool.name[3:]
-            pip.append(_NT_PIP.get(module) or tool.packages[0].removeprefix("python-"))
+            pip.append(_pip_name(tool))
         else:
             other.append(_NT_SEARCH.get(tool.name) or display_name(tool.name))
     cmds = [f"winget install --id {i} -e" for i in dict.fromkeys(winget)]

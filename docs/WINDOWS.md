@@ -36,7 +36,18 @@ Python engine.
 | **Python** | 3.11 or later, from [python.org](https://www.python.org/downloads/windows/) or `winget install --id Python.Python.3.12 -e` |
 | **Git** | To get the code: `winget install --id Git.Git -e` |
 
-**Install from the repository**
+**Install with one command**
+
+```powershell
+irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
+```
+
+The installer asks before every step: it installs Python and Git with winget when they are missing, gets
+the code into `%LOCALAPPDATA%\dropwheel\src`, lets you pick the optional Python modules and programs from
+numbered lists, can add the `dropwheel` command to `PATH`, then runs `dropwheel setup windows` and starts
+Dropwheel. From a clone, `powershell -ExecutionPolicy Bypass -File install.ps1` does the same.
+
+**Or install from the repository by hand**
 
 ```powershell
 git clone https://github.com/haxurus/dropwheel.git
@@ -115,7 +126,7 @@ The shortcut is the `shortcut` key of [`[trigger]`](CONFIG.md#trigger), for exam
 | Configuration | `%APPDATA%\dropwheel\config.toml` |
 | History and undo backups | `%LOCALAPPDATA%\dropwheel` |
 | Icon and icon font | `%LOCALAPPDATA%\dropwheel` |
-| Cache, thumbnails and the log (`winshell.log`) | `%LOCALAPPDATA%\Temp\dropwheel` |
+| Cache, thumbnails and the log (`qtshell.log`) | `%LOCALAPPDATA%\Temp\dropwheel` |
 
 ## Differences from Linux
 
@@ -142,7 +153,7 @@ The shortcut is the `shortcut` key of [`[trigger]`](CONFIG.md#trigger), for exam
 
 | Problem | What to do |
 |---|---|
-| Nothing happens | `dropwheel status` tells whether Dropwheel runs. `dropwheel start --foreground` runs it in the terminal with its messages; the log is `%LOCALAPPDATA%\Temp\dropwheel\winshell.log` |
+| Nothing happens | `dropwheel status` tells whether Dropwheel runs. `dropwheel start --foreground` runs it in the terminal with its messages; the log is `%LOCALAPPDATA%\Temp\dropwheel\qtshell.log` |
 | The icons show as words | The icon font is missing: run `dropwheel setup windows` again (it needs the network once) |
 | The shortcut does nothing | Another program owns it: the log says so. Choose another one in `trigger.shortcut` |
 | *Open in Dropwheel* is not in the menu | On Windows 11 it is under *Show more options* (or <kbd>Shift</kbd>+<kbd>F10</kbd>). Run `dropwheel setup windows` again if it is missing there too |

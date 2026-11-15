@@ -1,4 +1,4 @@
-"""Start, stop and talk to the Windows host (``shellctl`` delegates here on Windows).
+"""Start, stop and talk to the Qt host (``shellctl`` delegates here on Windows and GNOME).
 
 The host listens on ``127.0.0.1`` on a random port and writes ``{pid, port, token}`` to
 :func:`state_path` in the per-user cache.  Every request carries the token, so another user on
@@ -20,15 +20,15 @@ from typing import Any
 from .. import util
 from ..errors import UserError
 
-MODULE = "dropwheel.winshell"
+MODULE = "dropwheel.qtshell"
 
 
 def state_path() -> Path:
-    return util.cache_dir() / "winshell.json"
+    return util.cache_dir() / "qtshell.json"
 
 
 def log_path() -> Path:
-    return util.cache_dir() / "winshell.log"
+    return util.cache_dir() / "qtshell.log"
 
 
 def gui_python() -> str:

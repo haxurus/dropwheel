@@ -61,6 +61,12 @@ REQUIRED_TOOLS: tuple[tuple[str, str], ...] = (
 if tools.WINDOWS:
     # no compositor or Quickshell there: PySide6 hosts the shell; send2trash is the only safe trash
     REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"), ("py:PySide6", "PySide6-Essentials"))
+elif tools.qt_frontend():
+    # GNOME: PySide6 hosts the shell (dropwheel setup gnome adds the Shell extension it reads)
+    _deb = tools.distro() == "debian"
+    REQUIRED_TOOLS = (("py:PIL", "python3-pil" if _deb else "python-pillow"),
+                      ("py:PySide6", "PySide6-Essentials" if _deb else "pyside6"),
+                      ("wl-copy", "wl-clipboard"), ("wl-paste", "wl-clipboard"))
 
 #: Programs that are a personal choice (terminals, file managers, viewers, package helpers…):
 #: reported by ``doctor`` but never part of the "install everything" command.
@@ -93,7 +99,7 @@ ALTERNATIVES: tuple[tuple[str, ...], ...] = (
 )
 
 _GROUP_ORDER = ("image", "pdf", "docs", "media", "archive", "fonts", "system", "python")
-_SETUP_TARGETS = ("hyprland", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
+_SETUP_TARGETS = ("hyprland", "gnome", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
 if tools.WINDOWS:
     _SETUP_TARGETS = ("windows",)
 _URL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]+://")
@@ -451,8 +457,7 @@ def build_parser(lang: str = "en") -> argparse.ArgumentParser:
                    help=T("cli.arg.target", targets=", ".join(_SETUP_TARGETS)))
     p.add_argument("--dry-run", action="store_true", help=T("cli.arg.dry_run"))
     p.add_argument("--apply", action="store_true", help=T("cli.arg.apply"))
-    if tools.WINDOWS:
-        p.add_argument("--remove", action="store_true", help=T("cli.arg.remove"))
+    p.add_argument("--remove", action="store_true", help=T("cli.arg.remove"))
 
     p = add("shares", cmd_shares)
     g = p.add_mutually_exclusive_group()
@@ -1226,7 +1231,7 @@ def _required_status() -> list[dict]:
 
 def _doctor_windows_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
     """``doctor`` on Windows: PySide6, the Explorer entries and the icon font instead of Hyprland."""
-    from .winshell import explorer
+    from .qtshell import explorer
 
     term = ctx.term
     yes, no = term.ok(), term.fail()
@@ -1241,6 +1246,27 @@ def _doctor_windows_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
     font = explorer.font_installed()
     rows.append((yes if font else term.warn(), ctx.t("cli.doctor.win_font"),
                  explorer.FONT_FAMILY if font else ctx.t("cli.doctor.win_font_missing") + hint))
+
+
+def _doctor_gnome_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
+    """``doctor`` in a GNOME session: PySide6, the Shell extension, the shortcut and the icon font."""
+    from .qtshell import gnome_setup
+
+    term = ctx.term
+    yes, no = term.ok(), term.fail()
+    pyside = tools.path("py:PySide6")
+    rows.append((yes if pyside else no, "PySide6", pyside or (ctx.t("cli.doctor.missing") + term.dim(
+        f"  {term.sym('arrow')} " + tools.install_hint(["py:PySide6"])))))
+    st = gnome_setup.state()
+    hint = term.dim(f"  {term.sym('arrow')} dropwheel setup gnome")
+    rows.append((yes if st["extension"] else term.warn(), ctx.t("cli.doctor.gnome_extension"),
+                 ctx.t("cli.doctor.gnome_extension_ok") if st["extension"]
+                 else ctx.t("cli.doctor.gnome_extension_missing") + hint))
+    rows.append((yes if st["shortcut"] else term.warn(), ctx.t("cli.doctor.gnome_shortcut"),
+                 ctx.t("cli.doctor.gnome_shortcut_ok") if st["shortcut"]
+                 else ctx.t("cli.doctor.gnome_shortcut_missing") + hint))
+    rows.append((yes if st["font"] else term.warn(), ctx.t("cli.doctor.win_font"),
+                 "Material Symbols Rounded" if st["font"] else ctx.t("cli.doctor.win_font_missing") + hint))
 
 
 def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
@@ -1291,14 +1317,16 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     rows: list[tuple[str, str, str]] = []
     if tools.WINDOWS:
         _doctor_windows_rows(ctx, rows)
+    elif tools.qt_frontend():
+        _doctor_gnome_rows(ctx, rows)
     in_hypr = bool(os.environ.get("HYPRLAND_INSTANCE_SIGNATURE"))
-    if not tools.WINDOWS:
+    if not tools.qt_frontend():
         rows.append((yes if in_hypr else no, "Hyprland",
                      ctx.t("cli.doctor.hypr_session") if in_hypr else ctx.t("cli.doctor.hypr_no_session")))
     qs_text = shell.get("qs") or ctx.t("cli.doctor.missing")
     if shell.get("qs_version"):
         qs_text += term.dim(f"  {shell['qs_version']}")
-    if not tools.WINDOWS:
+    if not tools.qt_frontend():
         rows.append((yes if shell.get("qs") else no, "Quickshell", qs_text))
     if shell.get("running"):
         pids = ", ".join(_instance_pid(i) for i in shell.get("instances") or [])
@@ -1309,7 +1337,7 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
         state = ctx.t("cli.status.stopped") + term.dim(f"  {term.sym('arrow')} dropwheel start")
     rows.append((yes if shell.get("shell_ok") else no, ctx.t("cli.status.shell"),
                  f"{shell.get('shell_dir')}  {term.dim(term.sym('dot'))} {state}"))
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         pass
     elif hypr.get("configured"):
         rows.append((yes, ctx.t("cli.doctor.hypr_setup"), str(hypr.get("module"))))
@@ -1953,7 +1981,7 @@ def _setup_thunar(st: _Setup) -> int:
 
 def _setup_windows(ctx: Ctx, *, dry: bool, remove: bool) -> int:
     """``dropwheel setup windows [--remove]``: the Explorer entries, the shortcuts and the icon font."""
-    from .winshell import explorer
+    from .qtshell import explorer
 
     term = ctx.term
 
@@ -1972,10 +2000,35 @@ def _setup_windows(ctx: Ctx, *, dry: bool, remove: bool) -> int:
     return code
 
 
+def _setup_gnome(ctx: Ctx, *, dry: bool, remove: bool) -> int:
+    """``dropwheel setup gnome [--remove]``: the Shell extension, the shortcut, autostart, the icon font."""
+    from .qtshell import gnome_setup
+
+    term = ctx.term
+
+    def say(key: str, **fmt: Any) -> None:
+        prefix = term.dim(ctx.t("cli.setup.dry_prefix") + " ") if dry else ""
+        out(f"  {prefix}{ctx.t(key, **fmt)}")
+
+    out(term.bold("GNOME"))
+    if remove:
+        return gnome_setup.remove(dry=dry, say=say)
+    shortcut = str(ctx.config.get("trigger", {}).get("shortcut", "") or "")
+    code = gnome_setup.install(shortcut, dry=dry, say=say)
+    if not dry:
+        out()
+        out("  " + ctx.t("cli.setup.gnome_next"))
+    return code
+
+
 def cmd_setup(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel setup TARGET``: install the desktop integrations for the current user."""
     if tools.WINDOWS:
         return _setup_windows(ctx, dry=args.dry_run, remove=args.remove)
+    if args.target == "gnome":
+        return _setup_gnome(ctx, dry=args.dry_run, remove=args.remove)
+    if args.remove:
+        raise UsageError(ctx.t("cli.setup.remove_only"))
     st = _Setup(ctx, dry=args.dry_run, apply=args.apply)
     if not st.src.is_dir():
         raise UserError("cli.setup.no_integrations", path=str(st.src))

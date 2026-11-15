@@ -1,0 +1,8 @@
+{
+  "uuid": "dropwheel@haxurus.github.io",
+  "name": "Dropwheel",
+  "description": "Lets Dropwheel see the pointer position and whether Shift and the mouse buttons are held, so that tapping Shift during a drag opens its wheel. Nothing else is read or sent anywhere.",
+  "shell-version": ["45", "46", "47", "48", "49", "50", "51"],
+  "url": "https://github.com/haxurus/dropwheel",
+  "version": 1
+}

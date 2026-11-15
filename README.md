@@ -5,12 +5,14 @@
 <h1 align="center">Dropwheel</h1>
 
 <p align="center">
-  <b>A radial wheel of file actions for your Linux desktop.</b><br>
+  <b>A radial wheel of file actions for Linux and Windows.</b><br>
   Drag files, tap <kbd>Shift</kbd>, drop on a segment: converted, compressed, cropped, redacted, shared.
 </p>
 
 <p align="center">
-  <img alt="Platform: Arch Linux" src="https://img.shields.io/badge/platform-Arch%20Linux-1793d1?logo=archlinux&logoColor=white">
+  <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-Hyprland%20%7C%20GNOME-1793d1?logo=archlinux&logoColor=white">
+  <img alt="Debian and Ubuntu with GNOME" src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu-GNOME-a80030?logo=debian&logoColor=white">
+  <img alt="Windows 10 and 11, preview" src="https://img.shields.io/badge/Windows-preview-0078d4">
   <img alt="Hyprland 0.57 or later" src="https://img.shields.io/badge/Hyprland-0.57%2B-58e1ff">
   <img alt="Quickshell 0.3.2 or later" src="https://img.shields.io/badge/Quickshell-0.3.2%2B-6f334a">
   <img alt="Python 3.11 or later" src="https://img.shields.io/badge/python-3.11%2B-3776ab?logo=python&logoColor=white">
@@ -24,7 +26,7 @@
 
 ---
 
-Dropwheel brings the idea of [Tangerine](https://tangerineformac.com) for macOS to Linux. While you
+Dropwheel brings the idea of [Tangerine](https://tangerineformac.com) for macOS to Linux and Windows. While you
 drag files from any application, tap <kbd>Shift</kbd> and a wheel appears under the pointer with the
 actions that make sense for those files. Drop them on a segment and the job starts. A small card in
 the corner of the screen shows the progress and then the result, which you can open, reveal, copy,
@@ -39,9 +41,9 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 </p>
 
 > [!IMPORTANT]
-> **Dropwheel is made for Arch Linux with Hyprland.** A preview for Windows 10 and 11, with the same
-> wheel, is described in [Dropwheel on Windows](docs/WINDOWS.md); it has not yet run on a real Windows
-> machine. The goal is to reach other systems too: see [Platform support](#platform-support).
+> **Dropwheel runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME, and in preview
+> on Windows 10 and 11.** The GNOME and Windows versions are new and have not yet run on a real GNOME or
+> Windows machine: see [Platform support](#platform-support).
 >
 > This is an early release. The code has an extensive automated test suite, but the complete
 > drag-and-drop flow has not yet been exercised on a live Hyprland session, and many paths that call
@@ -82,17 +84,18 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 |---|---|
 | Arch Linux, Hyprland 0.57+, Caelestia | **Primary target** |
 | Arch Linux, Hyprland 0.57+, without Caelestia | **Supported**, with a built-in dark palette |
+| Arch Linux, GNOME 45+ | **New**: the same wheel, through a small GNOME Shell extension. See [Dropwheel on GNOME](docs/GNOME.md) |
+| Debian 13, Ubuntu 24.04 or later, GNOME | **New**: as above, installed with apt. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Arch-based distributions | Expected to work with the same packages, not tested |
-| Other Linux distributions | Not yet |
-| Other Wayland compositors, X11 | Not yet |
+| KDE Plasma, other compositors, other distributions | Not yet |
 | Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
 | macOS | Not yet |
 
 ### Where this is going
 
-Arch and Hyprland are where the project started, not where it is meant to stop. **The goal is to
-extend Dropwheel to other operating systems.** There is no schedule yet, and the order will depend on
-what people need and who wants to help.
+Arch and Hyprland are where the project started; GNOME and Windows came next. **The goal is to
+extend Dropwheel to other operating systems** and desktops. There is no schedule yet, and the order will
+depend on what people need and who wants to help.
 
 The architecture keeps most of the hard work portable, because the interface talks to the engine
 through a small JSON protocol:
@@ -102,41 +105,33 @@ through a small JSON protocol:
 | Action engine (Python) | Linux, plus Windows branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows; the same work for macOS |
 | Protocol | JSON lines over stdio | Nothing: any front end can speak it |
 | Command line | Needs no compositor | Mostly nothing: a natural first step on a new platform |
-| Trigger | Hyprland global shortcuts and `hyprctl`; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
-| Wheel and dialogs | Quickshell, Wayland layer-shell; on Windows, the same QML hosted by PySide6 | Other Wayland compositors may reuse them; macOS could start from the Windows host |
-| Packaging | `PKGBUILD`, `install.sh` | Native packages for each system |
+| Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
+| Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME and Windows, the same QML hosted by PySide6 | KDE and macOS could start from the PySide6 host |
+| Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) | Native packages for each system |
 
 If you would like to see Dropwheel on your system, an
 [issue](https://github.com/haxurus/dropwheel/issues) describing your setup is a useful start.
 
 ## Quick start
 
-On Arch Linux with Hyprland 0.57 or later and Quickshell 0.3.2 or later:
+On **Arch Linux, Debian or Ubuntu**, in a terminal:
 
 ```sh
-git clone https://github.com/haxurus/dropwheel.git
-cd dropwheel
-makepkg -si                # or ./install.sh, without root, into ~/.local
-dropwheel setup hyprland   # Shift, SUPER+ALT+D, layer rules and autostart
-hyprctl reload
-dropwheel start
+curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
 ```
 
-Now start dragging a file and tap <kbd>Shift</kbd>. The requirements, the full set of optional programs,
-updating and uninstalling are in the [installation guide](docs/INSTALL.md).
-
-On Windows 10 or 11 (preview), with Python 3.11 or later and Git, in PowerShell:
+On **Windows 10 or 11** (preview), in PowerShell:
 
 ```powershell
-git clone https://github.com/haxurus/dropwheel.git
-cd dropwheel
-py -m pip install -e .
-dropwheel setup windows    # Explorer menu, Send to, Start menu, login, icon font
-dropwheel start
+irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
 ```
 
-Drag files in Explorer and tap <kbd>Shift</kbd>, or press <kbd>Ctrl</kbd>+<kbd>Alt</kbd>+<kbd>D</kbd> after
-copying them. The details are in [Dropwheel on Windows](docs/WINDOWS.md).
+The installer recognises the system and the desktop (Hyprland, GNOME or Windows), asks which features you
+want, installs what is missing (with your password, once) and starts Dropwheel. Then drag some files and
+tap <kbd>Shift</kbd>. On GNOME, log out and back in once first.
+
+The details are in the [installation guide](docs/INSTALL.md), [Dropwheel on GNOME](docs/GNOME.md) and
+[Dropwheel on Windows](docs/WINDOWS.md). On Arch, `makepkg -si` builds a system package instead.
 
 ## Documentation
 
@@ -152,6 +147,7 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Function reference](docs/FUNCTIONS.md) | Every action, ring by ring, with the programs it needs |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
+| [GNOME](docs/GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
 | [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |
 | [Changelog](CHANGELOG.md) | What changed in each version |

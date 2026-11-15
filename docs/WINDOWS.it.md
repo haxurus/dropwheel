@@ -36,7 +36,18 @@ stesso motore Python.
 | **Python** | 3.11 o successivo, da [python.org](https://www.python.org/downloads/windows/) oppure `winget install --id Python.Python.3.12 -e` |
 | **Git** | Per scaricare il codice: `winget install --id Git.Git -e` |
 
-**Installare dal repository**
+**Installare con un solo comando**
+
+```powershell
+irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
+```
+
+L'installer chiede prima di ogni passo: installa Python e Git con winget se mancano, scarica il codice in
+`%LOCALAPPDATA%\dropwheel\src`, ti fa scegliere i moduli Python e i programmi facoltativi da elenchi
+numerati, può aggiungere il comando `dropwheel` al `PATH`, poi esegue `dropwheel setup windows` e avvia
+Dropwheel. Da una copia del repository, `powershell -ExecutionPolicy Bypass -File install.ps1` fa lo stesso.
+
+**Oppure installare dal repository a mano**
 
 ```powershell
 git clone https://github.com/haxurus/dropwheel.git
@@ -116,7 +127,7 @@ La scorciatoia è la chiave `shortcut` di [`[trigger]`](CONFIG.it.md#trigger), p
 | Configurazione | `%APPDATA%\dropwheel\config.toml` |
 | Cronologia e copie per annullare | `%LOCALAPPDATA%\dropwheel` |
 | Icona e font delle icone | `%LOCALAPPDATA%\dropwheel` |
-| Cache, miniature e log (`winshell.log`) | `%LOCALAPPDATA%\Temp\dropwheel` |
+| Cache, miniature e log (`qtshell.log`) | `%LOCALAPPDATA%\Temp\dropwheel` |
 
 ## Differenze rispetto a Linux
 
@@ -144,7 +155,7 @@ La scorciatoia è la chiave `shortcut` di [`[trigger]`](CONFIG.it.md#trigger), p
 
 | Problema | Cosa fare |
 |---|---|
-| Non succede nulla | `dropwheel status` dice se Dropwheel è in esecuzione. `dropwheel start --foreground` lo avvia nel terminale con i suoi messaggi; il log è `%LOCALAPPDATA%\Temp\dropwheel\winshell.log` |
+| Non succede nulla | `dropwheel status` dice se Dropwheel è in esecuzione. `dropwheel start --foreground` lo avvia nel terminale con i suoi messaggi; il log è `%LOCALAPPDATA%\Temp\dropwheel\qtshell.log` |
 | Le icone appaiono come parole | Manca il font delle icone: esegui di nuovo `dropwheel setup windows` (serve la rete una volta) |
 | La scorciatoia non fa nulla | Un altro programma la usa già: il log lo dice. Scegline un'altra in `trigger.shortcut` |
 | *Apri in Dropwheel* non è nel menu | Su Windows 11 è sotto *Mostra altre opzioni* (oppure <kbd>Shift</kbd>+<kbd>F10</kbd>). Se manca anche lì, esegui di nuovo `dropwheel setup windows` |

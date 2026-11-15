@@ -551,7 +551,7 @@ def test_documented_toml_examples_load_cleanly(tmp_path, doc):
 
 
 #: Every user guide, in both languages (docs/README.md is the documentation index).
-GUIDES = ["docs/INSTALL.md", "docs/INSTALL.it.md", "docs/USAGE.md", "docs/USAGE.it.md", "docs/FEATURES.md", "docs/FEATURES.it.md", "docs/CLI.md", "docs/CLI.it.md", "docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md", "docs/PRIVACY.md", "docs/PRIVACY.it.md", "docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md", "docs/WINDOWS.md", "docs/WINDOWS.it.md", "docs/README.md", "docs/README.it.md"]
+GUIDES = ["docs/INSTALL.md", "docs/INSTALL.it.md", "docs/USAGE.md", "docs/USAGE.it.md", "docs/FEATURES.md", "docs/FEATURES.it.md", "docs/CLI.md", "docs/CLI.it.md", "docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md", "docs/PRIVACY.md", "docs/PRIVACY.it.md", "docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md", "docs/WINDOWS.md", "docs/WINDOWS.it.md", "docs/GNOME.md", "docs/GNOME.it.md", "docs/README.md", "docs/README.it.md"]
 
 
 @pytest.mark.parametrize("doc", ["README.md", "README.it.md", *GUIDES, "docs/CONFIG.md", "docs/CONFIG.it.md"])
@@ -631,7 +631,7 @@ def _doc_structure(path: Path) -> dict:
 
 @pytest.mark.parametrize("original, translation", [("README.md", "README.it.md"), ("docs/CONFIG.md", "docs/CONFIG.it.md"),
                                                    ("docs/FUNCTIONS.md", "docs/FUNCTIONS.it.md"),
-                                                   ("CHANGELOG.md", "CHANGELOG.it.md"), ("docs/INSTALL.md", "docs/INSTALL.it.md"), ("docs/USAGE.md", "docs/USAGE.it.md"), ("docs/FEATURES.md", "docs/FEATURES.it.md"), ("docs/CLI.md", "docs/CLI.it.md"), ("docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md"), ("docs/PRIVACY.md", "docs/PRIVACY.it.md"), ("docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md"), ("docs/WINDOWS.md", "docs/WINDOWS.it.md"), ("docs/README.md", "docs/README.it.md")])
+                                                   ("CHANGELOG.md", "CHANGELOG.it.md"), ("docs/INSTALL.md", "docs/INSTALL.it.md"), ("docs/USAGE.md", "docs/USAGE.it.md"), ("docs/FEATURES.md", "docs/FEATURES.it.md"), ("docs/CLI.md", "docs/CLI.it.md"), ("docs/TROUBLESHOOTING.md", "docs/TROUBLESHOOTING.it.md"), ("docs/PRIVACY.md", "docs/PRIVACY.it.md"), ("docs/DEVELOPMENT.md", "docs/DEVELOPMENT.it.md"), ("docs/WINDOWS.md", "docs/WINDOWS.it.md"), ("docs/GNOME.md", "docs/GNOME.it.md"), ("docs/README.md", "docs/README.it.md")])
 def test_translations_stay_in_sync(original, translation):
     """Changing one language only is a bug: both versions have the same structure, images and links."""
     assert _doc_structure(ROOT / original) == _doc_structure(ROOT / translation)

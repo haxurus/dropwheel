@@ -19,9 +19,10 @@ flowchart LR
 - **Actions (`src/dropwheel/actions/`).** One module per family, registered with a decorator that
   declares categories, parameters and required tools. Menus are built from those declarations.
 - **Jobs (`src/dropwheel/jobs.py`).** Parallelism, cancellation, progress, atomic output, undo.
-- **Windows host (`src/dropwheel/winshell/`).** A PySide6 program that loads the same `shell/shell.qml`
-  through small stand-ins for the Quickshell modules, and answers the Hyprland commands itself.
-  `tests/test_winshell.py` starts it offscreen on Linux.
+- **Qt host for Windows and GNOME (`src/dropwheel/qtshell/`).** A PySide6 program that loads the same
+  `shell/shell.qml` through small stand-ins for the Quickshell modules, and answers the Hyprland commands
+  itself; `win32.py` and `gnome.py` (with the Shell extension in `integrations/gnome/`) supply Shift and the pointer.
+  `tests/test_qtshell.py` starts it offscreen on Linux.
 
 [docs/ARCHITECTURE.md](ARCHITECTURE.md) explains how to add an action or a translation, and
 [docs/SPEC.md](SPEC.md) is the full contract.

@@ -1,4 +1,4 @@
-"""The Windows host: loads the Linux shell (``shell/shell.qml``) with PySide6, the Quickshell
+"""The Qt host for Windows and GNOME: loads the Linux shell (``shell/shell.qml``) with PySide6, the Quickshell
 stand-in modules in ``qml/`` first on the import path.
 
 * one instance per user (a lock file next to the state file);
@@ -7,7 +7,7 @@ stand-in modules in ``qml/`` first on the import path.
   ``ping`` and ``quit`` are answered here, the shell's ``IpcHandler`` functions are forwarded.
   ``open`` calls with ``merge`` (the Explorer context menu starts one process per selected
   file) are gathered for 400 ms into one wheel;
-* QML and Python messages go to ``winshell.log`` in the cache folder.
+* QML and Python messages go to ``qtshell.log`` in the cache folder.
 """
 
 from __future__ import annotations
@@ -26,7 +26,7 @@ from .. import config as cfgmod
 from .. import shellctl, util
 from . import control, win32
 
-log = logging.getLogger("dropwheel.winshell")
+log = logging.getLogger("dropwheel.qtshell")
 
 QML_DIR = Path(__file__).resolve().parent / "qml"
 #: The functions of the shell's ``IpcHandler`` (shell.qml) that the host forwards.
@@ -219,7 +219,13 @@ def main(argv: list[str] | None = None) -> int:
         return 0
 
     qInstallMessageHandler(_qt_message)
+    if not win32.WINDOWS and not os.environ.get("QT_QPA_PLATFORM") and os.environ.get("DISPLAY"):
+        # GNOME: under XWayland the host may place its windows and keep them above the others
+        os.environ["QT_QPA_PLATFORM"] = "xcb"
     app = QApplication(sys.argv[:1])
+    from . import gnome
+
+    gnome.ACTIVE = not win32.WINDOWS and app.platformName() == "xcb"
     app.setApplicationName("Dropwheel")
     app.setQuitOnLastWindowClosed(False)
     for folder in font_dirs():

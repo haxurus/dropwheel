@@ -64,7 +64,7 @@ where = ["src"]
 include = ["dropwheel*"]
 
 [tool.setuptools.package-data]
-dropwheel = ["locales/*/*.json", "locales/**/*.json", "winshell/qml/**/*"]
+dropwheel = ["locales/*/*.json", "locales/**/*.json", "qtshell/qml/**/*"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

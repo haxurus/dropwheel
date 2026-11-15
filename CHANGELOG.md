@@ -9,6 +9,17 @@ and the project uses [Semantic Versioning](https://semver.org/).
 
 ### Added
 
+- **GNOME on Debian, Ubuntu and Arch**, not yet tested in a real GNOME session. See
+  [Dropwheel on GNOME](docs/GNOME.md). The same wheel, hosted by the PySide6 host of the Windows preview.
+  - A GNOME Shell extension (GNOME 45 or later) tells Dropwheel where the pointer is and whether Shift and the
+    mouse buttons are held, over one D-Bus method.
+  - `dropwheel setup gnome [--remove]`: the extension, a custom shortcut (`trigger.shortcut`) running
+    `dropwheel open`, starting at login and the icon font.
+  - Install hints with `apt` on Debian and Ubuntu, and pip for Python modules.
+- **Interactive installers.** `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) open with the
+  project name and links, recognise the system and the desktop, and ask before every step: required
+  packages (installed with pacman, apt or winget once you say yes), optional feature groups from a numbered
+  list, the desktop integration, `PATH`. `curl … | bash` and `irm … | iex` work without cloning first.
 - **Windows preview of the engine and the command line**, not yet tested on real Windows. See
   [Dropwheel on Windows](docs/WINDOWS.md). Every Windows code path is separate from the Linux one, which does
   not change.
@@ -23,13 +34,13 @@ and the project uses [Semantic Versioning](https://semver.org/).
   - Install hints with `winget install` and `python -m pip install`.
   - *Open a terminal here* opens a `cmd.exe` console.
 - **Windows interface (preview)**: the same wheel, job cards, editors and QR card as on Linux, hosted by
-  PySide6 (`dropwheel.winshell`). Shift during a drag, the hot corner, a global shortcut and
+  PySide6 (`dropwheel.qtshell`). Shift during a drag, the hot corner, a global shortcut and
   *Open in Dropwheel* / *Send to* in Explorer open it.
   - `dropwheel setup windows [--remove]`: Explorer menu, *Send to*, Start menu and login shortcuts, and
     the icon font (downloaded once from a fixed version, checked against its SHA-256).
   - `trigger.shortcut` (default `Ctrl+Alt+D`), used on Windows.
   - `dropwheel start`, `stop`, `status` and `open` control the host over `127.0.0.1` with a per-start token.
-  - `tests/test_winshell.py`: 20 tests, including loading the real shell offscreen without QML warnings.
+  - `tests/test_qtshell.py`: 20 tests, including loading the real shell offscreen without QML warnings.
 - `tests/test_windows.py`: 16 tests that exercise the Windows code paths on Linux.
 - Documentation split into guides in [docs](docs/README.md): installing, using, features, command line,
   troubleshooting, privacy, development and Windows, in English and Italian.
@@ -38,6 +49,9 @@ and the project uses [Semantic Versioning](https://semver.org/).
 ### Changed
 
 - On Windows the daemon exchanges paths with the shell as `/C:/…`; PySide6-Essentials is a Windows dependency.
+- `install.sh` installs the missing packages after asking, from a terminal; before, it only printed the
+  commands. Without a terminal, or with `--no-packages`, it still only prints them.
+- The PySide6 front end moved from `dropwheel.winshell` to `dropwheel.qtshell`, since it now serves GNOME too.
 - The main README is shorter. It keeps the overview, the platform table and a quick start, and links to
   the guides.
 

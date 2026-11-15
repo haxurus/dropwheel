@@ -145,7 +145,12 @@ def test_scripts_are_strict_and_have_shebang() -> None:
         text = _read(script)
         assert text.startswith("#!/usr/bin/env bash\n"), script
         assert "set -euo pipefail" in text, script
-        # sudo may only appear inside printed hints, never as a command that runs.
+        # sudo runs only inside install.sh's as_root, which is called after the user said yes;
+        # anywhere else it may only appear inside printed hints.
+        if script == "install.sh":
+            body = re.search(r"^as_root\(\) \{\n((?:    .*\n)+)\}\n", text, re.MULTILINE)
+            assert body and body.group(1).strip() == 'sudo -- "$@"', "as_root must only run sudo"
+            text = text.replace(body.group(0), "")
         assert not re.search(r"^\s*(exec\s+|if\s+|!\s*)?sudo\b", text, re.MULTILINE), script
         assert not re.search(r"(&&|\|\||;|\$\()\s*sudo\b", text), script
     assert _read("integrations/nautilus/Dropwheel").startswith("#!/usr/bin/env bash\n")
@@ -332,7 +337,8 @@ class Sandbox:
     def install(self, *args: str, env: dict | None = None):
         """install.sh without the steps that need a session, unless ``args`` say otherwise."""
         result = self.run(
-            ROOT / "install.sh", "--no-start", "--no-file-managers", "--yes", "--python", _posix(self.python),
+            ROOT / "install.sh", "--no-start", "--no-file-managers", "--no-packages", "--yes", "--python",
+            _posix(self.python),
             *args, env=env,
         )
         assert result.returncode == 0, result.stdout + result.stderr
@@ -494,7 +500,7 @@ def test_install_reports_hyprland_as_configured_only_when_it_is(
     if wired:
         assert wired in result.stdout
         assert 'require("dropwheel")' in (sandbox.config / "caelestia" / "hypr-user.lua").read_text(encoding="utf-8")
-        assert "dropwheel setup hyprland" not in result.stdout.split("==>")[-1]
+        assert "dropwheel setup hyprland" not in result.stdout.split("━━")[-1]
     else:
         assert "Hyprland configured" not in result.stdout and "Hyprland configurato" not in result.stdout
         assert reminder in result.stdout
@@ -811,14 +817,33 @@ def test_lua_module_survives_a_failing_bind() -> None:
 def test_readme_states_the_platform_scope_and_links_exist() -> None:
     """The English README says what runs today and where it is going, and its local links resolve."""
     readme = _read("README.md")
-    assert "made for Arch Linux with Hyprland" in readme
-    assert "not yet run on a real Windows" in readme
+    assert "runs on Arch Linux with Hyprland or GNOME, on Debian and Ubuntu with GNOME" in readme
+    assert "have not yet run on a real GNOME or\n> Windows machine" in readme
     assert "extend Dropwheel to other operating systems" in readme
     italian = _read("README.it.md")
-    assert "fatto per Arch Linux con Hyprland" in italian
-    assert "non è ancora stata eseguita su un vero" in italian
-    assert "estendere\nDropwheel ad altri sistemi operativi" in italian
+    assert "funziona su Arch Linux con Hyprland o GNOME, su Debian e Ubuntu con GNOME" in italian
+    assert "non sono ancora state eseguite su un vero" in italian
+    assert "estendere Dropwheel ad altri sistemi operativi" in italian
     targets = re.findall(r"""(?:\]\(|src="|href=")([^)"#\s]+)""", readme)
     local = [t for t in targets if not t.startswith(("http://", "https://"))]
     assert local, "no local links found"
     assert not [t for t in local if not (ROOT / t).exists()], "broken local links"
+
+
+def test_install_on_gnome_points_at_setup_gnome(sandbox: Sandbox) -> None:
+    """GNOME: the summary talks about Nautilus, the shortcut and ``dropwheel setup gnome``."""
+    result = sandbox.install("--no-mime-guard", "--no-hyprland", "--desktop", "gnome",
+                             env={"XDG_CURRENT_DESKTOP": "GNOME"})
+    done = result.stdout.split("━━")[-1]
+    assert "dropwheel setup gnome" in done and "Ctrl+Alt+D" in done
+    assert "Desktop" in result.stdout and "GNOME" in result.stdout
+    assert "https://github.com/haxurus/dropwheel" in result.stdout and "Haxurus" in result.stdout
+
+
+def test_install_never_installs_packages_without_a_terminal(sandbox: Sandbox) -> None:
+    """--yes from a pipe only prints the commands: sudo needs someone to type the password."""
+    sandbox.add_tool("sudo", "#!/bin/sh\necho SUDO-RAN >&2\nexit 1\n")
+    sandbox.add_tool("pacman", "#!/bin/sh\nexit 1\n")  # nothing is installed
+    result = sandbox.install("--no-mime-guard", "--no-hyprland")
+    assert "SUDO-RAN" not in result.stdout + result.stderr
+    assert "sudo pacman -S --needed" in result.stdout

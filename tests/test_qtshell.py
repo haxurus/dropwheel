@@ -1,4 +1,4 @@
-"""The Windows front end (``dropwheel.winshell``), on Linux.
+"""The Windows front end (``dropwheel.qtshell``), on Linux.
 
 The pure parts are tested directly.  ``test_host_*`` start the real host offscreen (PySide6
 required, else skipped): it must load the unchanged Linux shell through the Quickshell stand-ins
@@ -20,7 +20,7 @@ import pytest
 
 from dropwheel import config as cfgmod
 from dropwheel import daemon, tools
-from dropwheel.winshell import control, explorer, virtual, win32
+from dropwheel.qtshell import control, explorer, virtual, win32
 
 ROOT = Path(__file__).resolve().parent.parent
 
@@ -116,7 +116,7 @@ def test_zenity_args():
 def test_explorer_command_and_paths(monkeypatch):
     monkeypatch.setenv("APPDATA", "/appdata")
     cmd = explorer.open_command()
-    assert cmd.endswith(' -P -m dropwheel.winshell.open "%1"')
+    assert cmd.endswith(' -P -m dropwheel.qtshell.open "%1"')
     paths = explorer.shortcuts()
     assert paths["send_to"].parts[-2:] == ("SendTo", "Dropwheel.lnk")
     assert paths["startup"].parts[-3:] == ("Programs", "Startup", "Dropwheel.lnk")
@@ -150,7 +150,7 @@ def host(tmp_path):
         pytest.skip("PySide6 is not installed")
     env = dict(os.environ)
     env.update(QT_QPA_PLATFORM="offscreen", PYTHONPATH=str(ROOT / "src"), DROPWHEEL_DATA=str(ROOT))
-    proc = subprocess.Popen([sys.executable, "-P", "-m", "dropwheel.winshell"], env=env,
+    proc = subprocess.Popen([sys.executable, "-P", "-m", "dropwheel.qtshell"], env=env,
                             stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
     try:
         deadline = time.monotonic() + 60
@@ -196,3 +196,99 @@ def test_host_rejects_unknown_calls_and_tokens(host):
     with socket.create_connection(("127.0.0.1", state["port"]), timeout=5) as sock:
         sock.sendall(b'{"token": "nope", "fn": "ping", "args": []}\n')
         assert sock.recv(100) == b""  # dropped without a reply
+
+
+# ==================================================================================== GNOME
+
+from dropwheel.qtshell import gnome, gnome_setup  # noqa: E402
+
+
+@pytest.mark.parametrize(("text", "accel"), [
+    ("Ctrl+Alt+D", "<Control><Alt>d"),
+    ("win+shift+f12", "<Super><Shift>F12"),
+    ("Super+Space", "<Super>Space"),
+    ("F9", "F9"),
+    ("D", ""), ("Ctrl+", ""), ("Hyper+D", ""), ("", ""),
+])
+def test_gnome_accelerator(text, accel):
+    assert gnome_setup.accelerator(text) == accel
+
+
+def test_gsettings_string_lists():
+    assert gnome_setup.parse_strv("@as []") == []
+    assert gnome_setup.parse_strv("['a@b.c', 'x']\n") == ["a@b.c", "x"]
+    assert gnome_setup.parse_strv("garbage") == []
+    assert gnome_setup.parse_strv(gnome_setup._strv(["it's", "b"])) == ["it's", "b"]
+
+
+def test_gnome_backend_without_the_extension(monkeypatch):
+    monkeypatch.setattr(gnome, "ACTIVE", False)
+    assert gnome.pointer() is None and gnome.cursor() is None
+    assert not gnome.key_down(gnome.VK_SHIFT) and not gnome.primary_button_down()
+    monkeypatch.setattr(gnome, "ACTIVE", True)
+    monkeypatch.setattr(gnome, "_call", lambda: (10, 20, gnome.SHIFT_MASK | gnome.BUTTON1_MASK))
+    gnome._state.update(at=0.0, value=None, failed_at=0.0)
+    assert gnome.cursor() == (10, 20)
+    assert gnome.key_down(gnome.VK_SHIFT) and gnome.primary_button_down() and gnome.any_button_down()
+
+
+def test_the_extension_matches_the_backend():
+    ext = ROOT / "integrations" / "gnome" / gnome.EXTENSION_UUID
+    meta = json.loads((ext / "metadata.json").read_text(encoding="utf-8"))
+    assert meta["uuid"] == gnome.EXTENSION_UUID
+    assert all(int(v) >= 45 for v in meta["shell-version"])  # ES modules: GNOME 45 or later
+    js = (ext / "extension.js").read_text(encoding="utf-8")
+    for name in (gnome.SERVICE, gnome.PATH, gnome.INTERFACE, "GetPointer", "global.get_pointer()"):
+        assert name in js
+
+
+@pytest.mark.parametrize(("env", "expected"), [
+    ({"XDG_CURRENT_DESKTOP": "ubuntu:GNOME"}, True),
+    ({"XDG_CURRENT_DESKTOP": "GNOME", "HYPRLAND_INSTANCE_SIGNATURE": "x"}, False),
+    ({"XDG_CURRENT_DESKTOP": "Hyprland"}, False),
+    ({"XDG_CURRENT_DESKTOP": "KDE", "DROPWHEEL_FRONTEND": "qt"}, True),
+    ({"XDG_CURRENT_DESKTOP": "GNOME", "DROPWHEEL_FRONTEND": "quickshell"}, False),
+])
+def test_qt_frontend_follows_the_session(monkeypatch, env, expected):
+    if tools.WINDOWS:
+        pytest.skip("always the Qt host on Windows")
+    for var in ("XDG_CURRENT_DESKTOP", "HYPRLAND_INSTANCE_SIGNATURE", "DROPWHEEL_FRONTEND"):
+        monkeypatch.delenv(var, raising=False)
+    for k, v in env.items():
+        monkeypatch.setenv(k, v)
+    assert tools.qt_frontend() is expected
+
+
+def test_debian_install_hints(monkeypatch):
+    monkeypatch.setattr(tools, "distro", lambda: "debian")
+    hint = tools.install_hint(["exiftool", "pdftoppm", "py:pymupdf", "hyprctl"])
+    assert hint.startswith("sudo apt install libimage-exiftool-perl poppler-utils hyprland")
+    assert "pip install" in hint and "pymupdf" in hint
+    assert tools.install_hint(["caelestia"]) == ""  # not packaged for Debian
+
+
+def test_setup_gnome_dry_run_changes_nothing(tmp_path, monkeypatch):
+    monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
+    monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
+    monkeypatch.setenv("DROPWHEEL_DATA", str(ROOT))
+    said = []
+    assert gnome_setup.install("Ctrl+Alt+D", dry=True, say=lambda key, **fmt: said.append(key)) == 0
+    assert "cli.setup.gnome_would_shortcut" in said
+    assert not (tmp_path / "data").exists() and not (tmp_path / "config").exists()
+
+
+# ============================================================================== install.ps1
+
+def test_install_ps1_is_ascii_and_parses():
+    text = (ROOT / "install.ps1").read_text(encoding="utf-8")
+    assert text.isascii(), "Windows PowerShell 5.1 reads a file without BOM in the ANSI code page"
+    for needle in ("Haxurus", "https://github.com/haxurus/dropwheel", "setup windows", "Choose", "Ask"):
+        assert needle in text
+    import shutil
+    pwsh = shutil.which("pwsh")
+    if pwsh is None:
+        pytest.skip("pwsh not installed")
+    script = ("$e=$null; [void][System.Management.Automation.Language.Parser]::ParseFile("
+              f"'{ROOT / 'install.ps1'}', [ref]$null, [ref]$e); @($e).Count")
+    res = subprocess.run([pwsh, "-NoProfile", "-Command", script], capture_output=True, text=True, timeout=60)
+    assert res.stdout.strip() == "0", res.stdout + res.stderr

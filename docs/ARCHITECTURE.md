@@ -66,13 +66,13 @@ src/dropwheel/
   notify.py     desktop notifications
   locales/{it,en}/*.json
   actions/      common, image, pdf, docs, media, archive, fonts, folder, web, system, custom
-  winshell/     Windows host: PySide6 + qml/Quickshell stand-ins, IPC, Explorer integration
+  qtshell/     Qt host for Windows and GNOME: PySide6 + qml/Quickshell stand-ins, IPC, Explorer/GNOME setup
 shell/                         Quickshell config, always started by path (qs -p shell/)
   shell.qml                    root: triggers, IpcHandler, wheel controller
   services/                    singletons: Theme, Backend, I18n, Hypr, Jobs
   components/                  Caelestia look-alike controls (MaterialIcon, StateLayer, M3Slider…)
   wheel/  hud/  dialogs/       the wheel, the job cards, the editors (crop, redact, trim, pages…)
-integrations/                  hyprland/dropwheel.lua, nautilus/, dolphin/, nemo/, thunar/, desktop/
+integrations/                  hyprland/dropwheel.lua, gnome/ (Shell extension), nautilus/, dolphin/, nemo/, thunar/, desktop/
 tests/                         pytest, one test_<module>.py per module
 ```
 
@@ -112,20 +112,24 @@ tests/                         pytest, one test_<module>.py per module
   `open(json)`, `openAtCursor()`, `close()`, `setHotzone(bool)`, `reload()`, `ping()`), or runs
   actions headless with its own `JobRunner`.
 
-### The Windows host (`src/dropwheel/winshell/`)
+### The Qt host for Windows and GNOME (`src/dropwheel/qtshell/`)
 
-On Windows `dropwheel start` runs `pythonw -P -m dropwheel.winshell` instead of `qs`. It loads the
+On Windows and in a GNOME session without Hyprland (`tools.qt_frontend()`; `DROPWHEEL_FRONTEND=qt|quickshell`
+forces it) `dropwheel start` runs `python -P -m dropwheel.qtshell` (`pythonw` on Windows) instead of `qs`. It loads the
 unchanged `shell/shell.qml` with `qml/Quickshell/` on the import path: QML and Python stand-ins for the
 Quickshell, Io, Hyprland, Wayland and Widgets types the shell uses (`native.py` registers the Python
 ones under `DropwheelHost`).
 
 - `PanelWindow` is a frameless top-most `Window`; its input mask is emulated by toggling
-  `WS_EX_TRANSPARENT` while the cursor is outside the mask (`win32.py`).
+  `WS_EX_TRANSPARENT` (`win32.py`) or an empty X11 input shape (`gnome.py`) while the cursor is outside it.
+- On GNOME the host runs on XWayland (`QT_QPA_PLATFORM=xcb`) so it can place its windows, and asks the
+  Shell extension (`integrations/gnome/`, D-Bus `io.github.haxurus.Dropwheel.GetPointer → (x, y, mods)`)
+  for the pointer and the Shift and button state; `gnome_setup.py` installs it with the shortcut and autostart.
 - `Process` answers `hyprctl -j cursorpos|monitors`, `hyprpicker` and `zenity` in-process
   (`virtual.py`); a drag is "the primary mouse button is held".
-- Triggers: a 25 ms poll of `GetAsyncKeyState` fires `shift`; `RegisterHotKey` fires `open`
-  (`trigger.shortcut`).
-- IPC: a `QTcpServer` on `127.0.0.1`, random port, token in `cache_dir()/winshell.json`
+- Triggers: a 25 ms poll (`GetAsyncKeyState`, or the extension) fires `shift`; `RegisterHotKey` fires
+  `open` on Windows (`trigger.shortcut`), a GNOME custom shortcut runs `dropwheel open`.
+- IPC: a `QTcpServer` on `127.0.0.1`, random port, token in `cache_dir()/qtshell.json`
   (`control.py` is the client). `open` with `"merge": true` coalesces Explorer's one-process-per-file
   launches for 400 ms.
 - The daemon exchanges paths with the shell as `/C:/…` (`daemon.nt_to_shell` / `nt_from_shell`).

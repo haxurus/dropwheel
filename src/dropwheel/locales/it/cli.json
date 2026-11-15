@@ -236,7 +236,7 @@
   "shell.err.no_display": "Nessuna sessione grafica trovata (WAYLAND_DISPLAY non è impostata): esegui il comando dentro Hyprland",
   "shell.err.start_failed": "Quickshell non è riuscito ad avviare la shell di Dropwheel. Log: {log}",
 
-  "cli.arg.remove": "windows: rimuove le voci di Esplora file, i collegamenti e il font delle icone",
+  "cli.arg.remove": "gnome, windows: rimuove ciò che il setup ha aggiunto (estensione o voci di Esplora file, scorciatoie, font delle icone)",
   "cli.setup.win_would_menu": "aggiungerebbe \"Apri in Dropwheel\" al menu contestuale di file e cartelle: {command}",
   "cli.setup.win_would_font": "scaricherebbe il font delle icone da {url}",
   "cli.setup.win_menu": "Aggiunto \"{label}\" al menu contestuale di file e cartelle (Windows 11: sotto \"Mostra altre opzioni\")",
@@ -253,5 +253,20 @@
   "cli.doctor.win_explorer_missing": "non configurato",
   "cli.doctor.win_font": "Font delle icone",
   "cli.doctor.win_font_missing": "mancante: le icone appaiono come parole",
-  "win.menu.open": "Apri in Dropwheel"
+  "win.menu.open": "Apri in Dropwheel",
+  "cli.setup.gnome_would_shortcut": "imposterebbe la scorciatoia {accel} per eseguire: {command}",
+  "cli.setup.gnome_extension": "Estensione di GNOME Shell installata in {path} (parte al prossimo accesso)",
+  "cli.setup.gnome_enable_failed": "Impossibile attivare l'estensione di GNOME Shell {uuid}: attivala nell'app Estensioni",
+  "cli.setup.gnome_shortcut": "Scorciatoia {accel}: apre la ruota con i file copiati",
+  "cli.setup.gnome_shortcut_failed": "Impossibile impostare la scorciatoia {accel}: aggiungila in Impostazioni → Tastiera → Scorciatoie personalizzate",
+  "cli.setup.gnome_would_unset": "rimuoverebbe la scorciatoia {path}",
+  "cli.setup.gnome_unset": "Rimossa la scorciatoia {path}",
+  "cli.setup.gnome_next": "Esci e rientra una volta, così GNOME carica l'estensione. Poi Dropwheel parte da solo a ogni accesso.",
+  "cli.setup.remove_only": "--remove funziona solo con gnome e windows",
+  "cli.doctor.gnome_extension": "Estensione GNOME",
+  "cli.doctor.gnome_extension_ok": "installata e attiva",
+  "cli.doctor.gnome_extension_missing": "non installata o non attiva: niente Shift durante il trascinamento",
+  "cli.doctor.gnome_shortcut": "Scorciatoia",
+  "cli.doctor.gnome_shortcut_ok": "impostata",
+  "cli.doctor.gnome_shortcut_missing": "non impostata"
 }

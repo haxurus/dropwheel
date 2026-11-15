@@ -16,7 +16,7 @@
 ``qs`` that rejects the flag is retried without it.
 
 On Windows there is no Quickshell: the same functions start and drive the PySide6 host
-(:mod:`dropwheel.winshell.control`), which loads the same ``shell/``.
+(:mod:`dropwheel.qtshell.control`), which loads the same ``shell/``.
 """
 
 from __future__ import annotations
@@ -145,13 +145,13 @@ def shell_env() -> dict[str, str]:
 
 
 def _win() -> Any:
-    from .winshell import control
+    from .qtshell import control
     return control
 
 
 def log_command() -> str:
     """The command that shows the shell log (for messages)."""
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         return str(_win().log_path())
     return f"qs log -p {shlex.quote(str(shell_dir()))}"
 
@@ -205,7 +205,7 @@ def _has_display() -> bool:
 
 def instances() -> list[dict]:
     """Running instances of our shell (``qs list --any-display -p <shell> -j``)."""
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         return _win().instances()
     shell = shell_dir()
     if not (shell / "shell.qml").is_file() or tools.path("qs") is None:
@@ -237,7 +237,7 @@ def ipc_call(fn: str, *args: Any, timeout: float = 5.0) -> str:
 
     Raises :class:`UserError` (``shell.err.not_running`` / ``shell.err.ipc_failed``).
     """
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         result = _win().request(str(fn), [str(a).lower() if isinstance(a, bool) else str(a) for a in args],
                                 timeout=timeout)
         return "" if result is None else str(result)
@@ -291,7 +291,7 @@ def start(wait: float = 5.0) -> dict:
     answered ``ping`` within ``wait`` seconds.  Raises :class:`UserError` when ``qs`` or the
     shell directory is missing or ``qs`` fails to launch.
     """
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         return _win().start(_require_shell(), shell_env(), wait)
     shell = _require_shell()
     qs_path()
@@ -330,7 +330,7 @@ def start(wait: float = 5.0) -> dict:
 
 def run_foreground() -> int:
     """Run the shell in the foreground (logs on the terminal); returns qs' exit status."""
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         _require_shell()
         return _win().run_foreground(shell_env())
     shell = _require_shell()
@@ -343,7 +343,7 @@ def run_foreground() -> int:
 
 def stop(timeout: float = 10.0) -> bool:
     """Stop every instance of the shell (``qs kill``); ``True`` when something was stopped."""
-    if tools.WINDOWS:
+    if tools.qt_frontend():
         return _win().stop(timeout)
     qs_path()
     shell = shell_dir()
@@ -381,7 +381,7 @@ def _qs_version() -> str:
 def status(check_ping: bool = True) -> dict:
     """Everything ``dropwheel status`` shows (never raises)."""
     shell = shell_dir()
-    qs = None if tools.WINDOWS else tools.path("qs")
+    qs = None if tools.qt_frontend() else tools.path("qs")
     info: dict[str, Any] = {
         "data_dir": str(data_dir()), "shell_dir": str(shell), "shell_ok": (shell / "shell.qml").is_file(),
         "integrations_ok": integrations_dir().is_dir(), "qs": qs, "qs_version": _qs_version() if qs else "",
@@ -389,7 +389,7 @@ def status(check_ping: bool = True) -> dict:
         "hyprland": bool(os.environ.get("HYPRLAND_INSTANCE_SIGNATURE")), "instances": [], "running": False,
         "responding": None, "log": log_command(), "error": "",
     }
-    if tools.WINDOWS and info["shell_ok"]:
+    if tools.qt_frontend() and info["shell_ok"]:
         info["instances"] = instances()
         info["running"] = bool(info["instances"])
         info["responding"] = info["running"] or None

@@ -34,7 +34,7 @@ FONT_SHA256 = "7e74e36533ccee12c2b81e75bfcf3ccf123d3bb7e7e46d65d94445f23db0c97c"
 FONT_FAMILY = "Material Symbols Rounded"
 
 REG_KEYS = (r"Software\Classes\*\shell\Dropwheel", r"Software\Classes\Directory\shell\Dropwheel")
-OPEN_MODULE = "dropwheel.winshell.open"
+OPEN_MODULE = "dropwheel.qtshell.open"
 
 
 def home() -> Path:

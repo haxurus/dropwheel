@@ -3,11 +3,11 @@ import QtQuick.Window
 import DropwheelHost
 import Quickshell.Wayland
 
-// PanelWindow on Windows: a frameless, always-on-top tool window placed like a layer surface.
+// PanelWindow on Windows and GNOME: a frameless, always-on-top tool window placed like a layer surface.
 //   * anchors + margins + implicit size → geometry on `screen` (the work area without the taskbar, or the whole
 //     screen with ExclusionMode.Ignore); two opposite anchors and no size stretch, as in wlr-layer-shell;
 //   * `mask` (a Region) is emulated: while the window is shown, the cursor is checked every 30 ms and the window
-//     lets input through (WS_EX_TRANSPARENT) whenever it is outside the region, so clicks and drops land on the
+//     lets input through (WS_EX_TRANSPARENT, an empty X11 input shape) whenever it is outside the region, so clicks and drops land on the
 //     windows below, as they do outside a layer surface's input region;
 //   * WlrLayershell.keyboardFocus None → the window never activates; Exclusive / OnDemand → it is activated when
 //     shown;
@@ -129,7 +129,7 @@ QtObject {
     property Timer dwMaskTimer: Timer {
         interval: 30
         repeat: true
-        running: win.visible && (root.mask !== null || root.dwDropOnly) && DesktopHost.isWindows
+        running: win.visible && (root.mask !== null || root.dwDropOnly) && DesktopHost.emulatesInput
         onTriggered: root.dwApplyStyle()
     }
 

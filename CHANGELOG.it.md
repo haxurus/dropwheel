@@ -9,6 +9,18 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
 
 ### Aggiunto
 
+- **GNOME su Debian, Ubuntu e Arch**, non ancora provato in una vera sessione GNOME. Vedi
+  [Dropwheel su GNOME](docs/GNOME.it.md). La stessa ruota, ospitata dall'host PySide6 dell'anteprima per Windows.
+  - Un'estensione di GNOME Shell (GNOME 45 o successivo) dice a Dropwheel dove si trova il puntatore e se Shift
+    e i tasti del mouse sono premuti, con un solo metodo D-Bus.
+  - `dropwheel setup gnome [--remove]`: l'estensione, una scorciatoia personalizzata (`trigger.shortcut`) che
+    esegue `dropwheel open`, l'avvio all'accesso e il font delle icone.
+  - Indicazioni di installazione con `apt` su Debian e Ubuntu, e pip per i moduli Python.
+- **Installer interattivi.** `install.sh` (Arch, Debian, Ubuntu) e `install.ps1` (Windows) si aprono con il nome
+  del progetto e i link, riconoscono il sistema e il desktop, e chiedono prima di ogni passo: i pacchetti
+  obbligatori (installati con pacman, apt o winget dopo il tuo sì), i gruppi di funzioni facoltative da un
+  elenco numerato, l'integrazione con il desktop, il `PATH`. `curl … | bash` e `irm … | iex` funzionano senza
+  clonare prima.
 - **Anteprima per Windows del motore e della riga di comando**, non ancora provata su un vero Windows. Vedi
   [Dropwheel su Windows](docs/WINDOWS.it.md). Ogni parte per Windows è separata da quella per Linux, che non
   cambia.
@@ -24,13 +36,13 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
   - Indicazioni di installazione con `winget install` e `python -m pip install`.
   - *Apri un terminale qui* apre una console `cmd.exe`.
 - **Interfaccia per Windows (anteprima)**: la stessa ruota, le stesse schede, gli stessi editor e la scheda del
-  codice QR di Linux, ospitati da PySide6 (`dropwheel.winshell`). Si apre con Shift durante un trascinamento,
+  codice QR di Linux, ospitati da PySide6 (`dropwheel.qtshell`). Si apre con Shift durante un trascinamento,
   l'angolo attivo, una scorciatoia globale e *Apri in Dropwheel* / *Invia a* in Esplora file.
   - `dropwheel setup windows [--remove]`: menu di Esplora file, *Invia a*, collegamenti nel menu Start e
     all'accesso, e il font delle icone (scaricato una volta da una versione fissa, controllato con il suo SHA-256).
   - `trigger.shortcut` (predefinita `Ctrl+Alt+D`), usata su Windows.
   - `dropwheel start`, `stop`, `status` e `open` controllano l'host su `127.0.0.1` con un token per ogni avvio.
-  - `tests/test_winshell.py`: 20 test, compreso il caricamento della vera shell senza schermo e senza avvisi QML.
+  - `tests/test_qtshell.py`: 20 test, compreso il caricamento della vera shell senza schermo e senza avvisi QML.
 - `tests/test_windows.py`: 16 test che esercitano le parti per Windows su Linux.
 - Documentazione divisa in guide nella cartella [docs](docs/README.it.md): installazione, uso, funzioni, riga di
   comando, risoluzione dei problemi, privacy, sviluppo e Windows, in inglese e in italiano.
@@ -40,6 +52,9 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
 
 - Su Windows il servizio scambia i percorsi con la shell nella forma `/C:/…`; PySide6-Essentials è una
   dipendenza su Windows.
+- `install.sh` installa i pacchetti mancanti dopo averlo chiesto, da un terminale; prima stampava solo i
+  comandi. Senza un terminale, o con `--no-packages`, continua a stamparli soltanto.
+- L'interfaccia PySide6 è passata da `dropwheel.winshell` a `dropwheel.qtshell`, perché ora serve anche GNOME.
 - Il README principale è più corto. Tiene la panoramica, la tabella delle piattaforme e un avvio rapido, e
   rimanda alle guide.
 

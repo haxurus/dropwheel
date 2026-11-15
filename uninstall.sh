@@ -211,6 +211,13 @@ if command -v qs >/dev/null 2>&1 && [[ -d $DATA_DIR/shell ]]; then
 fi
 ok "$(t 'fatto' 'done')"
 
+# GNOME: the Shell extension, the keyboard shortcut and autostart ("dropwheel setup gnome")
+if (( remove_files )) && [[ -d $XDG_DATA_HOME_DIR/gnome-shell/extensions/dropwheel@haxurus.github.io ]] \
+        && [[ -x $DW_BIN ]] && grep -qs 'DROPWHEEL-USER-WRAPPER' "$DW_BIN"; then
+    step "GNOME"
+    run_with_timeout "$DW_BIN" setup gnome --remove || warn "dropwheel setup gnome --remove"
+fi
+
 # --------------------------------------------------------------------------------------------
 # Hyprland configuration
 # --------------------------------------------------------------------------------------------
@@ -339,7 +346,7 @@ done
 # Only what install.sh put in the data directory, including what an interrupted update left
 # behind: whisper/ and wallpapers/ live there too, but they are the user's data (see --purge).
 if (( remove_files )); then
-    for path in "$DATA_DIR"/{python,shell,integrations,uninstall.sh,install-manifest.txt} \
+    for path in "$DATA_DIR"/{python,venv,shell,integrations,uninstall.sh,install-manifest.txt} \
                 "$DATA_DIR"/.{shell,integrations}.old \
                 "$DATA_DIR"/.{shell,integrations}.new.* "$DATA_DIR"/.dropwheel-install.*; do
         [[ -e $path || -L $path ]] || continue

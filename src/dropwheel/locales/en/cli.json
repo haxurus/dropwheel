@@ -236,7 +236,7 @@
   "shell.err.no_display": "No graphical session found (WAYLAND_DISPLAY is not set): run the command inside Hyprland",
   "shell.err.start_failed": "Quickshell could not start the Dropwheel shell. Log: {log}",
 
-  "cli.arg.remove": "windows: remove the Explorer entries, the shortcuts and the icon font",
+  "cli.arg.remove": "gnome, windows: remove what the setup added (extension or Explorer entries, shortcuts, icon font)",
   "cli.setup.win_would_menu": "would add \"Open in Dropwheel\" to the context menu of files and folders: {command}",
   "cli.setup.win_would_font": "would download the icon font from {url}",
   "cli.setup.win_menu": "Added \"{label}\" to the context menu of files and folders (Windows 11: under \"Show more options\")",
@@ -253,5 +253,20 @@
   "cli.doctor.win_explorer_missing": "not set up",
   "cli.doctor.win_font": "Icon font",
   "cli.doctor.win_font_missing": "missing: the icons show as words",
-  "win.menu.open": "Open in Dropwheel"
+  "win.menu.open": "Open in Dropwheel",
+  "cli.setup.gnome_would_shortcut": "would set the keyboard shortcut {accel} to run: {command}",
+  "cli.setup.gnome_extension": "GNOME Shell extension installed in {path} (it starts at the next login)",
+  "cli.setup.gnome_enable_failed": "Cannot enable the GNOME Shell extension {uuid}: turn it on in the Extensions app",
+  "cli.setup.gnome_shortcut": "Keyboard shortcut {accel}: opens the wheel with the copied files",
+  "cli.setup.gnome_shortcut_failed": "Cannot set the keyboard shortcut {accel}: add it in Settings → Keyboard → Custom Shortcuts",
+  "cli.setup.gnome_would_unset": "would remove the keyboard shortcut {path}",
+  "cli.setup.gnome_unset": "Removed the keyboard shortcut {path}",
+  "cli.setup.gnome_next": "Log out and back in once, so that GNOME loads the extension. Dropwheel then starts by itself at every login.",
+  "cli.setup.remove_only": "--remove works only with the gnome and windows targets",
+  "cli.doctor.gnome_extension": "GNOME extension",
+  "cli.doctor.gnome_extension_ok": "installed and enabled",
+  "cli.doctor.gnome_extension_missing": "not installed or not enabled: no Shift during a drag",
+  "cli.doctor.gnome_shortcut": "Keyboard shortcut",
+  "cli.doctor.gnome_shortcut_ok": "set",
+  "cli.doctor.gnome_shortcut_missing": "not set"
 }

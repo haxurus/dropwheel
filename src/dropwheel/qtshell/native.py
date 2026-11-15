@@ -21,13 +21,16 @@ from pathlib import Path
 from typing import Any
 
 from PySide6.QtCore import (QAbstractNativeEventFilter, QByteArray, QCoreApplication, QFileSystemWatcher, QObject,
-                            QPointF, QProcess, QProcessEnvironment, QTimer, Property, Signal, Slot)
+                            QPointF, QProcess, QProcessEnvironment, Qt, QTimer, Property, Signal, Slot)
 from PySide6.QtGui import QCursor, QGuiApplication
 from PySide6.QtQml import QmlAnonymous, QmlAttached, QmlElement, qmlRegisterSingletonInstance
 
-from . import virtual, win32
+from . import gnome, virtual, win32
 
-log = logging.getLogger("dropwheel.winshell")
+#: the desktop's answers: Win32 calls, or the GNOME Shell extension and X11 shapes
+plat: Any = win32 if win32.WINDOWS else gnome
+
+log = logging.getLogger("dropwheel.qtshell")
 
 QML_IMPORT_NAME = "DropwheelHost"
 QML_IMPORT_MAJOR_VERSION = 1
@@ -698,6 +701,8 @@ class Desktop(QObject):
     primaryScreen = Property(QObject, _primary, notify=screensChanged)
     focusedScreenName = Property(str, lambda self: self._focused, notify=focusedScreenNameChanged)
     isWindows = Property(bool, lambda self: win32.WINDOWS, constant=True)
+    #: input masks and the drop-only hot zone are emulated (Windows, GNOME); offscreen tests skip them
+    emulatesInput = Property(bool, lambda self: win32.WINDOWS or gnome.ACTIVE, constant=True)
 
     def screen_at(self, x: float, y: float) -> ShellScreen | None:
         for s in self._screens:
@@ -708,12 +713,15 @@ class Desktop(QObject):
 
     # ------------------------------------------------------------------ polling
     def cursor_pos(self) -> tuple[int, int]:
+        c = None if win32.WINDOWS else plat.cursor()
+        if c is not None:
+            return c
         p = QCursor.pos()
         return p.x(), p.y()
 
     def dragging(self) -> bool:
         """What stands in for Hyprland's DND state: the primary button is held."""
-        return win32.primary_button_down()
+        return plat.primary_button_down()
 
     def fire(self, name: str) -> None:
         for sc in list(self.shortcuts.get(name, ())):
@@ -726,13 +734,13 @@ class Desktop(QObject):
         if name != self._focused:
             self._focused = name
             self.focusedScreenNameChanged.emit()
-        if not win32.WINDOWS:
+        if not (win32.WINDOWS or gnome.ACTIVE):
             return
-        buttons = win32.any_button_down()
+        buttons = plat.any_button_down()
         if buttons and not self._buttons:
             self.globalPress.emit(float(x), float(y))
         self._buttons = buttons
-        shift = win32.key_down(win32.VK_SHIFT)
+        shift = plat.key_down(win32.VK_SHIFT)
         if shift and not self._shift:
             self.fire("shift")
         self._shift = shift
@@ -768,11 +776,12 @@ class Desktop(QObject):
 
     @Slot(result=bool)
     def buttonDown(self) -> bool:  # noqa: N802
-        return win32.primary_button_down()
+        return plat.primary_button_down()
 
     @Slot(result=QPointF)
     def cursor(self) -> QPointF:
-        return QPointF(QCursor.pos())
+        x, y = self.cursor_pos()
+        return QPointF(x, y)
 
     @Slot(QObject, bool, bool)
     def updateWindow(self, window: QObject, click_through: bool, no_activate: bool) -> None:  # noqa: N802
@@ -780,16 +789,21 @@ class Desktop(QObject):
         if window is None:
             return
         window.setProperty("_q_showWithoutActivating", bool(no_activate))
-        if win32.WINDOWS and window.isVisible():
-            win32.set_window_style(int(window.winId()), click_through=click_through, no_activate=no_activate)
+        if not win32.WINDOWS:
+            if bool(window.flags() & Qt.WindowType.WindowDoesNotAcceptFocus) != bool(no_activate):
+                window.setFlag(Qt.WindowType.WindowDoesNotAcceptFocus, bool(no_activate))
+            if not window.isVisible():
+                gnome.forget_window(int(window.winId()))
+                return
+        if window.isVisible():
+            plat.set_window_style(int(window.winId()), click_through=click_through, no_activate=no_activate)
 
     @Slot(QObject)
     def activate(self, window: QObject) -> None:
         if window is None:
             return
         window.requestActivate()
-        if win32.WINDOWS:
-            win32.foreground(int(window.winId()))
+        plat.foreground(int(window.winId()))
 
 
 def register(desktop: Desktop) -> None:

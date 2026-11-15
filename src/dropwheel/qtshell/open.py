@@ -1,4 +1,4 @@
-"""Entry point of the Explorer entries: ``pythonw -P -m dropwheel.winshell.open FILE…``.
+"""Entry point of the Explorer entries: ``pythonw -P -m dropwheel.qtshell.open FILE…``.
 
 Starts the host when needed and asks it to open the wheel at the cursor with the files.  The
 call is marked ``merge``: the context menu starts one process per selected item, and the host
@@ -31,8 +31,8 @@ def main(argv: list[str] | None = None) -> int:
                 return 1
         control.request("open", [json.dumps({"files": files, "merge": True}, ensure_ascii=False)], timeout=10.0)
     except UserError as exc:
-        logging.basicConfig(filename=str(control.log_path().with_name("winshell-open.log")), level=logging.INFO)
-        logging.getLogger("dropwheel.winshell").error("cannot open %s: %s", files, exc.text())
+        logging.basicConfig(filename=str(control.log_path().with_name("qtshell-open.log")), level=logging.INFO)
+        logging.getLogger("dropwheel.qtshell").error("cannot open %s: %s", files, exc.text())
         return 1
     return 0
 

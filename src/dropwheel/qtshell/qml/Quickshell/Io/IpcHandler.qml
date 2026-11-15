@@ -1,7 +1,7 @@
 import QtQuick
 import DropwheelHost
 
-// IpcHandler: the host's IPC server calls the functions declared on the instance (see winshell/host.py, which
+// IpcHandler: the host's IPC server calls the functions declared on the instance (see qtshell/host.py, which
 // only forwards the names it knows). "true" / "false" arguments become booleans, as with `qs ipc call`.
 IpcEndpoint {
     id: ipc

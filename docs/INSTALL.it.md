@@ -2,6 +2,9 @@
 
 # Installare Dropwheel
 
+Questa pagina riguarda Arch Linux con Hyprland. Per GNOME su Debian, Ubuntu o Arch vedi
+[Dropwheel su GNOME](GNOME.it.md); per Windows vedi [Dropwheel su Windows](WINDOWS.it.md).
+
 ## Per iniziare
 
 **Requisiti**
@@ -33,8 +36,11 @@ cd dropwheel
 ./install.sh
 ```
 
-Lo script installa in `~/.local`, controlla le dipendenze e stampa il comando per ciò che manca. Non esegue
-mai `sudo`. Le opzioni sono in `./install.sh --help`.
+Lo script installa in `~/.local` e chiede prima di ogni passo: i pacchetti mancanti (installati con pacman,
+sudo chiede la password una volta), i gruppi di funzioni facoltative, il collegamento a Hyprland. Senza un
+terminale, o con `--no-packages`, stampa solo i comandi. Senza clonare prima:
+`curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash`. Le opzioni sono in
+`./install.sh --help`.
 
 **Poi, con il tuo utente normale, collegalo a Hyprland**
 

@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
-# Dropwheel — user-local installer (no root, nothing outside your home directory).
+# Dropwheel — interactive installer for Arch Linux, Debian and Ubuntu (Hyprland or GNOME).
 #
-#   ./install.sh                 install into ~/.local, then offer the Hyprland setup and start
+#   ./install.sh                 asks everything, installs into ~/.local and starts Dropwheel
+#   curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
+#                                the same without cloning first: the code goes to ~/.local/src/dropwheel
 #   ./install.sh --help          all options
 #
 # Layout (see docs/SPEC.md §8):
@@ -11,11 +13,18 @@
 #   ~/.local/bin/dropwheel                      launcher (python3 -m dropwheel, PYTHONPATH set)
 #   ~/.local/share/applications/dropwheel.desktop, ~/.local/share/icons/hicolor/…/dropwheel.svg
 #
-# The script never runs sudo: missing packages are listed with the command to install them.
+# Packages are installed with pacman or apt only after you say yes, from a terminal (sudo asks
+# for your password once); without a terminal the commands are printed instead. Everything else
+# stays in your home directory. On Debian and Ubuntu the Python modules go into a private
+# environment (~/.local/share/dropwheel/venv), never into the system Python.
 
 set -euo pipefail
 
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+# empty when the script comes from a pipe (curl … | bash): the sources are then cloned
+SCRIPT_DIR=""
+if [[ -n ${BASH_SOURCE[0]:-} && -f ${BASH_SOURCE[0]} ]]; then
+    SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd -P)
+fi
 readonly SCRIPT_DIR
 
 # --------------------------------------------------------------------------------------------
@@ -30,17 +39,105 @@ t() { if (( IT )); then printf '%s' "$1"; else printf '%s' "$2"; fi; }
 
 if [[ -t 1 && -z ${NO_COLOR:-} && ${TERM:-dumb} != dumb ]]; then
     C_RESET=$'\e[0m' C_BOLD=$'\e[1m' C_RED=$'\e[1;31m' C_GREEN=$'\e[1;32m'
-    C_YELLOW=$'\e[1;33m' C_BLUE=$'\e[1;34m' C_DIM=$'\e[2m'
+    C_YELLOW=$'\e[1;33m' C_BLUE=$'\e[1;34m' C_DIM=$'\e[2m' C_CYAN=$'\e[1;36m'
+    GRADIENT=($'\e[38;5;51m' $'\e[38;5;45m' $'\e[38;5;39m' $'\e[38;5;33m' $'\e[38;5;63m' $'\e[38;5;99m')
 else
-    C_RESET='' C_BOLD='' C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_DIM=''
+    C_RESET='' C_BOLD='' C_RED='' C_GREEN='' C_YELLOW='' C_BLUE='' C_DIM='' C_CYAN=''
+    GRADIENT=('' '' '' '' '' '')
 fi
 
-step() { printf '\n%s==>%s %s%s%s\n' "$C_BLUE" "$C_RESET" "$C_BOLD" "$*" "$C_RESET"; }
+STEP_NO=${DROPWHEEL_INSTALL_STEP:-0}
+step() {
+    STEP_NO=$((STEP_NO + 1))
+    printf '\n%s━━ %s%s %s%s%s\n' "$C_BLUE" "$STEP_NO" "$C_RESET" "$C_BOLD" "$*" "$C_RESET"
+}
 info() { printf '    %s\n' "$*"; }
 ok()   { printf '  %s✓%s %s\n' "$C_GREEN" "$C_RESET" "$*"; }
 warn() { printf '  %s!%s %s\n' "$C_YELLOW" "$C_RESET" "$*" >&2; }
 die()  { printf '%s✗ %s%s\n' "$C_RED" "$*" "$C_RESET" >&2; exit 1; }
 cmd()  { printf '      %s$ %s%s\n' "$C_DIM" "$*" "$C_RESET"; }
+
+banner() {
+    local cols i
+    local -a art=(
+        '██████╗ ██████╗  ██████╗ ██████╗ ██╗    ██╗██╗  ██╗███████╗███████╗██╗'
+        '██╔══██╗██╔══██╗██╔═══██╗██╔══██╗██║    ██║██║  ██║██╔════╝██╔════╝██║'
+        '██║  ██║██████╔╝██║   ██║██████╔╝██║ █╗ ██║███████║█████╗  █████╗  ██║'
+        '██║  ██║██╔══██╗██║   ██║██╔═══╝ ██║███╗██║██╔══██║██╔══╝  ██╔══╝  ██║'
+        '██████╔╝██║  ██║╚██████╔╝██║     ╚███╔███╔╝██║  ██║███████╗███████╗███████╗'
+        '╚═════╝ ╚═╝  ╚═╝ ╚═════╝ ╚═╝      ╚══╝╚══╝ ╚═╝  ╚═╝╚══════╝╚══════╝╚══════╝'
+    )
+    cols=${COLUMNS:-$(tput cols 2>/dev/null || echo 80)}
+    printf '\n'
+    if (( cols >= 78 )) && [[ ${LC_ALL:-${LC_CTYPE:-${LANG:-}}} == *[Uu][Tt][Ff]* ]]; then
+        for i in "${!art[@]}"; do
+            printf '  %s%s%s\n' "${GRADIENT[i]}" "${art[i]}" "$C_RESET"
+        done
+    else
+        printf '  %sD R O P W H E E L%s\n' "$C_CYAN" "$C_RESET"
+    fi
+    printf '\n  %s%s%s  %s·  by Haxurus%s\n\n' "$C_BOLD" \
+        "$(t 'La ruota delle azioni sui file' 'A radial wheel of file actions')" "$C_RESET" "$C_DIM" "$C_RESET"
+    field "$(t 'Codice' 'Code')" "https://github.com/haxurus/dropwheel"
+    field "$(t 'Documentazione' 'Documentation')" "https://github.com/haxurus/dropwheel/blob/main/docs/README.md"
+    field "$(t 'Segnalazioni' 'Issues')" "https://github.com/haxurus/dropwheel/issues"
+    field "$(t 'Novità' 'Changelog')" "https://github.com/haxurus/dropwheel/blob/main/CHANGELOG.md"
+}
+
+# field "label" "value" [style]: a label padded by characters (printf pads by bytes)
+field() {
+    local pad=$((16 - ${#1}))
+    (( pad > 0 )) || pad=1
+    printf '  %s%s%*s %s%s\n' "${3:-}" "$1" "$pad" '' "$C_RESET" "$2"
+}
+
+# A terminal to ask in (not when piped, not with --yes).
+interactive() { (( ! ASSUME_YES )) && [[ -t 0 ]]; }
+
+# choose_groups "<title>" label... → CHOSEN=(indices); Enter = all, n = none, or numbers
+CHOSEN=()
+choose_groups() {
+    local title=$1 reply n i ok
+    shift
+    local -a labels=("$@")
+    CHOSEN=()
+    if ! interactive; then
+        for i in "${!labels[@]}"; do CHOSEN+=("$i"); done
+        return
+    fi
+    printf '  %s%s%s\n' "$C_BOLD" "$title" "$C_RESET"
+    for i in "${!labels[@]}"; do
+        printf '    %s%2d%s  %s\n' "$C_CYAN" $((i + 1)) "$C_RESET" "${labels[i]}"
+    done
+    while true; do
+        printf '  %s?%s %s ' "$C_YELLOW" "$C_RESET" \
+            "$(t 'Quali installo? [Invio = tutti, n = nessuno, oppure i numeri, es. 1 3]' \
+                 'Which ones? [Enter = all, n = none, or the numbers, e.g. 1 3]')"
+        read -r reply || reply=""
+        reply=${reply,,}
+        reply=${reply//,/ }
+        case $reply in
+            '') for i in "${!labels[@]}"; do CHOSEN+=("$i"); done; return ;;
+            n|no|0|none|nessuno) return ;;
+        esac
+        ok=1
+        for n in $reply; do
+            if [[ $n =~ ^[0-9]+$ ]] && (( n >= 1 && n <= ${#labels[@]} )); then
+                CHOSEN+=($((n - 1)))
+            else
+                ok=0
+            fi
+        done
+        (( ok )) && return
+        CHOSEN=()
+        info "$(t 'Numeri da 1 a' 'Numbers from 1 to') ${#labels[@]}."
+    done
+}
+
+# The one place that runs a command as root, always after the user said yes.
+as_root() {
+    sudo -- "$@"
+}
 
 usage() {
     if (( IT )); then
@@ -52,7 +149,9 @@ Installa Dropwheel per l'utente corrente (in ~/.local), senza permessi di root.
 Opzioni:
   --prefix DIR         cartella di installazione (predefinita: ~/.local)
   --python PERCORSO    interprete Python da usare (predefinito: /usr/bin/python3)
-  --no-hyprland        non proporre "dropwheel setup hyprland"
+  --desktop NOME       hyprland oppure gnome (predefinito: quello della sessione)
+  --no-packages        non installare pacchetti né moduli pip: mostra solo i comandi
+  --no-hyprland        non proporre "dropwheel setup hyprland" (né "setup gnome")
   --no-start           non avviare Dropwheel al termine
   --no-file-managers   non installare le azioni per Nautilus, Dolphin e Nemo
   --no-mime-guard      non proteggere le applicazioni predefinite dei tipi di file
@@ -71,7 +170,9 @@ Installs Dropwheel for the current user (into ~/.local), without root.
 Options:
   --prefix DIR         installation prefix (default: ~/.local)
   --python PATH        Python interpreter to use (default: /usr/bin/python3)
-  --no-hyprland        do not offer "dropwheel setup hyprland"
+  --desktop NAME       hyprland or gnome (default: the one of this session)
+  --no-packages        do not install packages or pip modules: only show the commands
+  --no-hyprland        do not offer "dropwheel setup hyprland" (nor "setup gnome")
   --no-start           do not start Dropwheel at the end
   --no-file-managers   do not install the Nautilus, Dolphin and Nemo actions
   --no-mime-guard      do not protect the default applications of file types
@@ -205,18 +306,16 @@ install_launcher() {
 }
 
 pkg_installed() {
-    pacman -Qq -- "$1" >/dev/null 2>&1
+    if [[ ${DISTRO:-arch} == debian ]]; then
+        [[ $(dpkg-query -W -f='${Status}' -- "$1" 2>/dev/null) == *"install ok installed"* ]]
+    else
+        pacman -Qq -- "$1" >/dev/null 2>&1
+    fi
 }
 
-# "a/b" = install a, but b also satisfies the need.
-alternative_installed() {
-    local alt
-    local -a alts
-    IFS='/' read -r -a alts <<< "$1"
-    for alt in "${alts[@]}"; do
-        pkg_installed "$alt" && return 0
-    done
-    return 1
+# apt knows the package (Debian and Ubuntu releases differ: unknown names are skipped)
+pkg_available() {
+    apt-cache show --no-all-versions -- "$1" >/dev/null 2>&1
 }
 
 in_hyprland_session() {
@@ -234,6 +333,9 @@ DO_START=1
 DO_FILE_MANAGERS=1
 DO_MIME_GUARD=1
 ASSUME_YES=0
+DO_PACKAGES=1
+DESKTOP=""
+ORIG_ARGS=("$@")
 
 while (( $# )); do
     case $1 in
@@ -243,6 +345,9 @@ while (( $# )); do
         --python) [[ $# -ge 2 ]] || die "$(t '--python richiede un percorso' '--python needs a path')"; PYTHON_BIN=$2; shift 2 ;;
         --python=*) PYTHON_BIN=${1#*=}; shift ;;
         --no-hyprland) DO_HYPRLAND=0; shift ;;
+        --no-packages) DO_PACKAGES=0; shift ;;
+        --desktop) [[ $# -ge 2 ]] || die "$(t '--desktop richiede hyprland o gnome' '--desktop needs hyprland or gnome')"; DESKTOP=$2; shift 2 ;;
+        --desktop=*) DESKTOP=${1#*=}; shift ;;
         --no-start) DO_START=0; shift ;;
         --no-file-managers) DO_FILE_MANAGERS=0; shift ;;
         --no-mime-guard) DO_MIME_GUARD=0; shift ;;
@@ -277,12 +382,95 @@ MANIFEST_PATHS=()
 # Pre-flight checks
 # --------------------------------------------------------------------------------------------
 
-printf '%sDropwheel%s — %s\n' "$C_BOLD" "$C_RESET" "$(t 'installazione per l'"'"'utente' 'user-local installation')"
+[[ -n ${DROPWHEEL_INSTALL_CLONED:-} ]] || banner
 
-[[ $(uname -s) == Linux ]] || die "$(t 'Dropwheel funziona solo su Linux (Hyprland).' 'Dropwheel only runs on Linux (Hyprland).')"
+[[ $(uname -s) == Linux ]] || die "$(t 'install.sh è per Linux. Su Windows usa install.ps1 in PowerShell.' \
+                                         'install.sh is for Linux. On Windows use install.ps1 in PowerShell.')"
 if (( EUID == 0 )); then
-    die "$(t 'Non eseguire install.sh come root: installa per il tuo utente. Per un pacchetto di sistema usa "makepkg -si".' \
-             'Do not run install.sh as root: it installs for your user. For a system package use "makepkg -si".')"
+    die "$(t 'Non eseguire install.sh come root: installa per il tuo utente (chiederà la password solo per i pacchetti). Per un pacchetto di sistema su Arch usa "makepkg -si".' \
+             'Do not run install.sh as root: it installs for your user (it asks for the password only for packages). For a system package on Arch use "makepkg -si".')"
+fi
+
+# --- which system and which desktop
+DISTRO=arch
+DISTRO_NAME="Linux"
+OS_RELEASE=${DROPWHEEL_OS_RELEASE:-/etc/os-release}  # the variable is for the tests
+if [[ -r $OS_RELEASE ]]; then
+    # shellcheck disable=SC1090
+    os_id=$(. "$OS_RELEASE" && printf '%s %s' "${ID:-}" "${ID_LIKE:-}")
+    # shellcheck disable=SC1090
+    DISTRO_NAME=$(. "$OS_RELEASE" && printf '%s' "${PRETTY_NAME:-${NAME:-Linux}}")
+    case " ${os_id,,} " in
+        *" debian "*|*" ubuntu "*) DISTRO=debian ;;
+    esac
+fi
+[[ $DISTRO == arch ]] && ! command -v pacman >/dev/null 2>&1 && command -v apt-get >/dev/null 2>&1 && DISTRO=debian
+
+if [[ -z $DESKTOP ]]; then
+    if in_hyprland_session; then
+        DESKTOP=hyprland
+    elif [[ ${XDG_CURRENT_DESKTOP:-} == *GNOME* ]]; then
+        DESKTOP=gnome
+    elif command -v hyprctl >/dev/null 2>&1 || [[ -d ${XDG_CONFIG_HOME:-$HOME/.config}/hypr ]]; then
+        DESKTOP=hyprland
+    elif command -v gnome-shell >/dev/null 2>&1; then
+        DESKTOP=gnome
+    elif [[ $DISTRO == debian ]]; then
+        DESKTOP=gnome
+    else
+        DESKTOP=hyprland
+    fi
+fi
+DESKTOP=${DESKTOP,,}
+[[ $DESKTOP == hyprland || $DESKTOP == gnome ]] || die "$(t '--desktop: hyprland oppure gnome' '--desktop: hyprland or gnome')"
+if [[ $DISTRO == debian && $DESKTOP == hyprland ]]; then
+    warn "$(t 'Su Debian e Ubuntu Dropwheel supporta GNOME: Hyprland 0.57 e Quickshell non sono nei repository. Continuo, ma i pacchetti di Hyprland dovrai installarli tu.' \
+              'On Debian and Ubuntu Dropwheel supports GNOME: Hyprland 0.57 and Quickshell are not in the repositories. Continuing, but you will have to install the Hyprland packages yourself.')"
+fi
+
+if [[ $DESKTOP == gnome ]]; then desktop_label="GNOME"; else desktop_label="Hyprland"; fi
+if [[ -z ${DROPWHEEL_INSTALL_CLONED:-} ]]; then
+    printf '\n'
+    field "$(t 'Sistema' 'System')" "$DISTRO_NAME" "$C_DIM"
+    field "Desktop" "$desktop_label" "$C_DIM"
+    field "$(t 'Cartella' 'Folder')" "$PREFIX" "$C_DIM"
+fi
+if interactive && [[ -z ${DROPWHEEL_INSTALL_ASKED:-} ]]; then
+    printf '\n'
+    ask "$(t 'Iniziamo?' 'Shall we start?')" y y || exit 0
+    export DROPWHEEL_INSTALL_ASKED=1
+fi
+
+# --- the source tree: this folder, or a fresh clone when the script came from curl
+if [[ ! -e $SCRIPT_DIR/src/dropwheel/__init__.py ]]; then
+    # "curl … | bash": bash reads this script from the pipe, so the questions need the terminal.
+    # This whole if-block is parsed before it runs and it ends with exec, so switching stdin here
+    # does not cut the script short.
+    if [[ ! -t 0 ]] && (( ! ASSUME_YES )) && { true < /dev/tty; } 2>/dev/null; then
+        exec < /dev/tty
+        if [[ -z ${DROPWHEEL_INSTALL_ASKED:-} ]]; then
+            printf '\n'
+            ask "$(t 'Iniziamo?' 'Shall we start?')" y y || exit 0
+            export DROPWHEEL_INSTALL_ASKED=1
+        fi
+    fi
+    SRC_CLONE="$HOME/.local/src/dropwheel"
+    step "$(t 'Scarico Dropwheel' 'Downloading Dropwheel')"
+    if ! command -v git >/dev/null 2>&1; then
+        if (( DO_PACKAGES )) && interactive && ask "$(t 'Serve git. Lo installo ora?' 'git is needed. Install it now?')" y n; then
+            if [[ $DISTRO == debian ]]; then as_root apt-get install -y git; else as_root pacman -S --needed --noconfirm git; fi
+        else
+            die "$(t 'Installa git e riprova.' 'Install git and try again.')"
+        fi
+    fi
+    if [[ -d $SRC_CLONE/.git ]]; then
+        git -C "$SRC_CLONE" pull --ff-only || die "$(t 'Aggiornamento di' 'Cannot update') $SRC_CLONE"
+    else
+        mkdir -p -- "$(dirname -- "$SRC_CLONE")"
+        git clone --depth 1 "${DROPWHEEL_REPO:-https://github.com/haxurus/dropwheel.git}" "$SRC_CLONE" || die "git clone"
+    fi
+    ok "$SRC_CLONE"
+    DROPWHEEL_INSTALL_CLONED=1 DROPWHEEL_INSTALL_STEP=$STEP_NO exec bash "$SRC_CLONE/install.sh" "${ORIG_ARGS[@]+"${ORIG_ARGS[@]}"}"
 fi
 
 for required in src/dropwheel/__init__.py src/dropwheel/__main__.py shell/shell.qml \
@@ -298,17 +486,25 @@ if [[ -z $PYTHON_BIN ]]; then
         PYTHON_BIN=$(command -v python3 || true)
     fi
 fi
-[[ -n $PYTHON_BIN && -x $PYTHON_BIN ]] || die "$(t 'Python 3 non trovato: sudo pacman -S python' 'Python 3 not found: sudo pacman -S python')"
+[[ -n $PYTHON_BIN && -x $PYTHON_BIN ]] || die "$(t 'Python 3 non trovato: sudo pacman -S python (Arch) oppure sudo apt install python3 (Debian, Ubuntu)' 'Python 3 not found: sudo pacman -S python (Arch) or sudo apt install python3 (Debian, Ubuntu)')"
 if ! "$PYTHON_BIN" -c 'import sys; sys.exit(0 if sys.version_info >= (3, 11) else 1)'; then
     die "$(t 'Serve Python 3.11 o più recente' 'Python 3.11 or newer is required'): $("$PYTHON_BIN" -V 2>&1)"
 fi
 
 # --------------------------------------------------------------------------------------------
-# Dependencies (pacman -Qq; nothing is installed automatically)
+# Dependencies: checked, then installed with pacman or apt once you say yes
 # --------------------------------------------------------------------------------------------
 
+# Arch with Hyprland (the same list as the PKGBUILD's depends)
 REQUIRED_PKGS=(python python-pillow quickshell hyprland wl-clipboard libnotify
                ttf-material-symbols-variable glib2 xdg-utils)
+# Arch with GNOME: PySide6 hosts the wheel instead of Quickshell
+ARCH_GNOME_PKGS=(python python-pillow pyside6 wl-clipboard libnotify ttf-material-symbols-variable glib2 xdg-utils)
+# Debian and Ubuntu with GNOME: PySide6 comes from pip into Dropwheel's own environment; the
+# libraries below are what its X11 plugin needs (most are already there on a desktop)
+DEB_REQUIRED=(python3 python3-venv python3-pil wl-clipboard libnotify-bin libglib2.0-bin xdg-utils fontconfig
+              libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 libxcb-render-util0 libxcb-shape0
+              libxcb-xkb1 libxkbcommon-x11-0 libegl1 libxext6)
 
 # "Italian label|English label|packages" ("a/b" = suggest a, b also counts as installed)
 OPTIONAL_GROUPS=(
@@ -324,76 +520,217 @@ OPTIONAL_GROUPS=(
 )
 AUR_SUGGESTED=(ocrmypdf python-pdf2docx)
 
+# Debian and Ubuntu: "labels|apt packages|pip modules" (same groups; "a/b" = the first apt knows)
+DEB_GROUPS=(
+    "Immagini|Images|imagemagick librsvg2-bin oxipng pngquant jpegoptim libjpeg-turbo-progs gifsicle|pillow-heif pillow-jxl-plugin"
+    "Metadati|Metadata|libimage-exiftool-perl mat2|"
+    "PDF|PDF|qpdf ghostscript poppler-utils|pymupdf pypdf pikepdf"
+    "OCR e codici QR|OCR and QR codes|tesseract-ocr tesseract-ocr-ita tesseract-ocr-eng zbar-tools ocrmypdf|qrcode"
+    "Documenti|Documents|libreoffice pandoc typst|openpyxl charset-normalizer pyyaml tomli-w pygments python-docx defusedxml"
+    "Audio e video|Audio and video|ffmpeg|mutagen"
+    "Archivi|Archives|7zip/p7zip-full unrar|py7zr rarfile"
+    "Font|Fonts|fonttools woff2|fonttools brotli"
+    "Condivisione e sistema|Sharing and system|zenity gnupg trash-cli udisks2|send2trash"
+)
+
+if [[ $DISTRO == debian ]]; then
+    PKG_TOOL=apt-get
+else
+    PKG_TOOL=pacman
+fi
+can_install() { (( DO_PACKAGES )) && interactive && command -v "$PKG_TOOL" >/dev/null 2>&1 && command -v sudo >/dev/null 2>&1; }
+
+install_cmd_text() {
+    if [[ $DISTRO == debian ]]; then printf 'sudo apt install %s' "$*"; else printf 'sudo pacman -S --needed %s' "$*"; fi
+}
+
+APT_UPDATED=0
+install_pkgs() {
+    (( $# )) || return 0
+    if [[ $DISTRO == debian ]]; then
+        if (( ! APT_UPDATED )); then
+            as_root apt-get update || warn "apt-get update"
+            APT_UPDATED=1
+        fi
+        as_root apt-get install -y -- "$@"
+    else
+        as_root pacman -S --needed --noconfirm -- "$@"
+    fi
+}
+
+# the first of "a/b" that is installed, else the first one the package manager knows
+pick_alternative() {
+    local alt
+    local -a alts
+    IFS='/' read -r -a alts <<< "$1"
+    for alt in "${alts[@]}"; do
+        pkg_installed "$alt" && return 1
+    done
+    if [[ $DISTRO == debian ]]; then
+        for alt in "${alts[@]}"; do
+            if pkg_available "$alt"; then printf '%s' "$alt"; return 0; fi
+        done
+        return 1
+    fi
+    printf '%s' "${alts[0]}"
+}
+
 missing_required=()
 missing_optional=()
 missing_aur=()
+PIP_MODULES=()
 
-step "$(t 'Controllo le dipendenze' 'Checking dependencies')"
-if command -v pacman >/dev/null 2>&1; then
-    for p in "${REQUIRED_PKGS[@]}"; do
+step "$(t 'Dipendenze' 'Dependencies')"
+if [[ $DISTRO == debian ]]; then
+    required_list=("${DEB_REQUIRED[@]}")
+elif [[ $DESKTOP == gnome ]]; then
+    required_list=("${ARCH_GNOME_PKGS[@]}")
+else
+    required_list=("${REQUIRED_PKGS[@]}")
+fi
+
+if command -v "$PKG_TOOL" >/dev/null 2>&1; then
+    for p in "${required_list[@]}"; do
         pkg_installed "$p" || missing_required+=("$p")
     done
     if (( ${#missing_required[@]} == 0 )); then
         ok "$(t 'Dipendenze obbligatorie presenti' 'All required dependencies are installed')"
     else
         warn "$(t 'Dipendenze obbligatorie mancanti' 'Missing required dependencies'): ${missing_required[*]}"
-        cmd "sudo pacman -S --needed ${missing_required[*]}"
+        if can_install && ask "$(t 'Le installo ora? (sudo chiederà la tua password)' 'Install them now? (sudo will ask for your password)')" y n; then
+            if install_pkgs "${missing_required[@]}"; then
+                ok "$(t 'Dipendenze obbligatorie installate' 'Required dependencies installed')"
+                missing_required=()
+            else
+                warn "$(t 'Installazione non riuscita' 'Installation failed')"
+            fi
+        else
+            cmd "$(install_cmd_text "${missing_required[@]}")"
+        fi
     fi
 
-    printed_header=0
-    for group in "${OPTIONAL_GROUPS[@]}"; do
-        IFS='|' read -r label_it label_en pkgs <<< "$group"
+    # --- optional groups: a menu of what is still missing
+    group_labels=()
+    group_pkgs=()
+    group_pip=()
+    if [[ $DISTRO == debian ]]; then
+        groups=("${DEB_GROUPS[@]}")
+    else
+        groups=("${OPTIONAL_GROUPS[@]}")
+    fi
+    for group in "${groups[@]}"; do
+        IFS='|' read -r label_it label_en pkgs pip_mods <<< "$group"
         group_missing=()
         for p in $pkgs; do
-            alternative_installed "$p" || group_missing+=("${p%%/*}")
+            pick=$(pick_alternative "$p") && group_missing+=("$pick")
         done
-        (( ${#group_missing[@]} )) || continue
-        if (( ! printed_header )); then
-            info "$(t 'Funzioni opzionali non ancora disponibili (installa solo quello che ti serve):' \
-                      'Optional features not available yet (install only what you need):')"
-            printed_header=1
-        fi
-        printf '      %s%-24s%s %s\n' "$C_BOLD" "$(t "$label_it" "$label_en")" "$C_RESET" "${group_missing[*]}"
-        missing_optional+=("${group_missing[@]}")
+        (( ${#group_missing[@]} )) || [[ -n ${pip_mods:-} ]] || continue
+        group_labels+=("$(printf '%-24s %s' "$(t "$label_it" "$label_en")" "$C_DIM${group_missing[*]}${pip_mods:+ (pip: $pip_mods)}$C_RESET")")
+        group_pkgs+=("${group_missing[*]}")
+        group_pip+=("${pip_mods:-}")
     done
-    if (( ${#missing_optional[@]} )); then
-        cmd "sudo pacman -S --needed ${missing_optional[*]}"
+    if (( ${#group_labels[@]} )); then
+        info "$(t 'Funzioni facoltative: ogni gruppo abilita altre azioni della ruota.' \
+                  'Optional features: each group enables more actions of the wheel.')"
+        if can_install; then
+            choose_groups "$(t 'Gruppi disponibili' 'Available groups')" "${group_labels[@]}"
+        else
+            for i in "${!group_labels[@]}"; do
+                printf '      %s\n' "${group_labels[i]}"
+            done
+            CHOSEN=()
+        fi
+        for i in "${CHOSEN[@]+"${CHOSEN[@]}"}"; do
+            read -r -a words <<< "${group_pkgs[i]}"
+            missing_optional+=("${words[@]+"${words[@]}"}")
+            read -r -a words <<< "${group_pip[i]}"
+            PIP_MODULES+=("${words[@]+"${words[@]}"}")
+        done
+        if can_install && (( ${#missing_optional[@]} )); then
+            if install_pkgs "${missing_optional[@]}"; then
+                ok "$(t 'Pacchetti facoltativi installati' 'Optional packages installed')"
+            else
+                warn "$(t 'Alcuni pacchetti non si sono installati: dropwheel doctor dice cosa manca.' \
+                          'Some packages did not install: dropwheel doctor tells what is missing.')"
+            fi
+        elif ! can_install; then
+            all_missing=()
+            for i in "${!group_pkgs[@]}"; do
+                read -r -a words <<< "${group_pkgs[i]}"
+                all_missing+=("${words[@]+"${words[@]}"}")
+            done
+            (( ${#all_missing[@]} )) && cmd "$(install_cmd_text "${all_missing[@]}")"
+        fi
     else
         ok "$(t 'Tutte le dipendenze opzionali consigliate sono presenti' 'All suggested optional dependencies are installed')"
     fi
 
-    for p in "${AUR_SUGGESTED[@]}"; do
-        pkg_installed "$p" || missing_aur+=("$p")
-    done
-    if (( ${#missing_aur[@]} )); then
-        aur_helper=paru
-        if ! command -v paru >/dev/null 2>&1 && command -v yay >/dev/null 2>&1; then
-            aur_helper=yay
+    if [[ $DISTRO == arch ]]; then
+        for p in "${AUR_SUGGESTED[@]}"; do
+            pkg_installed "$p" || missing_aur+=("$p")
+        done
+        if (( ${#missing_aur[@]} )); then
+            aur_helper=""
+            for h in paru yay; do
+                command -v "$h" >/dev/null 2>&1 && { aur_helper=$h; break; }
+            done
+            info "$(t 'Dall'"'"'AUR (OCR dei PDF, PDF → Word):' 'From the AUR (PDF OCR, PDF → Word):')"
+            if [[ -n $aur_helper ]] && can_install && ask "$(t "Li installo con $aur_helper?" "Install them with $aur_helper?")" n n; then
+                "$aur_helper" -S --needed -- "${missing_aur[@]}" || warn "$aur_helper"
+            else
+                cmd "${aur_helper:-paru} -S ${missing_aur[*]}"
+            fi
         fi
-        info "$(t 'Dall'"'"'AUR (OCR dei PDF, PDF → Word):' 'From the AUR (PDF OCR, PDF → Word):')"
-        cmd "$aur_helper -S ${missing_aur[*]}"
+        if pkg_installed dropwheel; then
+            warn "$(t 'Il pacchetto di sistema "dropwheel" è già installato: questa installazione utente avrà la precedenza (~/.local/share/dropwheel). Di solito ne basta una.' \
+                      'The "dropwheel" system package is installed too: this user install takes precedence (~/.local/share/dropwheel). Usually one is enough.')"
+            ask "$(t 'Continuare comunque?' 'Continue anyway?')" n y || exit 1
+        fi
     fi
     if ! command -v rembg >/dev/null 2>&1; then
         info "$(t 'Rimozione dello sfondo (facoltativa, scarica un modello AI):' 'Background removal (optional, downloads an AI model):')"
         cmd "pipx install \"rembg[cpu,cli]\""
     fi
-
-    if pkg_installed dropwheel; then
-        warn "$(t 'Il pacchetto di sistema "dropwheel" è già installato: questa installazione utente avrà la precedenza (~/.local/share/dropwheel). Di solito ne basta una.' \
-                  'The "dropwheel" system package is installed too: this user install takes precedence (~/.local/share/dropwheel). Usually one is enough.')"
-        ask "$(t 'Continuare comunque?' 'Continue anyway?')" n y || exit 1
-    fi
 else
-    warn "$(t 'pacman non trovato: controllo delle dipendenze saltato (Dropwheel è pensato per Arch Linux).' \
-              'pacman not found: dependency check skipped (Dropwheel targets Arch Linux).')"
+    warn "$(t "$PKG_TOOL non trovato: controllo delle dipendenze saltato." "$PKG_TOOL not found: dependency check skipped.")"
+fi
+
+# --- Debian and Ubuntu: Dropwheel's own Python environment (PySide6 and the chosen modules)
+VENV_DIR="$PREFIX/share/dropwheel/venv"
+if [[ $DISTRO == debian ]] && (( ! DO_PACKAGES )); then
+    info "$(t 'Ambiente Python saltato (--no-packages). Per crearlo:' 'Python environment skipped (--no-packages). To create it:')"
+    cmd "$PYTHON_BIN -m venv --system-site-packages $VENV_DIR && $VENV_DIR/bin/python -m pip install PySide6-Essentials"
+elif [[ $DISTRO == debian ]]; then
+    step "$(t 'Ambiente Python' 'Python environment')"
+    if [[ ! -x $VENV_DIR/bin/python ]]; then
+        "$PYTHON_BIN" -m venv --system-site-packages "$VENV_DIR" \
+            || die "$(t 'Impossibile creare l'"'"'ambiente Python: serve python3-venv' 'Cannot create the Python environment: python3-venv is needed')"
+    fi
+    pip_list=(PySide6-Essentials "${PIP_MODULES[@]+"${PIP_MODULES[@]}"}")
+    info "$(t 'Installo con pip (PySide6 sono circa 80 MB):' 'Installing with pip (PySide6 is about 80 MB):') ${pip_list[*]}"
+    venv_pip() { "$VENV_DIR/bin/python" -m pip install --disable-pip-version-check -q --upgrade "$@"; }
+    # --ignore-installed: a system PySide6 (python3-pyside6) would otherwise lend its shiboken6,
+    # whose library is not where the pip build looks for it
+    if venv_pip --ignore-installed -- PySide6-Essentials \
+            && { (( ${#PIP_MODULES[@]} == 0 )) || venv_pip -- "${PIP_MODULES[@]}"; }; then
+        ok "$(t 'ambiente Python' 'Python environment') → $VENV_DIR"
+    else
+        warn "$(t 'pip non è riuscito a installare tutto: riprova più tardi con' 'pip could not install everything: try again later with')"
+        cmd "$VENV_DIR/bin/python -m pip install ${pip_list[*]}"
+    fi
+    PYTHON_BIN="$VENV_DIR/bin/python"
 fi
 
 if ! "$PYTHON_BIN" -c 'import PIL' >/dev/null 2>&1; then
     warn "$(t 'Pillow non è importabile da' 'Pillow cannot be imported by') $PYTHON_BIN"
 fi
-if ! command -v qs >/dev/null 2>&1; then
+if [[ $DESKTOP == hyprland ]] && ! command -v qs >/dev/null 2>&1; then
     warn "$(t 'Quickshell (comando qs) non trovato: la ruota non potrà partire finché non lo installi.' \
               'Quickshell (qs command) not found: the wheel cannot start until you install it.')"
+fi
+if [[ $DESKTOP == gnome ]] && ! "$PYTHON_BIN" -c 'import PySide6.QtQuick' >/dev/null 2>&1; then
+    warn "$(t 'PySide6 non è importabile: la ruota non potrà partire finché non lo installi.' \
+              'PySide6 cannot be imported: the wheel cannot start until you install it.')"
 fi
 
 if (( ${#missing_required[@]} )); then
@@ -407,7 +744,7 @@ fi
 
 UPGRADE=0
 [[ -x $DW_BIN ]] && UPGRADE=1
-if (( UPGRADE && DO_START )) && in_hyprland_session; then
+if (( UPGRADE && DO_START )) && { in_hyprland_session || [[ $DESKTOP == gnome ]]; }; then
     step "$(t 'Arresto la versione in esecuzione' 'Stopping the running version')"
     if command -v timeout >/dev/null 2>&1; then
         timeout 15 "$DW_BIN" stop >/dev/null 2>&1 || true
@@ -447,7 +784,7 @@ sync_dir "$SCRIPT_DIR/src" dropwheel "$PY_DIR"
 ok "$(t 'pacchetto Python' 'Python package') → $PY_DIR/dropwheel"
 
 sync_dir "$SCRIPT_DIR" shell "$DATA_DIR"
-ok "$(t 'shell Quickshell' 'Quickshell shell') → $DATA_DIR/shell"
+ok "$(t 'interfaccia' 'interface') → $DATA_DIR/shell"
 
 sync_dir "$SCRIPT_DIR" integrations "$DATA_DIR"
 chmod 0755 "$DATA_DIR/integrations/nautilus/Dropwheel"
@@ -575,9 +912,21 @@ case ":$PATH:" in
     *)
         warn "$(t "$BIN_DIR non è nel PATH: il comando \"dropwheel\" non sarà trovato dal terminale." \
                   "$BIN_DIR is not in PATH: the terminal will not find the \"dropwheel\" command.")"
-        info "fish: fish_add_path $BIN_DIR"
-        info "bash: echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.bashrc"
-        info "zsh:  echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.zshrc"
+        shell_name=$(basename -- "${SHELL:-bash}")
+        case $shell_name in
+            fish) rc="$XDG_CONFIG_HOME_DIR/fish/conf.d/dropwheel-path.fish"; line="fish_add_path $(sq "$BIN_DIR")" ;;
+            zsh) rc="$HOME/.zshrc"; line="export PATH=$(sq "$BIN_DIR"):\"\$PATH\"" ;;
+            *) rc="$HOME/.bashrc"; line="export PATH=$(sq "$BIN_DIR"):\"\$PATH\"" ;;
+        esac
+        if interactive && ask "$(t "Lo aggiungo al PATH in $rc?" "Add it to PATH in $rc?")" y n; then
+            mkdir -p -- "$(dirname -- "$rc")"
+            printf '\n# Dropwheel (install.sh)\n%s\n' "$line" >> "$rc"
+            ok "$(t 'PATH aggiornato: vale nei terminali che apri da ora' 'PATH updated: it applies to the terminals you open from now on')"
+        else
+            info "fish: fish_add_path $BIN_DIR"
+            info "bash: echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.bashrc"
+            info "zsh:  echo 'export PATH=\"$BIN_DIR:\$PATH\"' >> ~/.zshrc"
+        fi
         ;;
 esac
 
@@ -601,7 +950,23 @@ hypr_has_dropwheel() {
 }
 
 hypr_configured=0
-if (( DO_HYPRLAND )); then
+gnome_configured=0
+if (( DO_HYPRLAND )) && [[ $DESKTOP == gnome ]]; then
+    step "GNOME"
+    info "$(t '"dropwheel setup gnome" installa una piccola estensione di GNOME Shell (dice a Dropwheel dove sta il puntatore e se Shift è premuto), la scorciatoia Ctrl+Alt+D, l'"'"'avvio all'"'"'accesso e il font delle icone.' \
+              '"dropwheel setup gnome" installs a small GNOME Shell extension (it tells Dropwheel where the pointer is and whether Shift is held), the Ctrl+Alt+D shortcut, starting at login and the icon font.')"
+    if ask "$(t 'Configuro GNOME adesso?' 'Set up GNOME now?')" y n; then
+        if "$DW_BIN" setup gnome; then
+            gnome_configured=1
+        else
+            warn "$(t 'Configurazione non completa: dropwheel doctor dice cosa manca.' 'Setup not complete: dropwheel doctor tells what is missing.')"
+        fi
+    else
+        info "$(t 'Quando vuoi:' 'Whenever you like:')"
+        cmd "dropwheel setup gnome"
+    fi
+fi
+if (( DO_HYPRLAND )) && [[ $DESKTOP == hyprland ]]; then
     step "Hyprland"
     if hypr_has_dropwheel; then
         ok "$(t 'Dropwheel è già collegato alla configurazione di Hyprland' 'Dropwheel is already wired into the Hyprland configuration')"
@@ -640,7 +1005,17 @@ fi
 started=0
 if (( DO_START )); then
     step "$(t 'Avvio' 'Starting')"
-    if ! in_hyprland_session; then
+    if [[ $DESKTOP == gnome ]]; then
+        if [[ ${XDG_CURRENT_DESKTOP:-} != *GNOME* ]]; then
+            info "$(t 'Non sei in una sessione GNOME: Dropwheel partirà da solo al prossimo accesso.' \
+                      'Not in a GNOME session: Dropwheel will start by itself at the next login.')"
+        elif "$DW_BIN" start; then
+            ok "$(t 'Dropwheel è in esecuzione' 'Dropwheel is running')"
+            started=1
+        else
+            warn "$(t 'Avvio non riuscito: controlla con "dropwheel doctor".' 'Start failed: check with "dropwheel doctor".')"
+        fi
+    elif ! in_hyprland_session; then
         info "$(t 'Non sei in una sessione Hyprland: avvia Dropwheel dopo il login con "dropwheel start".' \
                   'Not in a Hyprland session: start Dropwheel after logging in with "dropwheel start".')"
     elif ! command -v qs >/dev/null 2>&1; then
@@ -666,7 +1041,25 @@ elif (( UPGRADE )); then
 else
     start_hint=$(t 'Per avviarla: dropwheel start' 'To start it: dropwheel start')
 fi
-if (( IT )); then
+if [[ $DESKTOP == gnome ]]; then
+    if (( IT )); then
+        (( gnome_configured )) && info "${C_BOLD}Esci e rientra una volta${C_RESET}: GNOME carica l'estensione solo all'accesso."
+        info "Mentre trascini dei file da Nautilus premi ${C_BOLD}Shift${C_RESET}: compare la ruota sotto il puntatore."
+        info "Senza trascinare: copia dei file e premi ${C_BOLD}Ctrl+Alt+D${C_RESET}, oppure tasto destro → Script → Dropwheel."
+        (( gnome_configured )) || info "Per l'estensione e la scorciatoia serve prima: dropwheel setup gnome"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Controllo degli strumenti opzionali: dropwheel doctor"
+        info "Disinstallazione: $DATA_DIR/uninstall.sh"
+    else
+        (( gnome_configured )) && info "${C_BOLD}Log out and back in once${C_RESET}: GNOME loads the extension only at login."
+        info "While dragging files from Nautilus press ${C_BOLD}Shift${C_RESET}: the wheel appears under the pointer."
+        info "Without dragging: copy some files and press ${C_BOLD}Ctrl+Alt+D${C_RESET}, or right click → Scripts → Dropwheel."
+        (( gnome_configured )) || info "The extension and the shortcut need: dropwheel setup gnome"
+        [[ -z $start_hint ]] || info "$start_hint"
+        info "Check optional tools: dropwheel doctor"
+        info "Uninstall: $DATA_DIR/uninstall.sh"
+    fi
+elif (( IT )); then
     info "Mentre trascini dei file premi ${C_BOLD}Shift${C_RESET}: compare la ruota sotto il puntatore."
     info "Senza trascinare: copia dei file e premi ${C_BOLD}SUPER+ALT+D${C_RESET}."
     (( hypr_configured )) || info "Per le scorciatoie serve prima: dropwheel setup hyprland"
