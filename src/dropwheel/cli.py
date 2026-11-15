@@ -61,11 +61,14 @@ REQUIRED_TOOLS: tuple[tuple[str, str], ...] = (
 if tools.WINDOWS:
     # no compositor or Quickshell there: PySide6 hosts the shell; send2trash is the only safe trash
     REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"), ("py:PySide6", "PySide6-Essentials"))
+elif tools.MACOS:
+    # PySide6 hosts the shell; clipboard, trash and opening are built into macOS (pbcopy, osascript, open)
+    REQUIRED_TOOLS = (("py:PIL", "pillow"), ("py:PySide6", "PySide6-Essentials"))
 elif tools.qt_frontend():
     # GNOME, KDE: PySide6 hosts the shell (dropwheel setup gnome|kde adds the extension or KWin script it reads)
-    _deb = tools.distro() == "debian"
-    REQUIRED_TOOLS = (("py:PIL", "python3-pil" if _deb else "python-pillow"),
-                      ("py:PySide6", "PySide6-Essentials" if _deb else "pyside6"),
+    _pil, _pyside = {"debian": ("python3-pil", "PySide6-Essentials"), "fedora": ("python3-pillow", "python3-pyside6"),
+                     "suse": ("python3-Pillow", "python3-pyside6")}.get(tools.distro(), ("python-pillow", "pyside6"))
+    REQUIRED_TOOLS = (("py:PIL", _pil), ("py:PySide6", _pyside),
                       ("wl-copy", "wl-clipboard"), ("wl-paste", "wl-clipboard"))
 
 #: Programs that are a personal choice (terminals, file managers, viewers, package helpers…):
@@ -102,6 +105,8 @@ _GROUP_ORDER = ("image", "pdf", "docs", "media", "archive", "fonts", "system", "
 _SETUP_TARGETS = ("hyprland", "gnome", "kde", "nautilus", "dolphin", "nemo", "thunar", "desktop", "all")
 if tools.WINDOWS:
     _SETUP_TARGETS = ("windows",)
+elif tools.MACOS:
+    _SETUP_TARGETS = ("macos",)
 _URL_RE = re.compile(r"^[A-Za-z][A-Za-z0-9+.-]+://")
 _REQUIRE_RE = re.compile(r"""require\s*\(?\s*["']dropwheel["']""")
 _HYPR_USER_RE = re.compile(r"""require\s*\(?\s*["']hypr-user["']|dofile\s*\(?.*hypr-user""")
@@ -1248,6 +1253,24 @@ def _doctor_windows_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
                  explorer.FONT_FAMILY if font else ctx.t("cli.doctor.win_font_missing") + hint))
 
 
+def _doctor_macos_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
+    """``doctor`` on macOS: PySide6, the Finder Quick Action, start at login and the icon font."""
+    from .qtshell import macos_setup
+
+    term = ctx.term
+    yes, no = term.ok(), term.fail()
+    pyside = tools.path("py:PySide6")
+    rows.append((yes if pyside else no, "PySide6", pyside or (ctx.t("cli.doctor.missing") + term.dim(
+        f"  {term.sym('arrow')} " + tools.install_hint(["py:PySide6"])))))
+    st = macos_setup.state()
+    hint = term.dim(f"  {term.sym('arrow')} dropwheel setup macos")
+    for key, label in (("service", "cli.doctor.mac_service"), ("login", "cli.doctor.mac_login")):
+        rows.append((yes if st[key] else term.warn(), ctx.t(label),
+                     ctx.t(label + "_ok") if st[key] else ctx.t(label + "_missing") + hint))
+    rows.append((yes if st["font"] else term.warn(), ctx.t("cli.doctor.win_font"),
+                 "Material Symbols Rounded" if st["font"] else ctx.t("cli.doctor.win_font_missing") + hint))
+
+
 def _doctor_gnome_rows(ctx: Ctx, rows: list[tuple[str, str, str]]) -> None:
     """``doctor`` in a GNOME session: PySide6, the Shell extension, the shortcut and the icon font."""
     from .qtshell import gnome_setup
@@ -1338,6 +1361,8 @@ def cmd_doctor(args: argparse.Namespace, ctx: Ctx) -> int:
     rows: list[tuple[str, str, str]] = []
     if tools.WINDOWS:
         _doctor_windows_rows(ctx, rows)
+    elif tools.MACOS:
+        _doctor_macos_rows(ctx, rows)
     elif tools.qt_frontend() and "kde" in os.environ.get("XDG_CURRENT_DESKTOP", "").lower().split(":"):
         _doctor_kde_rows(ctx, rows)
     elif tools.qt_frontend():
@@ -2023,6 +2048,27 @@ def _setup_windows(ctx: Ctx, *, dry: bool, remove: bool) -> int:
     return code
 
 
+def _setup_macos(ctx: Ctx, *, dry: bool, remove: bool) -> int:
+    """``dropwheel setup macos [--remove]``: the Finder Quick Action, start at login, the icon font."""
+    from .qtshell import macos_setup
+
+    term = ctx.term
+
+    def say(key: str, **fmt: Any) -> None:
+        prefix = term.dim(ctx.t("cli.setup.dry_prefix") + " ") if dry else ""
+        out(f"  {prefix}{ctx.t(key, **fmt)}")
+
+    out(term.bold("macOS"))
+    if remove:
+        return macos_setup.remove(dry=dry, say=say)
+    code = macos_setup.install(ctx.lang, dry=dry, say=say)
+    if not dry:
+        out()
+        out("  " + ctx.t("cli.setup.win_next"))
+        out("    dropwheel start")
+    return code
+
+
 def _setup_gnome(ctx: Ctx, *, dry: bool, remove: bool) -> int:
     """``dropwheel setup gnome [--remove]``: the Shell extension, the shortcut, autostart, the icon font."""
     from .qtshell import gnome_setup
@@ -2069,6 +2115,8 @@ def cmd_setup(args: argparse.Namespace, ctx: Ctx) -> int:
     """``dropwheel setup TARGET``: install the desktop integrations for the current user."""
     if tools.WINDOWS:
         return _setup_windows(ctx, dry=args.dry_run, remove=args.remove)
+    if tools.MACOS:
+        return _setup_macos(ctx, dry=args.dry_run, remove=args.remove)
     if args.target == "gnome":
         return _setup_gnome(ctx, dry=args.dry_run, remove=args.remove)
     if args.target == "kde":

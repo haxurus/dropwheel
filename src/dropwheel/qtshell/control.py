@@ -1,4 +1,4 @@
-"""Start, stop and talk to the Qt host (``shellctl`` delegates here on Windows and GNOME).
+"""Start, stop and talk to the Qt host (``shellctl`` delegates here on Windows, macOS and GNOME).
 
 The host listens on ``127.0.0.1`` on a random port and writes ``{pid, port, token}`` to
 :func:`state_path` in the per-user cache.  Every request carries the token, so another user on

@@ -269,6 +269,42 @@ def test_debian_install_hints(monkeypatch):
     assert tools.install_hint(["caelestia"]) == ""  # not packaged for Debian
 
 
+@pytest.mark.parametrize(("os_release", "expected"), [
+    ('ID=ubuntu\nID_LIKE=debian\n', "debian"),
+    ('ID=fedora\n', "fedora"),
+    ('ID="rocky"\nID_LIKE="rhel centos fedora"\n', "fedora"),
+    ('ID="opensuse-tumbleweed"\nID_LIKE="opensuse suse"\n', "suse"),
+    ('ID="opensuse-leap"\nID_LIKE="suse opensuse"\n', "suse"),
+    ('ID=arch\n', "arch"),
+])
+def test_distro_reads_os_release(tmp_path, monkeypatch, os_release, expected):
+    path = tmp_path / "os-release"
+    path.write_text(os_release, encoding="utf-8")
+    monkeypatch.setenv("DROPWHEEL_OS_RELEASE", str(path))
+    tools.distro.cache_clear()
+    try:
+        assert tools.distro() == expected
+    finally:
+        tools.distro.cache_clear()
+
+
+def test_fedora_install_hints(monkeypatch):
+    monkeypatch.setattr(tools, "distro", lambda: "fedora")
+    hint = tools.install_hint(["exiftool", "pdftoppm", "ffmpeg", "py:PySide6", "py:pymupdf"])
+    assert hint.startswith("sudo dnf install perl-Image-ExifTool poppler-utils ffmpeg-free python3-pyside6 && ")
+    assert "pip install" in hint and "pymupdf" in hint
+    assert tools.install_hint(["caelestia"]) == tools.install_hint(["hyprctl"]) == ""
+
+
+def test_suse_install_hints(monkeypatch):
+    monkeypatch.setattr(tools, "distro", lambda: "suse")
+    hint = tools.install_hint(["exiftool", "pdftoppm", "py:PIL", "py:PySide6", "py:pymupdf"])
+    assert hint.startswith("sudo zypper install exiftool poppler-tools python3-Pillow "
+                           "python3-pyside6 qt6-declarative-imports && ")
+    assert "pip install" in hint and "pymupdf" in hint
+    assert tools.install_hint(["mat2"]) == ""  # not packaged for openSUSE
+
+
 def test_setup_gnome_dry_run_changes_nothing(tmp_path, monkeypatch):
     monkeypatch.setenv("XDG_DATA_HOME", str(tmp_path / "data"))
     monkeypatch.setenv("XDG_CONFIG_HOME", str(tmp_path / "config"))
@@ -361,7 +397,7 @@ def test_kde_session_picks_the_kde_backend():
     if not _have_pyside():
         pytest.skip("PySide6 is not installed")
     res = subprocess.run([sys.executable, "-P", "-c", code], env=env, capture_output=True, text=True, timeout=60)
-    assert res.stdout.strip() == ("False" if win32.WINDOWS else "True"), res.stderr
+    assert res.stdout.strip() == ("False" if win32.WINDOWS or tools.MACOS else "True"), res.stderr
 
 
 def test_setup_kde_dry_run_changes_nothing(tmp_path, monkeypatch):

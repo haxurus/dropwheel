@@ -74,6 +74,8 @@ _REQUIRED =(("py:PIL", "python-pillow"), ("qs", "quickshell"), ("hyprctl", "hypr
              ("wl-paste", "wl-clipboard"))
 if tools.WINDOWS:
     _REQUIRED = (("py:PIL", "pillow"), ("py:send2trash", "send2trash"))
+elif tools.MACOS:
+    _REQUIRED = (("py:PIL", "pillow"),)
 
 
 # ============================================================================ action loading

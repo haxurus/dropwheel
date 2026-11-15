@@ -24,6 +24,10 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
   - `dropwheel setup gnome [--remove]`: l'estensione, una scorciatoia personalizzata (`trigger.shortcut`) che
     esegue `dropwheel open`, l'avvio all'accesso e il font delle icone.
   - Indicazioni di installazione con `apt` su Debian e Ubuntu, e pip per i moduli Python.
+- **Fedora e openSUSE con GNOME** (Fedora 43 o successivo, openSUSE Tumbleweed e Leap 16), non ancora provati su
+  un vero computer. `install.sh` li riconosce (e i derivati di RHEL), installa i pacchetti con dnf o zypper,
+  PySide6 compreso, e tiene un ambiente Python privato solo per ciò che installa pip; le indicazioni di
+  installazione e `dropwheel doctor` danno i nomi dei pacchetti di dnf e zypper.
 - **Installer interattivi.** `install.sh` (Arch, Debian, Ubuntu) e `install.ps1` (Windows) si aprono con il nome
   del progetto e i link, riconoscono il sistema e il desktop, e chiedono prima di ogni passo: i pacchetti
   obbligatori (installati con pacman, apt o winget dopo il tuo sì), i gruppi di funzioni facoltative da un
@@ -51,6 +55,19 @@ e il progetto usa il [Versionamento Semantico](https://semver.org/lang/it/).
   - `trigger.shortcut` (predefinita `Ctrl+Alt+D`), usata su Windows.
   - `dropwheel start`, `stop`, `status` e `open` controllano l'host su `127.0.0.1` con un token per ogni avvio.
   - `tests/test_qtshell.py`: 20 test, compreso il caricamento della vera shell senza schermo e senza avvisi QML.
+- **Anteprima per macOS (macOS 13 o successivo, Apple silicon e Intel)**, mai eseguita su un Mac vero. Vedi
+  [Dropwheel su macOS](docs/MACOS.it.md). La stessa ruota, ospitata dall'host PySide6.
+  - Configurazione, cronologia e font delle icone in `~/Library/Application Support/dropwheel`, cache in
+    `~/Library/Caches/dropwheel`.
+  - `open` e `open -R`, `pbcopy` e `pbpaste`, file e immagini negli appunti e il Cestino tramite
+    `osascript` con i percorsi come argomenti, Terminale per *Apri un terminale qui*, font in `~/Library/Fonts`.
+  - Shift durante un trascinamento dallo stato delle sorgenti di eventi Quartz, letto con `ctypes`; la ruota
+    resta sopra ogni Spazio e ogni app a tutto schermo senza prendere il focus. Ancora nessuna scorciatoia globale.
+  - `dropwheel setup macos [--remove] [--dry-run]`: un'azione rapida del Finder (*Apri in Dropwheel*), un
+    LaunchAgent per l'avvio all'accesso e il font delle icone.
+  - Indicazioni di installazione con `brew install` e `brew install --cask`; `install.sh` funziona con il bash
+    3.2 di macOS, usa Homebrew e propone di installare Homebrew solo mostrando il suo comando ufficiale e chiedendo.
+  - `tests/test_macos.py`: test che esercitano le parti per macOS su Linux.
 - `tests/test_windows.py`: 16 test che esercitano le parti per Windows su Linux.
 - Documentazione divisa in guide nella cartella [docs](docs/README.it.md): installazione, uso, funzioni, riga di
   comando, risoluzione dei problemi, privacy, sviluppo e Windows, in inglese e in italiano.

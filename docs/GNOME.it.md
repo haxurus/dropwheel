@@ -1,11 +1,11 @@
 [Documentazione](README.it.md) · [English](GNOME.md)
 
-# Dropwheel su GNOME (Debian, Ubuntu, Arch)
+# Dropwheel su GNOME (Debian, Ubuntu, Fedora, openSUSE, Arch)
 
 > [!WARNING]
 > **Questa versione è nuova e non è ancora stata eseguita in una vera sessione GNOME.** L'interfaccia ha
 > girato su Linux attraverso lo stesso host, l'estensione di GNOME è stata provata con un sostituto e
-> l'installer con un Ubuntu simulato, ma ciò che solo GNOME può mostrare (Shift durante un trascinamento da
+> l'installer con Ubuntu, Fedora e openSUSE simulati, ma ciò che solo GNOME può mostrare (Shift durante un trascinamento da
 > File, l'estensione, la scorciatoia) non è verificato. [Segnala ciò che trovi](https://github.com/haxurus/dropwheel/issues).
 
 Su GNOME Dropwheel fa girare **la stessa ruota di Hyprland**: l'interfaccia (ruota, schede dei lavori,
@@ -31,7 +31,7 @@ cose che GNOME non dice ai programmi normali.
 
 | | |
 |---|---|
-| **Sistema** | Debian 13, Ubuntu 24.04 o successivo, Arch Linux, con GNOME 45 o successivo |
+| **Sistema** | Debian 13, Ubuntu 24.04 o successivo, Fedora 43 o successivo, openSUSE Tumbleweed o Leap 16, Arch Linux, con GNOME 45 o successivo |
 | **Python** | 3.11 o successivo (già presente su questi sistemi) |
 | **Sessione** | GNOME su Wayland o su X11 |
 
@@ -43,12 +43,18 @@ curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh |
 
 L'installer mostra cosa ha trovato (sistema, desktop, cartella) e chiede prima di ogni passo:
 
-- i pacchetti che servono a Dropwheel, installati con apt o pacman (sudo chiede la password una volta);
+- i pacchetti che servono a Dropwheel, installati con apt, dnf, zypper o pacman (sudo chiede la password una volta);
 - quali gruppi di funzioni facoltative vuoi (immagini, PDF, OCR, documenti, audio e video, archivi, font,
   condivisione): un elenco numerato, <kbd>Invio</kbd> li prende tutti;
 - su Debian e Ubuntu, un ambiente Python privato in `~/.local/share/dropwheel/venv` con PySide6 (80 MB da
-  scaricare) e i moduli Python dei gruppi scelti, così il Python di sistema non viene mai toccato;
+  scaricare) e i moduli Python dei gruppi scelti, così il Python di sistema non viene mai toccato; su Fedora e
+  openSUSE PySide6 è un pacchetto di sistema, e l'ambiente viene creato solo per i moduli Python dei gruppi
+  scelti che installa pip;
 - `dropwheel setup gnome`: l'estensione, la scorciatoia, l'avvio all'accesso e il font delle icone.
+
+Su Fedora l'installer propone `ffmpeg-free`, la versione di Fedora, oppure l'`ffmpeg` completo quando il
+repository RPM Fusion è attivo; su openSUSE l'`ffmpeg` del repository principale non ha alcuni codec, che ha
+Packman.
 
 Poi **esci e rientra una volta**: GNOME carica una nuova estensione solo all'accesso. Da una copia del
 repository, `./install.sh` fa lo stesso. `./install.sh --help` elenca le opzioni; `--no-packages` mostra solo
@@ -102,7 +108,7 @@ nuovo `dropwheel setup gnome`. La [guida all'uso](USAGE.it.md) descrive la ruota
 
 ## Prossimi passi
 
-1. Provare su veri computer con Debian e Ubuntu, con e senza ridimensionamento dello schermo.
+1. Provare su veri computer con Debian, Ubuntu, Fedora e openSUSE, con e senza ridimensionamento dello schermo.
 2. Altri desktop, partendo dallo stesso host (KDE Plasma: [Dropwheel su KDE Plasma](KDE.it.md)).
 3. Colori che seguono lo stile chiaro o scuro e il colore d'accento di GNOME.
 

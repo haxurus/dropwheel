@@ -12,6 +12,7 @@
 <p align="center">
   <img alt="Arch Linux" src="https://img.shields.io/badge/Arch%20Linux-Hyprland%20%7C%20GNOME-1793d1?logo=archlinux&logoColor=white">
   <img alt="Debian and Ubuntu with GNOME" src="https://img.shields.io/badge/Debian%20%7C%20Ubuntu-GNOME-a80030?logo=debian&logoColor=white">
+  <img alt="Fedora and openSUSE with GNOME" src="https://img.shields.io/badge/Fedora%20%7C%20openSUSE-GNOME-51a2da?logo=fedora&logoColor=white">
   <img alt="Windows 10 and 11, preview" src="https://img.shields.io/badge/Windows-preview-0078d4">
   <img alt="Hyprland 0.57 or later" src="https://img.shields.io/badge/Hyprland-0.57%2B-58e1ff">
   <img alt="Quickshell 0.3.2 or later" src="https://img.shields.io/badge/Quickshell-0.3.2%2B-6f334a">
@@ -42,8 +43,9 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 
 > [!IMPORTANT]
 > **Dropwheel runs on Arch Linux with Hyprland, GNOME or KDE Plasma, on Debian and Ubuntu with GNOME or KDE
-> Plasma, and in preview on Windows 10 and 11.** The GNOME, KDE Plasma and Windows versions are new and have not
-> yet run on a real GNOME, Plasma or Windows machine: see [Platform support](#platform-support).
+> Plasma, on Fedora and openSUSE with GNOME, and in preview on Windows 10 and 11 and macOS 13 or later.**
+> The GNOME, KDE Plasma, Windows and macOS versions are new and have not yet run on a real GNOME, Plasma,
+> Windows or Mac machine: see [Platform support](#platform-support).
 >
 > This is an early release. The code has an extensive automated test suite, but the complete
 > drag-and-drop flow has not yet been exercised on a live Hyprland session, and many paths that call
@@ -86,11 +88,12 @@ Ghostscript, LibreOffice and Tesseract. There are no accounts, no cloud services
 | Arch Linux, Hyprland 0.57+, without Caelestia | **Supported**, with a built-in dark palette |
 | Arch Linux, GNOME 45+ | **New**: the same wheel, through a small GNOME Shell extension. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Debian 13, Ubuntu 24.04 or later, GNOME | **New**: as above, installed with apt. See [Dropwheel on GNOME](docs/GNOME.md) |
+| Fedora 43 or later, openSUSE Tumbleweed and Leap 16, GNOME | **New**: as above, installed with dnf or zypper. See [Dropwheel on GNOME](docs/GNOME.md) |
 | Arch Linux, Debian 13, Ubuntu or Kubuntu 25.04 or later, KDE Plasma 6 | **New**: the same wheel, through a small KWin script, on Wayland and X11. See [Dropwheel on KDE Plasma](docs/KDE.md) |
 | Arch-based distributions | Expected to work with the same packages, not tested |
 | Other compositors, other distributions | Not yet |
 | Windows 10 and 11 | **Preview**: the same wheel, job cards and editors, Shift during a drag from Explorer, hot corner, shortcut, context menu. Not yet tested on real Windows. See [Dropwheel on Windows](docs/WINDOWS.md) |
-| macOS | Not yet |
+| macOS 13 or later, Apple silicon and Intel | **Preview**: the same wheel, Shift during a drag from the Finder, hot corner, a Finder Quick Action, start at login; no shortcut yet. Never run on a real Mac. See [Dropwheel on macOS](docs/MACOS.md) |
 
 ### Where this is going
 
@@ -103,19 +106,19 @@ through a small JSON protocol:
 
 | Layer | Today | What a port needs |
 |---|---|---|
-| Action engine (Python) | Linux, plus Windows branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows; the same work for macOS |
+| Action engine (Python) | Linux, plus Windows and macOS branches in preview for paths, trash, clipboard, processes and install hints | Notifications on Windows and macOS |
 | Protocol | JSON lines over stdio | Nothing: any front end can speak it |
 | Command line | Needs no compositor | Mostly nothing: a natural first step on a new platform |
-| Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on KDE Plasma, a KWin script; on Windows, the Shift and mouse state and a registered hotkey | A new way to detect Shift during a drag on each platform |
-| Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME, KDE Plasma and Windows, the same QML hosted by PySide6 | macOS could start from the PySide6 host |
-| Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu) and `install.ps1` (Windows) | Native packages for each system |
+| Trigger | Hyprland global shortcuts and `hyprctl`; on GNOME, a Shell extension; on KDE Plasma, a KWin script; on Windows and macOS, the Shift and mouse state (plus a registered hotkey on Windows) | A new way to detect Shift during a drag on each platform |
+| Wheel and dialogs | Quickshell, Wayland layer-shell; on GNOME, KDE Plasma, Windows and macOS, the same QML hosted by PySide6 | Other desktops could start from the PySide6 host |
+| Packaging | `PKGBUILD`; interactive `install.sh` (Arch, Debian, Ubuntu, Fedora, openSUSE, macOS) and `install.ps1` (Windows) | Native packages for each system |
 
 If you would like to see Dropwheel on your system, an
 [issue](https://github.com/haxurus/dropwheel/issues) describing your setup is a useful start.
 
 ## Quick start
 
-On **Arch Linux, Debian or Ubuntu**, in a terminal:
+On **Arch Linux, Debian, Ubuntu, Fedora, openSUSE or macOS** (macOS: preview, with Homebrew), in a terminal:
 
 ```sh
 curl -fsSL https://raw.githubusercontent.com/haxurus/dropwheel/main/install.sh | bash
@@ -127,12 +130,13 @@ On **Windows 10 or 11** (preview), in PowerShell:
 irm https://raw.githubusercontent.com/haxurus/dropwheel/main/install.ps1 | iex
 ```
 
-The installer recognises the system and the desktop (Hyprland, GNOME, KDE Plasma or Windows), asks which features you
-want, installs what is missing (with your password, once) and starts Dropwheel. Then drag some files and
+The installer recognises the system and the desktop (Hyprland, GNOME, KDE Plasma, Windows or macOS), asks which
+features you want, installs what is missing (with your password, once) and starts Dropwheel. Then drag some files and
 tap <kbd>Shift</kbd>. On GNOME, log out and back in once first.
 
 The details are in the [installation guide](docs/INSTALL.md), [Dropwheel on GNOME](docs/GNOME.md),
-[Dropwheel on KDE Plasma](docs/KDE.md) and [Dropwheel on Windows](docs/WINDOWS.md). On Arch, `makepkg -si` builds a system package instead.
+[Dropwheel on KDE Plasma](docs/KDE.md), [Dropwheel on Windows](docs/WINDOWS.md) and
+[Dropwheel on macOS](docs/MACOS.md). On Arch, `makepkg -si` builds a system package instead.
 
 ## Documentation
 
@@ -148,9 +152,10 @@ The complete documentation is in the [docs](docs/README.md) folder.
 | [Function reference](docs/FUNCTIONS.md) | Every action, ring by ring, with the programs it needs |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | The wheel does not appear, logs, missing icons, greyed out features |
 | [Privacy and security](docs/PRIVACY.md) | What uses the network and how untrusted files are handled |
-| [GNOME](docs/GNOME.md) | Debian, Ubuntu and Arch with GNOME: installing, the extension, differences from Hyprland |
+| [GNOME](docs/GNOME.md) | Debian, Ubuntu, Fedora, openSUSE and Arch with GNOME: installing, the extension, differences from Hyprland |
 | [KDE Plasma](docs/KDE.md) | Debian, Ubuntu and Arch with Plasma 6: installing, the KWin script, differences from Hyprland |
 | [Windows](docs/WINDOWS.md) | The Windows preview: installing, the wheel from Explorer, differences from Linux |
+| [macOS](docs/MACOS.md) | The macOS preview, never run on a real Mac: Homebrew, the Finder Quick Action, differences from Linux |
 | [Architecture and development](docs/DEVELOPMENT.md) | How the pieces fit, running from a checkout, tests |
 | [Changelog](CHANGELOG.md) | What changed in each version |
 

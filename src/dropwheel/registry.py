@@ -653,7 +653,11 @@ _WINDOWS_HIDDEN: tuple[str, ...] = (
     "image.wallpaper", "image.resize.social.monitor", "image.edit.annotate", "image.print", "pdf.print",
     "font.install", "font.uninstall", "file.share.kdeconnect",
 )
-PLATFORM_HIDDEN: tuple[str, ...] = _WINDOWS_HIDDEN if tools.WINDOWS else ()
+#: macOS: the same minus printing (CUPS ``lp`` is part of macOS) and fonts (``~/Library/Fonts``).
+_MACOS_HIDDEN: tuple[str, ...] = (
+    "image.wallpaper", "image.resize.social.monitor", "image.edit.annotate", "file.share.kdeconnect",
+)
+PLATFORM_HIDDEN: tuple[str, ...] = (_WINDOWS_HIDDEN if tools.WINDOWS else _MACOS_HIDDEN if tools.MACOS else ())
 
 
 class _MenuCtx:
